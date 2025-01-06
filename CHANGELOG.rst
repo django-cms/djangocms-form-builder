@@ -2,6 +2,19 @@
 Changelog
 =========
 
+0.2.0 (2025-01-06)
+==================
+
+* fix: github coverage action by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/12
+* fix: an error when an anonymous user fills the form by @arunk in https://github.com/django-cms/djangocms-form-builder/pull/13
+* fix: Add support for Django-entangled 0.6+ by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/19
+* docs: Updated README.rst to show where to add actions by @arunk in https://github.com/django-cms/djangocms-form-builder/pull/14
+* chore: Added venv/ directory to .gitignore by @arunk in https://github.com/django-cms/djangocms-form-builder/pull/15
+
+**New Contributors**
+* @arunk made their first contribution in https://github.com/django-cms/djangocms-form-builder/pull/13
+
+
 0.1.1 (2021-09-14)
 ==================
 
