@@ -8,6 +8,10 @@ class FormEntryAdmin(admin.ModelAdmin):
     date_hierarchy = "entry_created_at"
     list_display = ("__str__", "form_user", "entry_created_at")
     list_filter = ("form_name", "form_user", "entry_created_at")
+    readonly_fields = ["form_name", "form_user"]
+
+    def has_add_permission(self, request):
+        return False
 
     def get_form(self, request, obj=None, **kwargs):
         if obj:
@@ -18,3 +22,4 @@ class FormEntryAdmin(admin.ModelAdmin):
         if obj:
             return obj.get_admin_fieldsets()
         return super().get_fieldsets(request, obj)
+
