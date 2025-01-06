@@ -22,4 +22,3 @@ class FormEntryAdmin(admin.ModelAdmin):
         if obj:
             return obj.get_admin_fieldsets()
         return super().get_fieldsets(request, obj)
-
