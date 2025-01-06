@@ -98,6 +98,32 @@ Upon submission of a valid form actions can be performed. A project can register
             ...  # This method is run upon successful submission of the form
 
 
+To add this action, this needs to be added to your project at startup. Fabian suggests putting these actions in your apps models.py file. Another options is your apps, apps.py file::
+
+    from django.apps import AppConfig
+
+    class MyAppConfig(AppConfig):
+        default_auto_field = 'django.db.models.BigAutoField'
+        name = 'myapp'
+        label = 'myapp'
+        verbose_name = _("My App")
+        
+        def ready(self):
+            super().ready()
+
+            from djangocms_form_builder import actions
+
+            @actions.register
+            class MyAction(actions.FormAction):
+                verbose_name = _("Everything included action")
+
+                def execute(self, form, request):
+                    ...  # This method is run upon successful submission of the form
+                    # Process form and request data, you can send an email to the person who filled the form
+                    # Or admins though that functionality is available from the default SendMailAction
+
+
+
 Using (existing) Django forms with djangocms-form-builder
 =========================================================
 
