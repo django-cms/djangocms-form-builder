@@ -108,13 +108,6 @@ class AjaxFormMixin(FormMixin):
                 "",
             )
         redirect = redirect or redir
-        print( {
-                "result": result,
-                "redirect": redirect,
-                "errors": errors,
-                "field_errors": {},
-                "content": content,
-            })
         return JsonResponse(
             {
                 "result": result,
