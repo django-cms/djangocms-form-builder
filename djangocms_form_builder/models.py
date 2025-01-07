@@ -255,13 +255,13 @@ class DecimalField(FormField):
                 return ""
             value = str(value)
             if "." in value:
-                l, r = value.rsplit(".", 1)
+                left, right = value.rsplit(".", 1)
             else:
-                l, r = value, ""
+                left, right = value, ""
             if self.decimal_places == 0:
-                return l
-            r = (r + self.decimal_places * "0")[: self.decimal_places]
-            return super().format_value(".".join((l, r)))
+                return left
+            right = (right + self.decimal_places * "0")[: self.decimal_places]
+            return super().format_value(".".join((left, right)))
 
     class StrDecimalField(forms.DecimalField):
         def clean(self, value):

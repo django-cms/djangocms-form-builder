@@ -3,7 +3,7 @@ import hashlib
 try:
     from django.utils.translation import gettext_lazy as _
 except ModuleNotFoundError:
-    _ = lambda x: x
+    _ = lambda x: x  # noqa: E731
 
 
 __version__ = "0.2.0"

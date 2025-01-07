@@ -19,7 +19,6 @@ from ..actions import ActionMixin
 from ..forms import SimpleFrontendForm
 from ..helpers import get_option, insert_fields, mark_safe_lazy
 
-
 SAME_PAGE_REDIRECT = "result"
 
 
