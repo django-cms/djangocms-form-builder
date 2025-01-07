@@ -86,7 +86,21 @@ A Form plugin must not be used within another Form plugin.
 Actions
 -------
 
-Upon submission of a valid form actions can be performed. A project can register as many actions as it likes::
+Upon submission of a valid form actions can be performed.
+
+Four actions come with djangocms-form-builder comes with four actions built-in
+
+* **Save form submission** - Saves each form submission to the database. See the
+  results in the admin interface.
+* **Send email** - Sends an email to the site admins with the form data.
+* **Success message** - Specify a message to be shown to the user upon
+  successful form submission.
+* **Redirect after submission** - Specify a link to a page where the user is
+  redirected after successful form submission.
+
+Actions can be configured in the form plugin.
+
+A project can register as many actions as it likes::
 
     from djangocms_form_builder import actions
 

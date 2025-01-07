@@ -1,6 +1,7 @@
 import hashlib
 
 from django import forms
+from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
 from django.core.mail import mail_admins, send_mail
 from django.core.validators import EmailValidator
@@ -8,6 +9,7 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
+from djangocms_text_ckeditor.fields import HTMLFormField
 from entangled.forms import EntangledModelFormMixin
 
 from . import models
@@ -219,3 +221,51 @@ class SendMailAction(FormAction):
                 fail_silently=True,
                 html_message=html_message,
             )
+
+
+@register
+class SuccessMessageAction(FormAction):
+    verbose_name = _("Success message")
+
+    class Meta:
+        entangled_fields = {
+            "action_parameters": [
+                "submitmessage_message",
+            ]
+        }
+
+    submitmessage_message = HTMLFormField(
+        label=_("Message"),
+        required=True,
+        initial=_("<p>Thank you for your submission.</p>"),
+    )
+
+    def execute(self, form, request):
+        message = self.get_parameter(form, "submitmessage_message")
+        form.get_success_context = lambda *args, **kwargs: {"message": message}
+        form.Meta.options["render_success"] = "djangocms_form_builder/actions/submit_message.html"
+        form.Meta.options["redirect"] = None
+
+
+if apps.is_installed("djangocms_link"):
+    from djangocms_link.fields import LinkFormField
+    from djangocms_link.helpers import get_link
+
+    @register
+    class RedirectAction(FormAction):
+        verbose_name = _("Redirect after submission")
+
+        class Meta:
+            entangled_fields = {
+                "action_parameters": [
+                    "redirect_link",
+                ]
+            }
+
+        redirect_link = LinkFormField(
+            label=_("Link"),
+            required=True,
+        )
+
+        def execute(self, form, request):
+            form.Meta.options["redirect"] = get_link(self.get_parameter(form, "redirect_link"))

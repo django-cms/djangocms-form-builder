@@ -2,6 +2,12 @@
 Changelog
 =========
 
+0.3.0 (2025-01-07)
+==================
+
+* feat: Success message and redirect action by @fsbraun
+* fix: forms did not redirect to same page if sent from alias by @fsbraun
+
 0.2.0 (2025-01-06)
 ==================
 

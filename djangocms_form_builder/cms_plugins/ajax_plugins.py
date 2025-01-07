@@ -19,6 +19,8 @@ from ..actions import ActionMixin
 from ..forms import SimpleFrontendForm
 from ..helpers import get_option, insert_fields, mark_safe_lazy
 
+SAME_PAGE_REDIRECT = "result"
+
 
 class CMSAjaxBase(CMSPluginBase):
     def ajax_post(self, request, instance, parameter):
@@ -82,6 +84,7 @@ class AjaxFormMixin(FormMixin):
             if hasattr(form, get_success_context):
                 get_success_context = getattr(form, get_success_context)
                 context.update(get_success_context(self.request, self.instance, form))
+            print(context)
             errors, result, redir, content = (
                 [],
                 context.get("result", "success"),
@@ -351,7 +354,7 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
         fields = {}
         traverse(self.instance)
 
-        # Add recaptcha field in necessary
+        # Add recaptcha field if necessary
         if recaptcha.installed and self.instance.captcha_widget:
             fields[recaptcha.field_name] = recaptcha.get_recaptcha_field(self.instance)
 
@@ -364,7 +367,7 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
         ] = f'{self.instance.form_spacing}'
         meta_options[
             "redirect"
-        ] = self.instance.placeholder.page  # Default behavior: redirect to same page
+        ] = SAME_PAGE_REDIRECT  # Default behavior: redirect to same page
         meta_options["login_required"] = self.instance.form_login_required
         meta_options["unique"] = self.instance.form_unique
         form_actions = self.instance.form_actions or "[]"
