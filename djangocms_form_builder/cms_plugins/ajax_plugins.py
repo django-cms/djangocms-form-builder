@@ -85,6 +85,7 @@ class AjaxFormMixin(FormMixin):
             if hasattr(form, get_success_context):
                 get_success_context = getattr(form, get_success_context)
                 context.update(get_success_context(self.request, self.instance, form))
+            print(context)
             errors, result, redir, content = (
                 [],
                 context.get("result", "success"),
@@ -108,6 +109,13 @@ class AjaxFormMixin(FormMixin):
                 "",
             )
         redirect = redirect or redir
+        print( {
+                "result": result,
+                "redirect": redirect,
+                "errors": errors,
+                "field_errors": {},
+                "content": content,
+            })
         return JsonResponse(
             {
                 "result": result,
