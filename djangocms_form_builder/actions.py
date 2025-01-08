@@ -216,8 +216,8 @@ class SendMailAction(FormAction):
             send_mail(
                 subject,
                 message,
-                recipients,
                 self.from_mail,
+                recipients.split(),
                 fail_silently=True,
                 html_message=html_message,
             )
