@@ -187,7 +187,7 @@ class SendMailAction(FormAction):
     def execute(self, form, request):
         from django.core.mail import mail_admins, send_mail
 
-        recipients = (self.get_parameter(form, "sendemail_recipients") or "").split()
+        recipients = self.get_parameter(form, "sendemail_recipients") or ""
         template_set = self.get_parameter(form, "sendemail_template") or "default"
         context = dict(
             cleaned_data=form.cleaned_data,
@@ -219,7 +219,7 @@ class SendMailAction(FormAction):
                 subject,
                 message,
                 self.from_mail,
-                recipients,
+                recipients.split(),
                 fail_silently=True,
                 html_message=html_message,
             )
