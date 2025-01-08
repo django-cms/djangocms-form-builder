@@ -3,7 +3,6 @@ import hashlib
 from django import forms
 from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
-from django.core.mail import mail_admins, send_mail
 from django.core.validators import EmailValidator
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -186,14 +185,16 @@ class SendMailAction(FormAction):
     )
 
     def execute(self, form, request):
-        recipients = (self.get_parameter(form, "sendemail_recipients") or [])
+        from django.core.mail import mail_admins, send_mail
+
+        recipients = (self.get_parameter(form, "sendemail_recipients") or "").split()
         template_set = self.get_parameter(form, "sendemail_template") or "default"
         context = dict(
             cleaned_data=form.cleaned_data,
             form_name=getattr(form.Meta, "verbose_name", ""),
             user=request.user,
-            user_agent=request.headers["User-Agent"],
-            referer=request.headers["Referer"],
+            user_agent=request.headers["User-Agent"] if "User-Agent" in request.headers else "",
+            referer=request.headers["Referer"] if "Referer" in request.headers else "",
         )
 
         html_message = render_to_string(f"djangocms_form_builder/mails/{template_set}/mail_html.html", context)
@@ -205,19 +206,20 @@ class SendMailAction(FormAction):
             subject = render_to_string(f"djangocms_form_builder/mails/{template_set}/subject.txt", context)
         except TemplateDoesNotExist:
             subject = self.subject % dict(form_name=context["form_name"])
+
         if not recipients:
-            mail_admins(
+            return mail_admins(
                 subject,
                 message,
                 fail_silently=True,
                 html_message=html_message,
             )
         else:
-            send_mail(
+            return send_mail(
                 subject,
                 message,
-                recipients,
                 self.from_mail,
+                recipients,
                 fail_silently=True,
                 html_message=html_message,
             )
