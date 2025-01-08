@@ -241,10 +241,15 @@ class SuccessMessageAction(FormAction):
     )
 
     def execute(self, form, request):
+        from .cms_plugins.ajax_plugins import SAME_PAGE_REDIRECT
+
         message = self.get_parameter(form, "submitmessage_message")
+        # Overwrite the success context and render template
         form.get_success_context = lambda *args, **kwargs: {"message": message}
         form.Meta.options["render_success"] = "djangocms_form_builder/actions/submit_message.html"
-        form.Meta.options["redirect"] = None
+        # Overwrite the default redirect to same page
+        if form.Meta.options.get("redirect") == SAME_PAGE_REDIRECT:
+            form.Meta.options["redirect"] = None
 
 
 if apps.is_installed("djangocms_link"):
