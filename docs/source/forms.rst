@@ -2,24 +2,16 @@
  Forms
 #######
 
-.. note::
-
-    Forms a available as of version 0.9.1
-
-.. warning::
-
-    Currently, for forms to work they require **jQuery** to be installed by
-    the user.
 
 
-**djangocms-frontend** supports rendering of styled forms which is part of
+**djangocms-form-builder** supports rendering of styled forms which is part of
 all major frontend frameworks, like Bootstrap 5. The objective is to tightly
-integrate forms in the website design. Djangocms-frontend allows as many forms
+integrate forms in the website design. djangocms-form-builder allows as many forms
 as you wish on one page. All forms are **ajax/xhr-based**. To this end,
-djangocms-frontend extends the django CMS plugin model allowing a form plugin
+djangocms-form-builder extends the django CMS plugin model allowing a form plugin
 to receive ajax post requests.
 
-There are two different ways to manage forms with **djangocms-frontend**:
+There are two different ways to manage forms with **djangocms-form-builder**:
 
 1. **Building a form with django CMS' powerful structure board.** This is
    fast an easy. It integrates smoothly with other design elements, especially
@@ -34,12 +26,12 @@ There are two different ways to manage forms with **djangocms-frontend**:
    your form editors and forms can be placed on pages by refering to them with
    their alias.
 
-2. **Registering an application-specific form with djangocms-frontend.** If you
-   already have forms you may register them with djangocms-frontend and allow
+2. **Registering an application-specific form with djangocms-form-builder.** If you
+   already have forms you may register them with djangocms-form-builder and allow
    editors to use them in the form plugin. If you use
    `django-crispy-forms <https://github.com/django-crispy-forms/django-crispy-forms>`_
    all form layouts will be retained. If you only have simpler design
-   requirements, **djangocms-frontend** allows you to use fieldsets as with
+   requirements, **djangocms-form-builder** allows you to use fieldsets as with
    admin forms.
 
 **************
@@ -54,7 +46,7 @@ except inside another form plugin.
 
 If you want to use the structure board to build your form you will have to add
 the form components as child plugins to a form plugin. If you have registiered
-an application-specific form with djangocms-frontend you will be able to select
+an application-specific form with djangocms-form-builder you will be able to select
 one of the registered forms for be shown by the form plugin. (If you do both,
 the selected form takes precedence over the child plugins.)
 
@@ -86,14 +78,14 @@ represent form fields. These are:
 Each field requires an input of then specific form. Some fields (e.g., Boolean
 or Select/Choice) offer options on the specific input widget.
 
-Djangocms frontend will use framework specific widgets or fall back to standard
+djangocms-form-builder will use framework specific widgets or fall back to standard
 widgets browsers offer (e.g., date picker).
 
 ***************************
 Using forms from other apps
 ***************************
 
-Other apps can register forms to be used by **djangocms-frontend**. Once at
+Other apps can register forms to be used by **djangocms-form-builder**. Once at
 least one form is registered, the form will appear as a option in the Form
 plugin.
 
@@ -102,20 +94,20 @@ Registration is can simply be done by a decorator or function call:
 .. code:: python
 
     from django import forms
-    from djangocms_frontend.contrib.frontend_forms import register_with_frontend
+    from djangocms_form_builder import register_with_form_builder
 
-    @register_with_frontend
+    @register_with_form_builder
     class MyCoolForm(forms.Form):
         ...
 
     class MyOtherCoolForm(forms.Form):
         ...
 
-    register_with_frontend(MyOtherCoolForm)
+    register_with_form_builder(MyOtherCoolForm)
 
 
 
-There are three ways **djangocms-frontend** can render registered forms:
+There are three ways **djangocms-form-builder** can render registered forms:
 
 1. **Regular form rendering**: all fields a shown below one another. This is
    only advisable for very simple forms (e.g. a contact form with name, email,
@@ -125,7 +117,7 @@ There are three ways **djangocms-frontend** can render registered forms:
    know them from ``ModelAdmin``. See `Django documentation
    <https://docs.djangoproject.com/en/dev/ref/contrib/admin/#django.contrib.admin.ModelAdmin.fieldsets>`_.
    This may be the most convenient way of building not-too-complex forms.
-   **djangocms-frontend** uses the grid system to generate the form layout.
+   **djangocms-form-builder** uses the grid system to generate the form layout.
 
 3. **Using the third party package** `django-crispy-forms <https://github.com/django-crispy-forms/django-crispy-forms>`_:
    If installed and the form has a property ``helper`` the form is automatically

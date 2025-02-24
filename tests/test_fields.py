@@ -13,8 +13,8 @@ class FieldsTestCase(TestCase):
         field = TagTypeField()
         self.assertEqual(field.verbose_name, "Tag type")
         self.assertEqual(
-            field.choices,
-            (("div", "div"),),
+            list(field.choices),
+            list((("div", "div"),)),
         )
         self.assertEqual(field.default, "div")
         self.assertEqual(field.max_length, 255)

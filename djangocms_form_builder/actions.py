@@ -1,13 +1,14 @@
 import hashlib
 
 from django import forms
+from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
-from django.core.mail import mail_admins, send_mail
 from django.core.validators import EmailValidator
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
+from djangocms_text_ckeditor.fields import HTMLFormField
 from entangled.forms import EntangledModelFormMixin
 
 from . import models
@@ -125,7 +126,7 @@ class SaveToDBAction(FormAction):
             keys = {}
             defaults = {
                 "form_name": get_option(form, "form_name"),
-                "form_user": form_user,
+                "form_user": None if request.user.is_anonymous else request.user
             }
         defaults.update(
             {
@@ -190,14 +191,16 @@ class SendMailAction(FormAction):
     )
 
     def execute(self, form, request):
-        recipients = (self.get_parameter(form, "sendemail_recipients") or []).split()
+        from django.core.mail import mail_admins, send_mail
+
+        recipients = self.get_parameter(form, "sendemail_recipients") or ""
         template_set = self.get_parameter(form, "sendemail_template") or "default"
         context = dict(
             cleaned_data=form.cleaned_data,
             form_name=getattr(form.Meta, "verbose_name", ""),
             user=request.user,
-            user_agent=request.headers["User-Agent"],
-            referer=request.headers["Referer"],
+            user_agent=request.headers["User-Agent"] if "User-Agent" in request.headers else "",
+            referer=request.headers["Referer"] if "Referer" in request.headers else "",
         )
 
         html_message = render_to_string(f"djangocms_form_builder/mails/{template_set}/mail_html.html", context)
@@ -209,19 +212,73 @@ class SendMailAction(FormAction):
             subject = render_to_string(f"djangocms_form_builder/mails/{template_set}/subject.txt", context)
         except TemplateDoesNotExist:
             subject = self.subject % dict(form_name=context["form_name"])
+
         if not recipients:
-            mail_admins(
+            return mail_admins(
                 subject,
                 message,
                 fail_silently=True,
                 html_message=html_message,
             )
         else:
-            send_mail(
+            return send_mail(
                 subject,
                 message,
-                recipients,
                 self.from_mail,
+                recipients.split(),
                 fail_silently=True,
                 html_message=html_message,
             )
+
+
+@register
+class SuccessMessageAction(FormAction):
+    verbose_name = _("Success message")
+
+    class Meta:
+        entangled_fields = {
+            "action_parameters": [
+                "submitmessage_message",
+            ]
+        }
+
+    submitmessage_message = HTMLFormField(
+        label=_("Message"),
+        required=True,
+        initial=_("<p>Thank you for your submission.</p>"),
+    )
+
+    def execute(self, form, request):
+        from .cms_plugins.ajax_plugins import SAME_PAGE_REDIRECT
+
+        message = self.get_parameter(form, "submitmessage_message")
+        # Overwrite the success context and render template
+        form.get_success_context = lambda *args, **kwargs: {"message": message}
+        form.Meta.options["render_success"] = "djangocms_form_builder/actions/submit_message.html"
+        # Overwrite the default redirect to same page
+        if form.Meta.options.get("redirect") == SAME_PAGE_REDIRECT:
+            form.Meta.options["redirect"] = None
+
+
+if apps.is_installed("djangocms_link"):
+    from djangocms_link.fields import LinkFormField
+    from djangocms_link.helpers import get_link
+
+    @register
+    class RedirectAction(FormAction):
+        verbose_name = _("Redirect after submission")
+
+        class Meta:
+            entangled_fields = {
+                "action_parameters": [
+                    "redirect_link",
+                ]
+            }
+
+        redirect_link = LinkFormField(
+            label=_("Link"),
+            required=True,
+        )
+
+        def execute(self, form, request):
+            form.Meta.options["redirect"] = get_link(self.get_parameter(form, "redirect_link"))

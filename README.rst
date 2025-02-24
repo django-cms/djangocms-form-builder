@@ -86,7 +86,21 @@ A Form plugin must not be used within another Form plugin.
 Actions
 -------
 
-Upon submission of a valid form actions can be performed. A project can register as many actions as it likes::
+Upon submission of a valid form actions can be performed.
+
+Four actions come with djangocms-form-builder comes with four actions built-in
+
+* **Save form submission** - Saves each form submission to the database. See the
+  results in the admin interface.
+* **Send email** - Sends an email to the site admins with the form data.
+* **Success message** - Specify a message to be shown to the user upon
+  successful form submission.
+* **Redirect after submission** - Specify a link to a page where the user is
+  redirected after successful form submission.
+
+Actions can be configured in the form plugin.
+
+A project can register as many actions as it likes::
 
     from djangocms_form_builder import actions
 
@@ -96,6 +110,33 @@ Upon submission of a valid form actions can be performed. A project can register
 
         def execute(self, form, request):
             ...  # This method is run upon successful submission of the form
+
+
+To add this action, might need to be added to your project only after all Django apps have loaded at startup.
+You can put these actions in your apps models.py file. Another options is your apps, apps.py file::
+
+    from django.apps import AppConfig
+
+    class MyAppConfig(AppConfig):
+        default_auto_field = 'django.db.models.BigAutoField'
+        name = 'myapp'
+        label = 'myapp'
+        verbose_name = _("My App")
+
+        def ready(self):
+            super().ready()
+
+            from djangocms_form_builder import actions
+
+            @actions.register
+            class MyAction(actions.FormAction):  # Or import from within the ready method
+                verbose_name = _("Everything included action")
+
+                def execute(self, form, request):
+                    ...  # This method is run upon successful submission of the form
+                    # Process form and request data, you can send an email to the person who filled the form
+                    # Or admins though that functionality is available from the default SendMailAction
+
 
 
 Using (existing) Django forms with djangocms-form-builder
@@ -131,8 +172,8 @@ Actions are not available for Django forms. Any actions to be performed upon sub
 .. |pypi| image:: https://badge.fury.io/py/djangocms-form-builder.svg
    :target: http://badge.fury.io/py/djangocms-form-builder
 
-.. |coverage| image:: https://codecov.io/gh/fsbraun/djangocms-form-builder/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/fsbraun/djangocms-form-builder
+.. |coverage| image:: https://codecov.io/gh/django-cms/djangocms-form-builder/branch/main/graph/badge.svg
+   :target: https://codecov.io/gh/django-cms/djangocms-form-builder
 
 .. |python| image:: https://img.shields.io/badge/python-3.7+-blue.svg
    :target: https://pypi.org/project/djangocms-form-builder/

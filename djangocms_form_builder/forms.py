@@ -134,6 +134,12 @@ class FormsForm(mixin_factory("Form"), EntangledModelForm):
         required=False,
     )
 
+    form_floating_labels = forms.BooleanField(
+        label=_("Floating labels"),
+        required=False,
+        initial=False,
+    )
+
     form_actions = forms.MultipleChoiceField(
         label=_("Actions to be taken after form submission"),
         widget=SelectMultipleActionsWidget(),
@@ -187,7 +193,7 @@ class FormsForm(mixin_factory("Form"), EntangledModelForm):
         ):
             # remove form_selection data if widget will be hidden
             kwargs["instance"].form_selection = ""
-
+        self._meta.model = models.Form
         super().__init__(*args, **kwargs)
         registered_forms = get_registered_forms()
         available_form_actions = actions.get_registered_actions()

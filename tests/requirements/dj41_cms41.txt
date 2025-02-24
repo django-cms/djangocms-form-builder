@@ -1,6 +1,0 @@
--r base.txt
-
-Django>=4.1,<4.2
-django-cms>=4.1.0rc1
-djangocms-text-ckeditor
-djangocms-versioning>=2.0.0rc1

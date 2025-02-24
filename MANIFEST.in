@@ -1,7 +1,0 @@
-include LICENSE
-include CHANGELOG.rst
-include README.rst
-recursive-include djangomcs_form_builder/locale *
-recursive-include djangomcs_form_builder/static *
-recursive-include djangomcs_form_builder/templates *
-recursive-exclude * *.py[co]
