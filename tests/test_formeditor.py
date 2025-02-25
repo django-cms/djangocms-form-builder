@@ -24,6 +24,7 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
                 inspect.isclass(cls)
                 and issubclass(cls, FormElementPlugin)
                 and not issubclass(cls, cms_plugins.ChoicePlugin)
+                and cls is not cms_plugins.SubmitPlugin
             ):
                 field = add_plugin(
                     placeholder=self.placeholder,
@@ -48,5 +49,63 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
                 inspect.isclass(cls)
                 and issubclass(cls, FormElementPlugin)
                 and not issubclass(cls, cms_plugins.ChoicePlugin)
+                and cls is not cms_plugins.SubmitPlugin
             ):
                 self.assertContains(response, f'name="field_{item}"')
+
+    def test_auto_submit_button_appears_when_no_button(self):
+        form = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="test-form",
+        )
+        add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form,
+            language=self.language,
+            config=dict(
+                field_name="text_field",
+            ),
+        )
+        self.publish(self.page, self.language)
+        with self.login_user_context(self.superuser):
+            response = self.client.get(self.request_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode().count('type="submit"'), 1)
+
+    def test_auto_submit_button_does_not_appear_when_button_exists(self):
+        form = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="test-form",
+        )
+        add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form,
+            language=self.language,
+            config=dict(
+                field_name="text_field",
+            ),
+        )
+        add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.SubmitPlugin.__name__,
+            target=form,
+            language=self.language,
+            config=dict(
+                submit_cta="Submit Form",
+            ),
+        )
+        self.publish(self.page, self.language)
+        with self.login_user_context(self.superuser):
+            response = self.client.get(self.request_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode().count('type="submit"'), 1)
