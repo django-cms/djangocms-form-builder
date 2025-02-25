@@ -241,7 +241,8 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
         context.update(self.set_context(context, instance, placeholder))
         context["form_counter"] = context.get("form_counter", 0) + 1
         has_submit_button = any(
-            child.plugin_type == "SubmitPlugin" for child in instance.get_children()
+            child.plugin_type == "SubmitPlugin"
+            for child in (instance.child_plugin_instances)
         )
         context.update(
             {
