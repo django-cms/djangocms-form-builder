@@ -109,3 +109,46 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.decode().count('type="submit"'), 1)
+
+    def test_auto_submit_button_does_not_appear_with_indirect_button(self):
+        form = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="test-form",
+        )
+        parent_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form,
+            language=self.language,
+            config=dict(
+                field_name="parent_field",
+            ),
+        )
+        container_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=parent_field,  # Indirect child of form
+            language=self.language,
+            config=dict(
+                field_name="container_field",
+            ),
+        )
+        add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.SubmitPlugin.__name__,
+            target=container_field,
+            language=self.language,
+            config=dict(
+                submit_cta="Submit Form",
+            ),
+        )
+
+        self.publish(self.page, self.language)
+        with self.login_user_context(self.superuser):
+            response = self.client.get(self.request_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content.decode().count('type="submit"'), 1)
