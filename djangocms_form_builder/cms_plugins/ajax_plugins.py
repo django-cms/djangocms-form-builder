@@ -242,8 +242,6 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
         context["form_counter"] = context.get("form_counter", 0) + 1
 
         def find_submit_button(plugins):
-            if not plugins:
-                return None
             for child in plugins:
                 if child.plugin_type == "SubmitPlugin":
                     return child
