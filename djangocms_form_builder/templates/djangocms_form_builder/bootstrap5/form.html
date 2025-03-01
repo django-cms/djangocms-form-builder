@@ -7,8 +7,12 @@
               method="post">
             {% csrf_token %}
             {% include 'djangocms_form_builder/ajax_form.html' with form=form instance=instance tracking=instance.tracking_code RECAPTCHA_PUBLIC_KEY=RECAPTCHA_PUBLIC_KEY %}
-            <input type="submit" value="{{ instance.form_submit_message|default:_("Submit") }}"
-                class="btn btn-{{ instance.form_submit_context|default:"primary" }}">
+            {% if submit_button %}
+                {% include submit_template with instance=submit_button %}
+            {% else %}
+                <input type="submit" value="{{ instance.form_submit_message|default:_("Submit") }}"
+                    class="btn btn-{{ instance.form_submit_context|default:"primary" }}">
+            {% endif %}
         </form><div class="clearfix"></div>
     {% endif %}
 {% endspaceless %}

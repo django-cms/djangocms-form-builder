@@ -5,7 +5,9 @@
             </ul>
         </div>
         {% for plugin in instance.child_plugin_instances %}
-            {% render_plugin plugin %}
+            {% if plugin.plugin_type != "SubmitPlugin" %}
+                {% render_plugin plugin %}
+            {% endif %}
         {% empty %}
             {% render_form form %}
         {% endfor %}

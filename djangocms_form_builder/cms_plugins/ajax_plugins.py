@@ -240,16 +240,29 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
         form = self.get_ajax_form()
         context.update(self.set_context(context, instance, placeholder))
         context["form_counter"] = context.get("form_counter", 0) + 1
-        has_submit_button = any(
-            child.plugin_type == "SubmitPlugin"
-            for child in (instance.child_plugin_instances)
-        )
+
+        def find_submit_button(plugins):
+            if not plugins:
+                return None
+            for child in plugins:
+                if child.plugin_type == "SubmitPlugin":
+                    return child
+                child_plugins = getattr(child, "child_plugin_instances", None) or []
+                found = find_submit_button(child_plugins)
+                if found:
+                    return found
+            return None
+
+        submit_button = find_submit_button(instance.child_plugin_instances)
         context.update(
             {
                 "instance": instance,
                 "form": form,
                 "uid": f"{instance.id}{getattr(form, 'slug', '')}-{context['form_counter']}",
-                "auto_submit": not has_submit_button,
+                "submit_button": submit_button,
+                "submit_template": submit_button.get_plugin_class().render_template
+                if submit_button
+                else None,
             }
         )
         return context

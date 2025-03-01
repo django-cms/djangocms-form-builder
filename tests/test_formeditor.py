@@ -76,6 +76,7 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.decode().count('type="submit"'), 1)
+        self.assertIn('value="Submit"', response.content.decode())
 
     def test_auto_submit_button_does_not_appear_when_button_exists(self):
         form = add_plugin(
@@ -108,9 +109,12 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
             response = self.client.get(self.request_url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content.decode().count('type="submit"'), 1)
+        content = response.content.decode()
+        self.assertEqual(content.count('type="submit"'), 1)
+        self.assertIn('value="Submit Form"', content)
+        self.assertNotIn('value="Submit"', content)
 
-    def test_auto_submit_button_does_not_appear_with_indirect_button(self):
+    def test_auto_submit_button_handles_nested_submit_button(self):
         form = add_plugin(
             placeholder=self.placeholder,
             plugin_type=cms_plugins.FormPlugin.__name__,
@@ -118,28 +122,38 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
             form_selection="",
             form_name="test-form",
         )
-        parent_field = add_plugin(
+        add_plugin(
             placeholder=self.placeholder,
             plugin_type=cms_plugins.CharFieldPlugin.__name__,
             target=form,
             language=self.language,
             config=dict(
-                field_name="parent_field",
+                field_name="text_field",
             ),
         )
-        container_field = add_plugin(
+        container = add_plugin(
             placeholder=self.placeholder,
-            plugin_type=cms_plugins.CharFieldPlugin.__name__,
-            target=parent_field,  # Indirect child of form
+            plugin_type=cms_plugins.SelectPlugin.__name__,
+            target=form,
             language=self.language,
             config=dict(
-                field_name="container_field",
+                field_name="container",
+            ),
+        )
+        choice = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.ChoicePlugin.__name__,
+            target=container,
+            language=self.language,
+            config=dict(
+                value="choice1",
+                verbose="Choice 1",
             ),
         )
         add_plugin(
             placeholder=self.placeholder,
             plugin_type=cms_plugins.SubmitPlugin.__name__,
-            target=container_field,
+            target=choice,
             language=self.language,
             config=dict(
                 submit_cta="Submit Form",
@@ -151,4 +165,7 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
             response = self.client.get(self.request_url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content.decode().count('type="submit"'), 1)
+        content = response.content.decode()
+        self.assertEqual(content.count('type="submit"'), 1)
+        self.assertIn('value="Submit Form"', content)
+        self.assertNotIn('value="Submit"', content)
