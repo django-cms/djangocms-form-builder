@@ -2,6 +2,17 @@ import os
 
 from cms.utils.compat import DJANGO_3_1
 
+
+class DisableMigrations(dict):
+    def __contains__(self, item):
+        return True
+
+    def __getitem__(self, item):
+        return None
+
+
+MIGRATION_MODULES = DisableMigrations()
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
@@ -17,6 +28,7 @@ INSTALLED_APPS = [
     "djangocms_text_ckeditor",
     "djangocms_form_builder",
     "sekizai",
+    "tests.test_app",
 ]
 
 if DJANGO_3_1:
