@@ -63,10 +63,9 @@ def get_recaptcha_field(instance):
         )  # installing recaptcha 3 ?
     if not widget_params["api_params"]:
         del widget_params["api_params"]
-    field = CAPTCHA_FIELDS[instance.captcha_widget](
+    return CAPTCHA_FIELDS[instance.captcha_widget](
         widget=CAPTCHA_WIDGETS[instance.captcha_widget](**widget_params), label=""
     )
-    return field
 
 
 keys_available = installed and (
