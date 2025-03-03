@@ -14,11 +14,11 @@ if apps.is_installed("captcha"):
     from captcha.fields import ReCaptchaField  # NOQA
     from captcha.widgets import ReCaptchaV2Checkbox, ReCaptchaV2Invisible  # NOQA
 
-    CAPTCHA_WIDGETS['v2-checkbox'] = ReCaptchaV2Checkbox
-    CAPTCHA_WIDGETS['v2-invisible'] = ReCaptchaV2Invisible
+    CAPTCHA_WIDGETS["v2-checkbox"] = ReCaptchaV2Checkbox
+    CAPTCHA_WIDGETS["v2-invisible"] = ReCaptchaV2Invisible
 
-    CAPTCHA_FIELDS['v2-checkbox'] = ReCaptchaField
-    CAPTCHA_FIELDS['v2-invisible'] = ReCaptchaField
+    CAPTCHA_FIELDS["v2-checkbox"] = ReCaptchaField
+    CAPTCHA_FIELDS["v2-invisible"] = ReCaptchaField
 
     CAPTCHA_CHOICES += (
         ("v2-checkbox", f"reCaptcha - {_('v2 checkbox')}"),
@@ -31,12 +31,10 @@ if apps.is_installed("hcaptcha"):
     from hcaptcha.fields import hCaptchaField  # NOQA
     from hcaptcha.widgets import hCaptchaWidget  # NOQA
 
-    CAPTCHA_FIELDS['hcaptcha'] = hCaptchaField
-    CAPTCHA_WIDGETS['hcaptcha'] = hCaptchaWidget
+    CAPTCHA_FIELDS["hcaptcha"] = hCaptchaField
+    CAPTCHA_WIDGETS["hcaptcha"] = hCaptchaWidget
 
-    CAPTCHA_CHOICES += (
-        ("hcaptcha", _("hCaptcha")),
-    )
+    CAPTCHA_CHOICES += (("hcaptcha", _("hCaptcha")),)
 
 if len(CAPTCHA_CHOICES) > 0:
     installed = True
@@ -66,8 +64,7 @@ def get_recaptcha_field(instance):
     if not widget_params["api_params"]:
         del widget_params["api_params"]
     field = CAPTCHA_FIELDS[instance.captcha_widget](
-        widget=CAPTCHA_WIDGETS[instance.captcha_widget](**widget_params),
-        label=""
+        widget=CAPTCHA_WIDGETS[instance.captcha_widget](**widget_params), label=""
     )
     return field
 

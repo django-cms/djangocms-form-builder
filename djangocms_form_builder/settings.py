@@ -13,9 +13,9 @@ ADMIN_CSS = getattr(
 
 
 FORM_OPTIONS = getattr(django_settings, "DJANGOCMS_FORMS_OPTIONS", {})
-MAIL_TEMPLATE_SETS = getattr(django_settings, "DJANGOCMS_MAIL_TEMPLATE_SETS", (
-    ("default", _("Default")),
-))
+MAIL_TEMPLATE_SETS = getattr(
+    django_settings, "DJANGOCMS_MAIL_TEMPLATE_SETS", (("default", _("Default")),)
+)
 
 framework = getattr(django_settings, "DJANGOCMS_FRONTEND_FRAMEWORK", "bootstrap5")
 theme = getattr(django_settings, "DJANGOCMS_FRONTEND_THEME", "djangocms_frontend")
@@ -31,11 +31,14 @@ FORM_TEMPLATE = getattr(
 theme_render_path = f"{theme}.frameworks.{framework}"
 theme_forms_path = f"{theme}.forms"
 
-if not getattr(django_settings, 'DJANGO_FORM_BUILDER_SPACER_CHOICES', False):
-    if not getattr(django_settings, 'DJANGOCMS_FRONTEND_SPACER_SIZES', False):
+if not getattr(django_settings, "DJANGO_FORM_BUILDER_SPACER_CHOICES", False):
+    if not getattr(django_settings, "DJANGOCMS_FRONTEND_SPACER_SIZES", False):
         SPACER_SIZE_CHOICES = DEFAULT_SPACER_SIZE_CHOICES
     else:
-        SPACER_SIZE_CHOICES = ((f"mb-{key}", value) for key, value in django_settings.DJANGOCMS_FRONTEND_SPACER_SIZES)
+        SPACER_SIZE_CHOICES = (
+            (f"mb-{key}", value)
+            for key, value in django_settings.DJANGOCMS_FRONTEND_SPACER_SIZES
+        )
 else:
     SPACER_SIZE_CHOICES = django_settings.DJANGO_FORM_BUILDER_SPACER_CHOICES
 
