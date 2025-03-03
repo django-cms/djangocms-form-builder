@@ -1,0 +1,28 @@
+from django.utils.translation import gettext_lazy as _
+from djangocms_frontend.helpers import insert_fields
+
+
+class AttributesMixin:
+    block_attr = {
+        "description": _(
+            "Advanced settings lets you add html attributes to render this element. Use them wisely and rarely."
+        ),
+        "classes": (
+            "collapse",
+            "attributes",
+        ),
+    }
+
+    def get_fieldsets(self, request, obj=None):
+        meta = self.form._meta
+        fields = (
+            []
+        )
+        fields.append("attributes")
+        return insert_fields(
+            super().get_fieldsets(request, obj),
+            fields,
+            blockname=_("Advanced settings"),
+            blockattrs=self.block_attr,
+            position=-1,  # Always last
+        )
