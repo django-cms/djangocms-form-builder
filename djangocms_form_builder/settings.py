@@ -35,10 +35,10 @@ if not getattr(django_settings, "DJANGO_FORM_BUILDER_SPACER_CHOICES", False):
     if not getattr(django_settings, "DJANGOCMS_FRONTEND_SPACER_SIZES", False):
         SPACER_SIZE_CHOICES = DEFAULT_SPACER_SIZE_CHOICES
     else:
-        SPACER_SIZE_CHOICES = (
+        SPACER_SIZE_CHOICES = [
             (f"mb-{key}", value)
             for key, value in django_settings.DJANGOCMS_FRONTEND_SPACER_SIZES
-        )
+        ]
 else:
     SPACER_SIZE_CHOICES = django_settings.DJANGO_FORM_BUILDER_SPACER_CHOICES
 
