@@ -2,6 +2,11 @@
 Changelog
 =========
 
+0.3.2 (2025-03-04)
+==================
+
+* fix: Action tab failed form validation if djangocms-link was installed
+
 0.3.1 (2025-03-03)
 ==================
 
