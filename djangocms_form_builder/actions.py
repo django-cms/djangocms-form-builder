@@ -284,6 +284,7 @@ if apps.is_installed("djangocms_link"):
 
         redirect_link = LinkFormField(
             label=_("Link"),
+            required=True,
         )
 
         def __init__(self, *args, **kwargs):
