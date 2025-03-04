@@ -58,13 +58,10 @@ def get_action_class(action):
 
 class ActionMixin:
     """Adds action form elements to Form plugin admin"""
+
     def get_form(self, request, *args, **kwargs):
         """Creates new form class based adding the actions as mixins"""
-        return type(
-            "FormActionAdminForm",
-            (self.form, *_action_registry.values()),
-            {}
-        )
+        return type("FormActionAdminForm", (self.form, *_action_registry.values()), {})
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
@@ -78,7 +75,7 @@ class ActionMixin:
                     block=None,
                     position=-1,
                     blockname=action.verbose_name,
-                    blockattrs=dict(classes=(hash, 'action-hide')),
+                    blockattrs=dict(classes=(f"c{hash}", "action-hide")),
                 )
         return fieldsets
 
@@ -120,7 +117,7 @@ class SaveToDBAction(FormAction):
             keys = {}
             defaults = {
                 "form_name": get_option(form, "form_name"),
-                "form_user": None if request.user.is_anonymous else request.user
+                "form_user": None if request.user.is_anonymous else request.user,
             }
         defaults.update(
             {
@@ -147,7 +144,9 @@ SAVE_TO_DB_ACTION = next(iter(_action_registry)) if _action_registry else None
 def validate_recipients(value):
     recipients = value.split()
     for recipient in recipients:
-        EmailValidator(message=_("Please replace \"%s\" by a valid email address.") % recipient)(recipient)
+        EmailValidator(
+            message=_('Please replace "%s" by a valid email address.') % recipient
+        )(recipient)
 
 
 @register
@@ -193,17 +192,25 @@ class SendMailAction(FormAction):
             cleaned_data=form.cleaned_data,
             form_name=getattr(form.Meta, "verbose_name", ""),
             user=request.user,
-            user_agent=request.headers["User-Agent"] if "User-Agent" in request.headers else "",
+            user_agent=request.headers["User-Agent"]
+            if "User-Agent" in request.headers
+            else "",
             referer=request.headers["Referer"] if "Referer" in request.headers else "",
         )
 
-        html_message = render_to_string(f"djangocms_form_builder/mails/{template_set}/mail_html.html", context)
+        html_message = render_to_string(
+            f"djangocms_form_builder/mails/{template_set}/mail_html.html", context
+        )
         try:
-            message = render_to_string(f"djangocms_form_builder/mails/{template_set}/mail.txt", context)
+            message = render_to_string(
+                f"djangocms_form_builder/mails/{template_set}/mail.txt", context
+            )
         except TemplateDoesNotExist:
             message = strip_tags(html_message)
         try:
-            subject = render_to_string(f"djangocms_form_builder/mails/{template_set}/subject.txt", context)
+            subject = render_to_string(
+                f"djangocms_form_builder/mails/{template_set}/subject.txt", context
+            )
         except TemplateDoesNotExist:
             subject = self.subject % dict(form_name=context["form_name"])
 
@@ -248,7 +255,9 @@ class SuccessMessageAction(FormAction):
         message = self.get_parameter(form, "submitmessage_message")
         # Overwrite the success context and render template
         form.get_success_context = lambda *args, **kwargs: {"message": message}
-        form.Meta.options["render_success"] = "djangocms_form_builder/actions/submit_message.html"
+        form.Meta.options["render_success"] = (
+            "djangocms_form_builder/actions/submit_message.html"
+        )
         # Overwrite the default redirect to same page
         if form.Meta.options.get("redirect") == SAME_PAGE_REDIRECT:
             form.Meta.options["redirect"] = None
@@ -275,4 +284,6 @@ if apps.is_installed("djangocms_link"):
         )
 
         def execute(self, form, request):
-            form.Meta.options["redirect"] = get_link(self.get_parameter(form, "redirect_link"))
+            form.Meta.options["redirect"] = get_link(
+                self.get_parameter(form, "redirect_link")
+            )
