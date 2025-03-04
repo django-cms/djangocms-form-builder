@@ -56,6 +56,10 @@ def get_action_class(action):
     return _action_registry.get(action, None)
 
 
+def get_hash(action_class):
+    return hashlib.sha1(action_class.__name__.encode("utf-8")).hexdigest()
+
+
 class ActionMixin:
     """Adds action form elements to Form plugin admin"""
 
@@ -282,6 +286,11 @@ if apps.is_installed("djangocms_link"):
             label=_("Link"),
             required=True,
         )
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            if args:
+                self.fields["redirect_link"].required = get_hash(RedirectAction) in args[0].get("form_actions", [])
 
         def execute(self, form, request):
             form.Meta.options["redirect"] = get_link(
