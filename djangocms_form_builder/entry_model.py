@@ -7,6 +7,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from entangled.forms import EntangledModelForm
 
+from .fields import AttributesField
+
 
 class CSValues(forms.CharField):
     class CSVWidget(forms.TextInput):
@@ -50,6 +52,8 @@ class FormEntry(models.Model):
     )
     entry_created_at = models.DateTimeField(auto_now_add=True)
     entry_updated_at = models.DateTimeField(auto_now=True)
+
+    attributes = AttributesField()
 
     def get_admin_form(self):
         entangled_fields = []
