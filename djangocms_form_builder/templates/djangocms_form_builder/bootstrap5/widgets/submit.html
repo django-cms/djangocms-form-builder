@@ -1,1 +1,1 @@
-<input type="submit" value="{{ instance.form_submit_message|default:_("Submit") }}" class="btn btn-{{ instance.form_submit_context|default:"primary" }}
+<input type="submit" value="{{ instance.config.submit_cta|default:_("Submit") }}" class="btn btn-{{ instance.form_submit_context|default:"primary" }}">

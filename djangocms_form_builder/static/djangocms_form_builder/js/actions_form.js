@@ -1,20 +1,24 @@
-$(function () {
+document.addEventListener('DOMContentLoaded', function () {
     'use strict';
-    $('fieldset.action-auto-hide input[type="checkbox"][name="form_actions"]').each(function (index, element) {
-        const target = $('.' + $(element).attr("value"));
-        if (element.checked) {
-            target.removeClass("action-hide");
-        }
-        if (!target.find('.form-row:not(.hidden)').length) {
-            target.addClass("empty");
-        }
-        $(element).on("change", function (event) {
-            var element = event.target;
+
+    for (const element of document.querySelectorAll('fieldset.action-auto-hide input[type="checkbox"][name="form_actions"]')) {
+        const getByClass = (className) => (document.getElementsByClassName('c' + className) || [undefined])[0];
+        const target = getByClass(element.value);
+
+        if (target) {
             if (element.checked) {
-                $("." + $(element).val()).removeClass("action-hide");
-            } else {
-                $("." + $(element).val()).addClass("action-hide");
+                target.classList.remove("action-hide");
             }
-        });
-    });
+            if (!target.querySelector('.form-row:not(.hidden)')) {
+                target.classList.add("empty");
+            }
+            element.addEventListener('change', function (event) {
+                if (event.target.checked) {
+                    getByClass(event.target.value)?.classList.remove("action-hide");
+                } else {
+                    getByClass(event.target.value)?.classList.add("action-hide");
+                }
+            });
+        }
+    }
 });

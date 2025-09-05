@@ -2,6 +2,23 @@
 Changelog
 =========
 
+0.3.2 (2025-03-04)
+==================
+
+* fix: Action tab failed form validation if djangocms-link was installed
+
+0.3.1 (2025-03-03)
+==================
+
+* fix: Send mail action failed  by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/21
+* fix: Correct send_mail recipients parameter in action.py by @fdik in https://github.com/django-cms/djangocms-form-builder/pull/22
+* docs: Update Codecov link in  README.rst by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/23
+* fix: prevent duplicate submit buttons in forms by @earthcomfy in https://github.com/django-cms/djangocms-form-builder/pull/27
+
+* @fdik made their first contribution in https://github.com/django-cms/djangocms-form-builder/pull/22
+* @earthcomfy made their first contribution in https://github.com/django-cms/djangocms-form-builder/pull/27
+
+
 0.3.0 (2025-01-07)
 ==================
 

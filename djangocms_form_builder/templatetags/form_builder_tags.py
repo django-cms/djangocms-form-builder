@@ -55,9 +55,10 @@ def render_form(form, **kwargs):
 
 
 def get_bound_field(form, formfield):
-    for field in form.visible_fields():
-        if field.name == formfield:
-            return field
+    if form:
+        for field in form.visible_fields():
+            if field.name == formfield:
+                return field
     return None
 
 

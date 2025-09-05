@@ -19,6 +19,9 @@ class FormElementPlugin(AttributesMixin, CMSPluginBase):
     render_template = f"djangocms_form_builder/{settings.framework}/widgets/base.html"
     change_form_template = "djangocms_frontend/admin/base.html"
     settings_name = _("Settings")
+    # Form elements are rendered by the surrounding FormPlugin, hence any change has to be
+    # propageted up to the FormPlugin:
+    is_local = False
 
     fieldsets = (
         (

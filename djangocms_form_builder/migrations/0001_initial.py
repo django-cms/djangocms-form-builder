@@ -12,220 +12,366 @@ import djangocms_form_builder.fields
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('cms', '0022_auto_20180620_1551'),
+        ("cms", "0022_auto_20180620_1551"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Form',
+            name="Form",
             fields=[
-                ('cmsplugin_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, related_name='djangocms_form_builder_form', serialize=False, to='cms.cmsplugin')),
-                ('form_selection', models.CharField(blank=True, default='', max_length=256, verbose_name='Form')),
-                ('form_name', models.CharField(blank=True, default='', max_length=256, validators=[django.core.validators.RegexValidator(re.compile('^[-a-zA-Z0-9_]+\\Z'), 'Enter a valid “slug” consisting of letters, numbers, underscores or hyphens.', 'invalid')], verbose_name='Form name')),
-                ('form_login_required', models.BooleanField(blank=True, default=False, help_text='To avoid issues with user experience use this type of form only on pages, which require login.', verbose_name='Login required to submit form')),
-                ('form_unique', models.BooleanField(default=False, help_text='Requires "Login required" to be checked to work.', verbose_name='User can reopen form')),
-                ('form_floating_labels', models.BooleanField(default=False, verbose_name='Floating labels')),
-                ('form_spacing', models.CharField(max_length=16, verbose_name='Margin between fields')),
-                ('form_actions', models.CharField(blank=True, max_length=1024, verbose_name='Actions to be taken after form submission')),
-                ('attributes', djangocms_form_builder.fields.AttributesField(blank=True, default=dict, verbose_name='Attributes')),
-                ('captcha_widget', models.CharField(blank=True, choices=[('', '-----'), ('v2-checkbox', 'v2 checkbox'), ('v2-invisible', 'v2 invisible')], default='', help_text='Read more in the <a href="https://developers.google.com/recaptcha" target="_blank">documentation</a>.', max_length=16, verbose_name='reCaptcha widget')),
-                ('captcha_requirement', models.DecimalField(decimal_places=2, default=0.5, help_text='Only for reCaptcha v3: Minimum score required to accept challenge.', max_digits=3, null=True, verbose_name='Minimum score requirement')),
-                ('captcha_config', djangocms_form_builder.fields.AttributesField(blank=True, default=dict, help_text='The reCAPTCHA widget supports several <a href="https://developers.google.com/recaptcha/docs/display#render_param" target="_blank">data attributes</a> that customize the behaviour of the widget, such as <code>data-theme</code>, <code>data-size</code>. The reCAPTCHA api supports several <a href="https://developers.google.com/recaptcha/docs/display#javascript_resource_apijs_parameters" target="_blank">parameters</a>. Add these api parameters as attributes, e.g. <code>hl</code> to set the language.', verbose_name='Recaptcha configuration parameters')),
-                ('tag_type', djangocms_form_builder.fields.TagTypeField(choices=[('div', 'div')], default='div', help_text='Select the HTML tag to be used.', max_length=255, verbose_name='Tag type')),
+                (
+                    "cmsplugin_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        related_name="djangocms_form_builder_form",
+                        serialize=False,
+                        to="cms.cmsplugin",
+                    ),
+                ),
+                (
+                    "form_selection",
+                    models.CharField(
+                        blank=True, default="", max_length=256, verbose_name="Form"
+                    ),
+                ),
+                (
+                    "form_name",
+                    models.CharField(
+                        blank=True,
+                        default="",
+                        max_length=256,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                re.compile("^[-a-zA-Z0-9_]+\\Z"),
+                                "Enter a valid “slug” consisting of letters, numbers, underscores or hyphens.",
+                                "invalid",
+                            )
+                        ],
+                        verbose_name="Form name",
+                    ),
+                ),
+                (
+                    "form_login_required",
+                    models.BooleanField(
+                        blank=True,
+                        default=False,
+                        help_text="To avoid issues with user experience use this type of form only on pages, which require login.",
+                        verbose_name="Login required to submit form",
+                    ),
+                ),
+                (
+                    "form_unique",
+                    models.BooleanField(
+                        default=False,
+                        help_text='Requires "Login required" to be checked to work.',
+                        verbose_name="User can reopen form",
+                    ),
+                ),
+                (
+                    "form_floating_labels",
+                    models.BooleanField(default=False, verbose_name="Floating labels"),
+                ),
+                (
+                    "form_spacing",
+                    models.CharField(
+                        max_length=16, verbose_name="Margin between fields"
+                    ),
+                ),
+                (
+                    "form_actions",
+                    models.CharField(
+                        blank=True,
+                        max_length=1024,
+                        verbose_name="Actions to be taken after form submission",
+                    ),
+                ),
+                (
+                    "attributes",
+                    djangocms_form_builder.fields.AttributesField(
+                        blank=True, default=dict, verbose_name="Attributes"
+                    ),
+                ),
+                (
+                    "captcha_widget",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("", "-----"),
+                            ("v2-checkbox", "v2 checkbox"),
+                            ("v2-invisible", "v2 invisible"),
+                        ],
+                        default="",
+                        help_text='Read more in the <a href="https://developers.google.com/recaptcha" target="_blank">documentation</a>.',
+                        max_length=16,
+                        verbose_name="reCaptcha widget",
+                    ),
+                ),
+                (
+                    "captcha_requirement",
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0.5,
+                        help_text="Only for reCaptcha v3: Minimum score required to accept challenge.",
+                        max_digits=3,
+                        null=True,
+                        verbose_name="Minimum score requirement",
+                    ),
+                ),
+                (
+                    "captcha_config",
+                    djangocms_form_builder.fields.AttributesField(
+                        blank=True,
+                        default=dict,
+                        help_text='The reCAPTCHA widget supports several <a href="https://developers.google.com/recaptcha/docs/display#render_param" target="_blank">data attributes</a> that customize the behaviour of the widget, such as <code>data-theme</code>, <code>data-size</code>. The reCAPTCHA api supports several <a href="https://developers.google.com/recaptcha/docs/display#javascript_resource_apijs_parameters" target="_blank">parameters</a>. Add these api parameters as attributes, e.g. <code>hl</code> to set the language.',
+                        verbose_name="Recaptcha configuration parameters",
+                    ),
+                ),
+                (
+                    "tag_type",
+                    djangocms_form_builder.fields.TagTypeField(
+                        choices=[("div", "div")],
+                        default="div",
+                        help_text="Select the HTML tag to be used.",
+                        max_length=255,
+                        verbose_name="Tag type",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Form',
+                "verbose_name": "Form",
             },
-            bases=('cms.cmsplugin',),
+            bases=("cms.cmsplugin",),
         ),
         migrations.CreateModel(
-            name='FormField',
+            name="FormField",
             fields=[
-                ('cmsplugin_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, related_name='djangocms_form_builder_formfield', serialize=False, to='cms.cmsplugin')),
-                ('ui_item', models.CharField(max_length=30)),
-                ('tag_type', djangocms_form_builder.fields.TagTypeField(blank=True, choices=[('div', 'div'), ], default='div', help_text='Select the HTML tag to be used.', max_length=255, verbose_name='Tag type')),
-                ('config', models.JSONField(default=dict, encoder=django.core.serializers.json.DjangoJSONEncoder)),
+                (
+                    "cmsplugin_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        related_name="djangocms_form_builder_formfield",
+                        serialize=False,
+                        to="cms.cmsplugin",
+                    ),
+                ),
+                ("ui_item", models.CharField(max_length=30)),
+                (
+                    "tag_type",
+                    djangocms_form_builder.fields.TagTypeField(
+                        blank=True,
+                        choices=[
+                            ("div", "div"),
+                        ],
+                        default="div",
+                        help_text="Select the HTML tag to be used.",
+                        max_length=255,
+                        verbose_name="Tag type",
+                    ),
+                ),
+                (
+                    "config",
+                    models.JSONField(
+                        default=dict,
+                        encoder=django.core.serializers.json.DjangoJSONEncoder,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Form field item',
+                "verbose_name": "Form field item",
             },
-            bases=('cms.cmsplugin',),
+            bases=("cms.cmsplugin",),
         ),
         migrations.CreateModel(
-            name='FormEntry',
+            name="FormEntry",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('form_name', models.SlugField(verbose_name='Form')),
-                ('entry_data', models.JSONField(blank=True, default=dict, encoder=django.core.serializers.json.DjangoJSONEncoder)),
-                ('html_headers', models.JSONField(blank=True, default=dict)),
-                ('entry_created_at', models.DateTimeField(auto_now_add=True)),
-                ('entry_updated_at', models.DateTimeField(auto_now=True)),
-                ('form_user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL, verbose_name='User')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("form_name", models.SlugField(verbose_name="Form")),
+                (
+                    "entry_data",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        encoder=django.core.serializers.json.DjangoJSONEncoder,
+                    ),
+                ),
+                ("html_headers", models.JSONField(blank=True, default=dict)),
+                ("entry_created_at", models.DateTimeField(auto_now_add=True)),
+                ("entry_updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "form_user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="User",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Form entry',
-                'verbose_name_plural': 'Form entries',
+                "verbose_name": "Form entry",
+                "verbose_name_plural": "Form entries",
             },
         ),
         migrations.CreateModel(
-            name='BooleanField',
-            fields=[
-            ],
+            name="BooleanField",
+            fields=[],
             options={
-                'verbose_name': 'Boolean field',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Boolean field",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='CharField',
-            fields=[
-            ],
+            name="CharField",
+            fields=[],
             options={
-                'verbose_name': 'Character field',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Character field",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='Choice',
-            fields=[
-            ],
+            name="Choice",
+            fields=[],
             options={
-                'verbose_name': 'Choice',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Choice",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='DateField',
-            fields=[
-            ],
+            name="DateField",
+            fields=[],
             options={
-                'verbose_name': 'Date field',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Date field",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='DateTimeField',
-            fields=[
-            ],
+            name="DateTimeField",
+            fields=[],
             options={
-                'verbose_name': 'Date field',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Date field",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='DecimalField',
-            fields=[
-            ],
+            name="DecimalField",
+            fields=[],
             options={
-                'verbose_name': 'Decimal field',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Decimal field",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='EmailField',
-            fields=[
-            ],
+            name="EmailField",
+            fields=[],
             options={
-                'verbose_name': 'Email field',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Email field",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='IntegerField',
-            fields=[
-            ],
+            name="IntegerField",
+            fields=[],
             options={
-                'verbose_name': 'Integer field',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Integer field",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='Select',
-            fields=[
-            ],
+            name="Select",
+            fields=[],
             options={
-                'verbose_name': 'Select',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Select",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='SubmitButton',
-            fields=[
-            ],
+            name="SubmitButton",
+            fields=[],
             options={
-                'verbose_name': 'Submit button',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Submit button",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='TextareaField',
-            fields=[
-            ],
+            name="TextareaField",
+            fields=[],
             options={
-                'verbose_name': 'Text field',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Text field",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='TimeField',
-            fields=[
-            ],
+            name="TimeField",
+            fields=[],
             options={
-                'verbose_name': 'Date field',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Date field",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
         migrations.CreateModel(
-            name='UrlField',
-            fields=[
-            ],
+            name="UrlField",
+            fields=[],
             options={
-                'verbose_name': 'URL field',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "URL field",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('djangocms_form_builder.formfield',),
+            bases=("djangocms_form_builder.formfield",),
         ),
     ]
