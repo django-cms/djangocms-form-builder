@@ -294,6 +294,7 @@ class AjaxFormSubmissionTestCase(TestFixture, CMSTestCase):
         self.assertIn("result", json_data)
 
 
+@skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")
 class FormEntryCreationTestCase(TestFixture, CMSTestCase):
     """Tests for FormEntry creation during form submission"""
 
