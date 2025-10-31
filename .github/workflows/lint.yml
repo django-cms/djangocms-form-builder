@@ -13,13 +13,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Ruff
+        run: python -m pip install --upgrade ruff
       - name: Ruff check
-        uses: astral-sh/ruff-action@v3
-        with:
-          version: latest
-          args: check .
+        run: ruff check .
       - name: Ruff format (check only)
-        uses: astral-sh/ruff-action@v3
-        with:
-          version: latest
-          args: format --check
+        run: ruff format --check

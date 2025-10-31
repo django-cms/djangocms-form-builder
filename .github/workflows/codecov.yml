@@ -26,12 +26,12 @@ jobs:
         ]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: '2'
 
     - name: Setup Python
-      uses: actions/setup-python@master
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Generate Report
@@ -39,6 +39,14 @@ jobs:
         pip install -r tests/requirements/${{ matrix.requirements-file }}
         pip install -e .
         coverage run ./run_tests.py
-    - name: Upload Coverage to Codecov
-      uses: codecov/codecov-action@v3
+    - name: Generate XML report
+      run: |
+        coverage xml
+    - name: Upload coverage artifact (for CI consumption)
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-xml-${{ matrix.python-version }}-${{ matrix.requirements-file }}
+        path: coverage.xml
+    # If you need to upload to Codecov, prefer their minimal uploader binary or pin the action by SHA.
+    # Upload to Codecov is intentionally omitted here to avoid unpinned third-party actions.
 
