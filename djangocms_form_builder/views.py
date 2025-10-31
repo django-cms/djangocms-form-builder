@@ -29,7 +29,7 @@ def register_form_view(cls, slug=None):
 
 
 class AjaxView(View):
-    """
+    r"""
     A Django view to handle AJAX requests for GET and POST methods for django CMS Form Builder forms.
     this view allows django CMS plugins to receive ajax requests if they implement the `ajax_get` and
     `ajax_post` methods. The form plugin implements the `ajax_post` method to handle form submissions.
@@ -84,7 +84,7 @@ class AjaxView(View):
         return plugin, instance
 
     def ajax_post(self, request, *args, **kwargs):
-        """
+        r"""
         Handles AJAX POST requests for the form builder.
 
         This method processes AJAX POST requests by determining the appropriate
@@ -137,7 +137,7 @@ class AjaxView(View):
         raise Http404()
 
     def ajax_get(self, request, *args, **kwargs):
-        """
+        r"""
         Handles AJAX GET requests.
 
         This method processes AJAX GET requests by checking for specific keys in the
