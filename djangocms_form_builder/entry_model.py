@@ -86,7 +86,7 @@ class FormEntry(models.Model):
             (),
             {
                 "model": FormEntry,
-                "exclude": None,
+                "exclude": (),
                 "entangled_fields": {"entry_data": entangled_fields},
                 "untangled_fields": [
                     "form_name",
