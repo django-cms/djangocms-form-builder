@@ -1,3 +1,6 @@
+from unittest import skipIf
+
+from cms import __version__ as cms_version
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 from django import forms
@@ -9,6 +12,7 @@ from djangocms_form_builder import cms_plugins
 from .fixtures import TestFixture
 
 
+@skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")
 class FormRenderingTestCase(TestFixture, CMSTestCase):
     """Tests for rendering forms including template tags"""
 
