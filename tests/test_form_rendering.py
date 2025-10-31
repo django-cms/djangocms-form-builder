@@ -12,7 +12,6 @@ from djangocms_form_builder import cms_plugins
 from .fixtures import TestFixture
 
 
-@skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")
 class FormRenderingTestCase(TestFixture, CMSTestCase):
     """Tests for rendering forms including template tags"""
 
@@ -329,6 +328,7 @@ class TemplateTagsTestCase(CMSTestCase):
 class FormSubmissionRenderingTestCase(TestFixture, CMSTestCase):
     """Tests for form rendering during submission and validation"""
 
+    @skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")
     def test_form_validation_error_rendering(self):
         """Test that validation errors render properly"""
         form_plugin = add_plugin(
