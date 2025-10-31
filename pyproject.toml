@@ -19,12 +19,14 @@ classifiers = [
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.0",
     "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
     "Framework :: Django CMS",
     "Framework :: Django CMS :: 3.9",
     "Framework :: Django CMS :: 3.10",
     "Framework :: Django CMS :: 3.11",
     "Framework :: Django CMS :: 4.0",
     "Framework :: Django CMS :: 4.1",
+    "Framework :: Django CMS :: 5.0",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
@@ -61,3 +63,25 @@ path = "djangocms_form_builder/__init__.py"
 include = [
     "/djangocms_form_builder",
 ]
+
+[tool.ruff]
+# Align with supported Python; keep checks predictable.
+target-version = "py39"
+line-length = 88
+extend-exclude = [
+    "docs/_build",
+    "env",
+    ".venv",
+    "htmlcov",
+]
+
+[tool.ruff.lint]
+# Replace flake8 (E,F) and isort (I) with Ruff's equivalents.
+select = ["E", "F", "I"]
+# Avoid noisy long-line failures; Black handles formatting anyway.
+extend-ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
