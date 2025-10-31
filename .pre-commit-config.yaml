@@ -16,5 +16,4 @@ repos:
   rev: v0.6.7
   hooks:
     - id: ruff
-      args: ["--force-exclude"]
     - id: ruff-format
