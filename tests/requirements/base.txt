@@ -1,6 +1,7 @@
 django-filer
 easy-thumbnails
 djangocms-text
+djangocms-link
 coverage
 django-app-helper
 django-treebeard<4.5
