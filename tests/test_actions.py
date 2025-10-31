@@ -3,9 +3,11 @@ from unittest.mock import patch
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 from django.apps import apps
+from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import AnonymousUser
 
 from djangocms_form_builder.actions import get_registered_actions
+from djangocms_form_builder.cms_plugins.ajax_plugins import FormPlugin
 from djangocms_form_builder.entry_model import FormEntry
 
 from .fixtures import TestFixture
@@ -258,3 +260,101 @@ class ActionTestCase(TestFixture, CMSTestCase):
         form.cleaned_data = {}
         form.save()
         self.assertEqual(form.Meta.options.get("redirect"), "/home/")
+
+    def test_actions_appear_in_form_plugin_fieldsets(self):
+        """Test that registered actions appear in FormPlugin admin fieldsets"""
+        # Create FormPlugin instance
+        admin_site = AdminSite()
+        form_plugin = FormPlugin(model=FormPlugin.model, admin_site=admin_site)
+
+        # Get fieldsets for a new form (obj=None means no existing form selected)
+        request = self.get_request("/")
+        fieldsets = form_plugin.get_fieldsets(request, obj=None)
+
+        # Convert fieldsets to a flat list of (block_name, fields) for easier inspection
+        fieldset_info = [(name, data.get("fields", [])) for name, data in fieldsets]
+
+        # Check that form_actions field appears (added by FormPlugin.get_fieldsets)
+        all_fields = [field for _, fields in fieldset_info for field in fields]
+        flat_fields = []
+        for field in all_fields:
+            if isinstance(field, (list, tuple)):
+                flat_fields.extend(field)
+            else:
+                flat_fields.append(field)
+
+        self.assertIn(
+            "form_actions", flat_fields, "form_actions field should appear in fieldsets"
+        )
+
+        # Check that action-specific fieldsets are added by ActionMixin.get_fieldsets
+        # Each registered action with declared_fields should have its own fieldset
+        action_names = [verbose for _, verbose in get_registered_actions()]
+        fieldset_names = [name for name, _ in fieldset_info if name]
+
+        # At least some action names should appear as fieldset names
+        # (Actions like SendMailAction have fields like sendemail_recipients)
+        has_action_fieldsets = any(
+            action_name in fieldset_names for action_name in action_names
+        )
+        self.assertTrue(
+            has_action_fieldsets,
+            f"Expected at least one action fieldset. Actions: {action_names}, Fieldsets: {fieldset_names}",
+        )
+
+    def test_actions_fieldsets_include_action_fields(self):
+        """Test that action fieldsets include the action's declared fields"""
+        admin_site = AdminSite()
+        form_plugin = FormPlugin(model=FormPlugin.model, admin_site=admin_site)
+
+        request = self.get_request("/")
+        fieldsets = form_plugin.get_fieldsets(request, obj=None)
+
+        # Look for SendMailAction fieldset and its fields
+        send_mail_fieldset = None
+        for name, data in fieldsets:
+            if name and "email" in str(name).lower():
+                send_mail_fieldset = data
+                break
+
+        if send_mail_fieldset:
+            # SendMailAction should have sendemail_recipients and sendemail_template
+            all_fields = []
+            for field in send_mail_fieldset.get("fields", []):
+                if isinstance(field, (list, tuple)):
+                    all_fields.extend(field)
+                else:
+                    all_fields.append(field)
+
+            # Check for SendMailAction specific fields
+            self.assertTrue(
+                any("sendemail" in str(f) for f in all_fields),
+                "SendMailAction fields should be in its fieldset",
+            )
+
+    def test_actions_fieldsets_have_action_hide_class(self):
+        """Test that action fieldsets have action-related CSS classes"""
+        admin_site = AdminSite()
+        form_plugin = FormPlugin(model=FormPlugin.model, admin_site=admin_site)
+
+        request = self.get_request("/")
+        fieldsets = form_plugin.get_fieldsets(request, obj=None)
+
+        # Check that action fieldsets have appropriate CSS classes
+        action_fieldsets_found = False
+        for name, data in fieldsets:
+            if name and name != "None":
+                classes = data.get("classes", ())
+                # Action fieldsets should have "action-hide" or "action-auto-hide" class
+                if any("action" in str(cls) for cls in classes):
+                    action_fieldsets_found = True
+                    self.assertTrue(
+                        "action-hide" in classes or "action-auto-hide" in classes,
+                        f"Fieldset '{name}' should have action-hide or action-auto-hide class, got {classes}",
+                    )
+
+        # At least one action fieldset should be found
+        self.assertTrue(
+            action_fieldsets_found,
+            "Should find at least one action fieldset with classes",
+        )

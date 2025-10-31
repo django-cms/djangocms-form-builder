@@ -1,3 +1,4 @@
+import json
 from unittest import skipIf
 
 from cms import __version__ as cms_version
@@ -475,3 +476,367 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         # Skip this test as GET requests need special handling in the plugin
         # The ajax_get method requires get_context_data which needs proper setup
         self.skipTest("AJAX GET requires more complex setup with context data")
+
+
+@skipIf(cms_version < "4", "Form plugin tests require django CMS 4 or higher")
+class FormPluginTestCase(TestFixture, CMSTestCase):
+    """Tests for FormPlugin specific functionality"""
+
+    def test_form_plugin_get_parent_classes_rejects_nested_forms(self):
+        """Test that FormPlugin cannot be nested inside another FormPlugin"""
+        parent_form = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="parent-form",
+        )
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=parent_form,
+            language=self.language,
+            config={"field_name": "inner", "field_label": "Inner"},
+        )
+        char_field.initialize_from_form()
+
+        # Indirect nesting should also be rejected (form under a child of a form)
+        indirect_result = cms_plugins.FormPlugin.get_parent_classes(
+            slot=None, page=None, instance=char_field
+        )
+        self.assertEqual(indirect_result, [""])
+        # Child form should not be allowed as parent of FormPlugin
+        result = cms_plugins.FormPlugin.get_parent_classes(
+            slot=None, page=None, instance=parent_form
+        )
+
+        # Should return [""] which means no valid parent (prevents nesting)
+        self.assertEqual(result, [""])
+
+    def test_form_plugin_allows_form_as_top_level(self):
+        """Test that FormPlugin is allowed at top level"""
+        # Without an instance (top level), should allow normal parent classes
+        result = cms_plugins.FormPlugin.get_parent_classes(
+            slot=None, page=None, instance=None
+        )
+
+        # Should not be [""] (which would block it)
+        self.assertNotEqual(result, [""])
+
+    def test_create_form_class_from_plugins_with_fields(self):
+        """Test creating form class dynamically from child plugins"""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="dynamic-form",
+        )
+
+        # Add multiple field types
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": "username",
+                "field_label": "Username",
+                "field_required": True,
+            },
+        )
+        char_field.initialize_from_form()
+
+        email_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.EmailFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": "email",
+                "field_label": "Email",
+                "field_required": False,
+            },
+        )
+        email_field.initialize_from_form()
+
+        # Get the plugin instance
+        plugin_instance = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin_instance.instance = form_plugin
+        form_plugin.child_plugin_instances = [char_field, email_field]
+
+        # Create form class
+        form_class = plugin_instance.create_form_class_from_plugins()
+
+        # Verify form class was created
+        self.assertIsNotNone(form_class)
+        self.assertEqual(form_class.__name__, "FrontendAutoForm")
+
+        # Verify fields exist in the form
+        form_instance = form_class(request=self.get_request("/"))
+        self.assertIn("username", form_instance.fields)
+        self.assertIn("email", form_instance.fields)
+
+        # Verify field properties
+        self.assertTrue(form_instance.fields["username"].required)
+        self.assertFalse(form_instance.fields["email"].required)
+
+    def test_create_form_class_with_floating_labels(self):
+        """Test form class creation with floating labels option"""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="floating-form",
+            form_floating_labels=True,
+        )
+
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={"field_name": "name", "field_label": "Name"},
+        )
+        char_field.initialize_from_form()
+
+        plugin_instance = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin_instance.instance = form_plugin
+        form_plugin.child_plugin_instances = [char_field]
+
+        form_class = plugin_instance.create_form_class_from_plugins()
+        self.assertTrue(form_class.Meta.options.get("floating_labels", False))
+
+    def test_create_form_class_with_login_required(self):
+        """Test form class creation with login_required option"""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="login-form",
+            form_login_required=True,
+        )
+
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={"field_name": "data", "field_label": "Data"},
+        )
+        char_field.initialize_from_form()
+
+        plugin_instance = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin_instance.instance = form_plugin
+        form_plugin.child_plugin_instances = [char_field]
+
+        form_class = plugin_instance.create_form_class_from_plugins()
+        self.assertTrue(form_class.Meta.options.get("login_required", False))
+
+    def test_get_form_class_returns_none_without_children_or_selection(self):
+        """Test get_form_class returns None when no children and no form_selection"""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="empty-form",
+            form_selection="",
+        )
+
+        plugin_instance = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin_instance.instance = form_plugin
+        form_plugin.child_plugin_instances = []
+
+        result = plugin_instance.get_form_class()
+        self.assertIsNone(result)
+
+    def test_has_submit_button_detection(self):
+        """Test detection of submit button in child plugins"""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="button-form",
+        )
+
+        add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={"field_name": "test", "field_label": "Test"},
+        )
+
+        add_plugin(
+            placeholder=self.placeholder,
+            plugin_type="SubmitPlugin",
+            target=form_plugin,
+            language=self.language,
+            config={"field_name": "submit", "field_label": "Submit"},
+        )
+
+        self.publish(self.page, self.language)
+
+        # Render the plugin to get context
+        plugin_instance = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin_instance.instance = form_plugin
+
+        from django.template import Context
+
+        context = Context({"request": self.get_request("/")})
+        result_context = plugin_instance.render(context, form_plugin, self.placeholder)
+
+        self.assertTrue(result_context.get("has_submit_button", False))
+
+
+@skipIf(cms_version < "4", "AjaxFormMixin tests require django CMS 4 or higher")
+class AjaxFormMixinTestCase(TestFixture, CMSTestCase):
+    """Tests for AjaxFormMixin methods"""
+
+    def test_form_valid_with_redirect_url(self):
+        """Test form_valid returns correct JSON with redirect URL"""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="redirect-test",
+        )
+
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={"field_name": "data", "field_label": "Data"},
+        )
+        char_field.initialize_from_form()
+
+        plugin_instance = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin_instance.instance = form_plugin
+        plugin_instance.request = self.get_request("/")
+        form_plugin.child_plugin_instances = [char_field]
+
+        # Create form and set redirect in Meta
+        form_class = plugin_instance.create_form_class_from_plugins()
+        form_class.Meta.options["redirect"] = "/success/"
+
+        form = form_class(data={"data": "test"}, request=plugin_instance.request)
+        self.assertTrue(form.is_valid())
+
+        response = plugin_instance.form_valid(form)
+
+        json_data = response.content.decode("utf-8")
+        data = json.loads(json_data)
+
+        self.assertEqual(data["result"], "success")
+        self.assertEqual(data["redirect"], "/success/")
+
+    def test_form_invalid_returns_errors(self):
+        """Test form_invalid returns field errors"""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="error-test",
+        )
+
+        email_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.EmailFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": "email",
+                "field_label": "Email",
+                "field_required": True,
+            },
+        )
+        email_field.initialize_from_form()
+
+        plugin_instance = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin_instance.instance = form_plugin
+        plugin_instance.request = self.get_request("/")
+        form_plugin.child_plugin_instances = [email_field]
+
+        form_class = plugin_instance.create_form_class_from_plugins()
+        form = form_class(data={"email": "invalid"}, request=plugin_instance.request)
+
+        self.assertFalse(form.is_valid())
+
+        response = plugin_instance.form_invalid(form)
+
+        json_data = response.content.decode("utf-8")
+        data = json.loads(json_data)
+
+        self.assertEqual(data["result"], "invalid form")
+        self.assertIn("field_errors", data)
+
+    def test_get_form_kwargs_includes_request_data(self):
+        """Test get_form_kwargs includes POST data"""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="kwargs-test",
+        )
+
+        plugin_instance = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin_instance.instance = form_plugin
+
+        # Create POST request using factory
+        from django.test import RequestFactory
+
+        factory = RequestFactory()
+        request = factory.post("/", data={"test": "value"})
+        request.user = self.superuser
+        plugin_instance.request = request
+
+        kwargs = plugin_instance.get_form_kwargs()
+
+        self.assertIn("data", kwargs)
+        self.assertEqual(kwargs["data"]["test"], "value")
+
+    def test_get_ajax_form_adds_widget_ids(self):
+        """Test get_ajax_form adds unique IDs to field widgets"""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="widget-id-test",
+        )
+
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={"field_name": "myfield", "field_label": "My Field"},
+        )
+        char_field.initialize_from_form()
+
+        plugin_instance = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin_instance.instance = form_plugin
+        plugin_instance.request = self.get_request("/")
+        form_plugin.child_plugin_instances = [char_field]
+
+        form = plugin_instance.get_ajax_form()
+
+        # Widget should have ID with field name + plugin ID
+        expected_id = f"myfield{form_plugin.pk}"
+        self.assertEqual(form.fields["myfield"].widget.attrs["id"], expected_id)
