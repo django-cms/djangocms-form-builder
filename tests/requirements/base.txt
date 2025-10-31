@@ -12,3 +12,4 @@ pyflakes>=2.1
 wheel
 black
 pre-commit
+svglib!=1.6.0
