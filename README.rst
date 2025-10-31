@@ -2,7 +2,7 @@
  django CMS form builder
 ########################
 
-|pypi| |coverage| |python| |django| |djangocms| |djangocms4|
+|pypi| |coverage| |python| |django| |djangocms|
 
 **djangocms-form-builder** supports rendering of styled forms. The objective is to tightly integrate forms in the website design. **djangocms-form-builder** allows as many forms as you wish on one page. All forms are **xhr-based**. To this end, **djangocms-form-builder** extends the django CMS plugin model allowing a form plugin to receive xhr post requests.
 
