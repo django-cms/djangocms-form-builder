@@ -353,8 +353,8 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
         def traverse(instance):
             """Recursively traverse children to identify form fields (by them having a method called
             "get_form_field" """
-            nonlocal fields
             if hasattr(instance, "get_form_field"):
+                nonlocal fields
                 name, field = instance.get_form_field()
                 fields[name] = field
             if (
