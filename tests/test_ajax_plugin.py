@@ -65,6 +65,7 @@ class AjaxViewTestCase(TestFixture, CMSTestCase):
         with self.assertRaises(Http404):
             AjaxView.plugin_instance(99999)
 
+    @skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")
     def test_dispatch_with_json_accept_header_post(self):
         """Test dispatch routes to ajax_post for JSON POST requests"""
         form_plugin = add_plugin(
@@ -101,11 +102,6 @@ class AjaxViewTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response, JsonResponse)
-
-    def test_dispatch_with_json_accept_header_get(self):
-        """Test dispatch routes to ajax_get for JSON GET requests"""
-        # Skip this test as GET requests need special handling in the plugin
-        self.skipTest("AJAX GET requires more complex setup with context data")
 
 
 @skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")

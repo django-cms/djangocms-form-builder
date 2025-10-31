@@ -12,7 +12,7 @@ def run():
     django.setup()
     TestRunner = get_runner(settings)
     test_runner = TestRunner()
-    failures = test_runner.run_tests(["tests"])
+    failures = test_runner.run_tests(sys.argv[1:] or ["tests"])
     sys.exit(bool(failures))
 
 
