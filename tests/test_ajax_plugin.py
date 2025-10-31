@@ -1,3 +1,6 @@
+from unittest import skipIf
+
+from cms import __version__ as cms_version
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 from django.http import JsonResponse
@@ -105,6 +108,7 @@ class AjaxViewTestCase(TestFixture, CMSTestCase):
         self.skipTest("AJAX GET requires more complex setup with context data")
 
 
+@skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")
 class AjaxFormSubmissionTestCase(TestFixture, CMSTestCase):
     """Tests for AJAX form submission and validation"""
 
