@@ -125,7 +125,10 @@ def add_plugin(placeholder, plugin):
 
 def delete_plugin(plugin):
     """CMS version save function to delete a plugin (and its descendants) from a placeholder"""
-    return plugin.placeholder.delete_plugin(plugin)
+    if hasattr(plugin.placeholder, "delete_plugin"):  # CMS v4?
+        return plugin.placeholder.delete_plugin(plugin)
+    else:  # CMS < v4
+        return plugin.delete()
 
 
 def coerce_decimal(value):
