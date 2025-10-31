@@ -80,6 +80,12 @@ class FormEntry(models.Model):
                     label=key,
                     required=False,
                 )
+            elif isinstance(value, int):
+                entangled_fields.append(key)
+                fields[key] = forms.IntegerField(
+                    label=key,
+                    required=False,
+                )
 
         fields["Meta"] = type(
             "Meta",
@@ -110,7 +116,7 @@ class FormEntry(models.Model):
                     "fields": tuple(
                         key
                         for key, value in self.entry_data.items()
-                        if isinstance(value, (str, tuple, list, bool))
+                        if isinstance(value, (str, tuple, list, bool, decimal.Decimal, int))
                     )
                 },
             ),
