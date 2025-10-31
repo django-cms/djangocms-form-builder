@@ -1,7 +1,5 @@
 import os
 
-from cms.utils.compat import DJANGO_3_1
-
 
 class DisableMigrations(dict):
     def __contains__(self, item):

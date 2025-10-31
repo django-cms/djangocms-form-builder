@@ -1,8 +1,8 @@
 import decimal
 
-from django.contrib.auth import get_user_model
 from django.contrib.admin.sites import site
-from django.test import TestCase, RequestFactory
+from django.contrib.auth import get_user_model
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from djangocms_form_builder.models import FormEntry
