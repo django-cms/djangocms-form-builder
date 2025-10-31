@@ -34,10 +34,13 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install -r tests/requirements/${{ matrix.requirements-file }}
+        python -m pip install -e .
     - name: Generate Report
       run: |
-        pip install -r tests/requirements/${{ matrix.requirements-file }}
-        pip install -e .
         coverage run ./run_tests.py
     - name: Generate XML report
       run: |
