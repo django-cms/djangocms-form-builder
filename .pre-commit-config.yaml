@@ -6,9 +6,15 @@ repos:
   rev: v2.32.1
   hooks:
     - id: pyupgrade
-      args: [ "--py38-plus" ]
+      args: [ "--py310-plus" ]
 - repo: https://github.com/adamchainz/django-upgrade
   rev: '1.16.0'
   hooks:
     - id: django-upgrade
       args: [ --target-version, "4.2" ]
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.6.7
+  hooks:
+    - id: ruff
+      args: ["--force-exclude"]
+    - id: ruff-format
