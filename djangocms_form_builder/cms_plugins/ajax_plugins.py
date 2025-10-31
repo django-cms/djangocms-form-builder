@@ -297,7 +297,7 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
         parent = instance
         while parent is not None:
             if parent.plugin_type == cls.__name__:
-                return [""]
+                return ["0"]
             parent = parent.parent
         return super().get_parent_classes(slot, page, instance)
 

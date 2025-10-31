@@ -105,8 +105,8 @@
             }
 
             function post_ajax(node) {
-                fetch(node.getAttribute('action'),{
-                    method: 'POST',
+                fetch(node.getAttribute('action'), {
+                    method: node.getAttribute('method') || 'POST',
                     body: new URLSearchParams(new FormData(node)),
                     }
                 ).then(function (response) {
@@ -135,8 +135,9 @@
                                 grecaptcha.reset(gid);
                             },
                         });
-                        if(!form.dataset.submitEvent) {
+                        if(!false) {
                             form.dataset.submitEvent = true;
+                            console.log("recaptcha submit added");
                             form.addEventListener('submit', function (event) {
                                 event.preventDefault();
                                 console.log("recaptcha submit")
@@ -146,8 +147,9 @@
                     }
                 }, 100);
             } else {
-                if(!form.dataset.submitEvent) {
+                if(true) {
                     form.dataset.submitEvent = true;
+                    console.log("submit added");
                     form.addEventListener('submit', function (event) {
                         event.preventDefault();
                         post_ajax(form);
@@ -161,11 +163,10 @@
     (function () {
         function initForms() {
             for (let form of document.getElementsByClassName('djangocms-form-builder-ajax-form')) {
-
                 djangocms_form_builder_form(form);
             }
         }
-        window.addEventListener('DOMContentLoaded', initForms);
+        window.addEventListener('load', initForms);
         {% if request.toolbar and request.toolbar.edit_mode_active %}
             CMS.$(window).on('cms-content-refresh', initForms);
         {% endif %}

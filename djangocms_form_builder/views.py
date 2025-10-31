@@ -37,7 +37,7 @@ class AjaxView(View):
     Methods
     -------
 
-    dispatch(request, \*args, \*\*kwargs)
+    dispatch(request, *args, **kwargs)
         Overrides the default dispatch method to handle AJAX requests.
 
     decode_path(path)
@@ -46,10 +46,10 @@ class AjaxView(View):
     plugin_instance(pk)
         Retrieves the plugin instance and its associated model instance by primary key.
 
-    ajax_post(request, \*args, \*\*kwargs)
+    ajax_post(request, *args, **kwargs)
         Handles AJAX POST requests. Calls the `ajax_post` method of the plugin or form instance if available.
 
-    ajax_get(request, \*args, \*\*kwargs)
+    ajax_get(request, *args, **kwargs)
         Handles AJAX GET requests. Calls the `ajax_get` method of the plugin or form instance if available.
     """
     def dispatch(self, request, *args, **kwargs):
@@ -93,8 +93,8 @@ class AjaxView(View):
 
         Args:
             request (HttpRequest): The HTTP request object.
-            \*args: Additional positional arguments.
-            \*\*kwargs: Additional keyword arguments, which may include:
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments, which may include:
                 - instance_id (int): The ID of the plugin instance.
                 - parameter (str): Optional parameter for decoding.
                 - form_id (str): The ID of the form instance.
@@ -145,8 +145,8 @@ class AjaxView(View):
 
         Args:
             request (HttpRequest): The HTTP request object.
-            \*args: Additional positional arguments.
-            \*\*kwargs: Additional keyword arguments.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
             JsonResponse: A JSON response with the result of the AJAX request.
