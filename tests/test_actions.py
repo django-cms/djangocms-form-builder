@@ -12,8 +12,12 @@ class ActionTestCase(TestFixture, CMSTestCase):
     def setUp(self):
         super().setUp()
         self.actions = get_registered_actions()
-        self.save_action = [key for key, value in self.actions if value == "Save form submission"][0]
-        self.send_mail_action = [key for key, value in self.actions if value == "Send email"][0]
+        self.save_action = [
+            key for key, value in self.actions if value == "Save form submission"
+        ][0]
+        self.send_mail_action = [
+            key for key, value in self.actions if value == "Send email"
+        ][0]
 
     def test_send_mail_action(self):
         plugin_instance = add_plugin(
@@ -22,8 +26,11 @@ class ActionTestCase(TestFixture, CMSTestCase):
             language=self.language,
             form_name="test_form",
         )
-        plugin_instance.action_parameters = {"sendemail_recipients": "a@b.c d@e.f", "sendemail_template": "default"}
-        plugin_instance.form_actions = f"[\"{self.send_mail_action}\"]"
+        plugin_instance.action_parameters = {
+            "sendemail_recipients": "a@b.c d@e.f",
+            "sendemail_template": "default",
+        }
+        plugin_instance.form_actions = f'["{self.send_mail_action}"]'
         plugin_instance.save()
 
         child_plugin = add_plugin(
@@ -31,7 +38,7 @@ class ActionTestCase(TestFixture, CMSTestCase):
             plugin_type="CharFieldPlugin",
             language=self.language,
             target=plugin_instance,
-            config={"field_name": "field1"}
+            config={"field_name": "field1"},
         )
         child_plugin.save()
         plugin_instance.child_plugin_instances = [child_plugin]
@@ -49,12 +56,15 @@ class ActionTestCase(TestFixture, CMSTestCase):
         # Validate send_mail call
         mock_send_mail.assert_called_once()
         args, kwargs = mock_send_mail.call_args
-        self.assertEqual(args[0], 'Test form form submission')
-        self.assertIn('Form submission', args[1])
-        self.assertEqual(args[3], ['a@b.c', 'd@e.f'])
+        self.assertEqual(args[0], "Test form form submission")
+        self.assertIn("Form submission", args[1])
+        self.assertEqual(args[3], ["a@b.c", "d@e.f"])
 
         # Test with no recipients
-        plugin_instance.action_parameters = {"sendemail_recipients": "", "sendemail_template": "default"}
+        plugin_instance.action_parameters = {
+            "sendemail_recipients": "",
+            "sendemail_template": "default",
+        }
         plugin_instance.save()
 
         with patch("django.core.mail.mail_admins") as mock_mail_admins:
@@ -65,5 +75,5 @@ class ActionTestCase(TestFixture, CMSTestCase):
         # Validate mail_admins call
         mock_mail_admins.assert_called_once()
         args, kwargs = mock_mail_admins.call_args
-        self.assertEqual(args[0], 'Test form form submission')
-        self.assertIn('Form submission', args[1])
+        self.assertEqual(args[0], "Test form form submission")
+        self.assertIn("Form submission", args[1])

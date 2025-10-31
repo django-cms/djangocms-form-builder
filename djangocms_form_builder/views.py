@@ -52,6 +52,7 @@ class AjaxView(View):
     ajax_get(request, \*args, \*\*kwargs)
         Handles AJAX GET requests. Calls the `ajax_get` method of the plugin or form instance if available.
     """
+
     def dispatch(self, request, *args, **kwargs):
         if request.accepts("application/json"):
             if request.method == "GET" and "get" in self.http_method_names:

@@ -290,7 +290,9 @@ if apps.is_installed("djangocms_link"):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             if args:
-                self.fields["redirect_link"].required = get_hash(RedirectAction) in args[0].get("form_actions", [])
+                self.fields["redirect_link"].required = get_hash(
+                    RedirectAction
+                ) in args[0].get("form_actions", [])
 
         def execute(self, form, request):
             form.Meta.options["redirect"] = get_link(

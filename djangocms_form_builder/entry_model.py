@@ -116,7 +116,9 @@ class FormEntry(models.Model):
                     "fields": tuple(
                         key
                         for key, value in self.entry_data.items()
-                        if isinstance(value, (str, tuple, list, bool, decimal.Decimal, int))
+                        if isinstance(
+                            value, (str, tuple, list, bool, decimal.Decimal, int)
+                        )
                     )
                 },
             ),
