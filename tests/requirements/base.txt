@@ -1,6 +1,6 @@
 django-filer
 easy-thumbnails
-djangocms-text-ckeditor
+djangocms-text
 coverage
 django-app-helper
 django-treebeard<4.5
