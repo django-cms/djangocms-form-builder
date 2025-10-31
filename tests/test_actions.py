@@ -257,5 +257,4 @@ class ActionTestCase(TestFixture, CMSTestCase):
         form = plugin.get_form_class()({}, request=request)
         form.cleaned_data = {}
         form.save()
-
-        self.assertTrue(form.Meta.options.get("redirect"))
+        self.assertEqual(form.Meta.options.get("redirect"), "/home/")
