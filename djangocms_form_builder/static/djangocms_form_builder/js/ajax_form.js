@@ -10,7 +10,9 @@ function getErrorMessage() {
 function djangocms_form_builder_form(form) {
     function feedback(node, data) {
         if (data.result === 'success') {
-            node.outerHTML = data.content;
+            const range = document.createRange();
+            const fragment = range.createContextualFragment(data.content);
+            node.replaceWith(fragment);
             node.style.transition='';
             node.style.opacity = 0;
             node.style.transition='opacity 0.3s';
