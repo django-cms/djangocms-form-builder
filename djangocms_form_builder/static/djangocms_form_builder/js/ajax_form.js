@@ -54,13 +54,12 @@ function djangocms_form_builder_form(form) {
             for (const [key, value] of Object.entries(data.field_errors)) {
                 for (const err of value) {
                     if (key.substring(0,7) !== "__all__") {
-                        let msg = document.createElement('template');
-
+                        const msg = document.createElement('template');
                         msg.innerHTML = "<div class='invalid-feedback'><strong></strong></div>";
                         msg.content.querySelector('strong').innerText = err;
                         document.getElementById(key).after(msg.content);
                     } else {
-                        let msg = document.createElement('template');
+                        const msg = document.createElement('template');
                         msg.innerHTML = "<li></li>";
                         msg.content.querySelector('li').innerText = err;
                         for (let invalid of node.getElementsByClassName('all-invalid')) {
@@ -132,7 +131,6 @@ function djangocms_form_builder_form(form) {
                     form.dataset.submitEvent = true;
                     form.addEventListener('submit', function (event) {
                         event.preventDefault();
-                        console.log("recaptcha submit")
                         grecaptcha.execute(gid);
                     });
                 }
