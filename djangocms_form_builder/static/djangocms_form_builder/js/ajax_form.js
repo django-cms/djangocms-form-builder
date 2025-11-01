@@ -33,7 +33,9 @@ function djangocms_form_builder_form(form) {
             }
             if (node.dataset.results) {
                 let target = document.getElementById(node.dataset.results);
-                target.innerHTML = data.content;
+                const range = document.createRange();
+                const fragment = range.createContextualFragment(data.content);
+                target.appendChild(fragment);
             }
         } else if (data.result === 'invalid form') {
             for (let invalid of node.getElementsByClassName('all-invalid')) {
