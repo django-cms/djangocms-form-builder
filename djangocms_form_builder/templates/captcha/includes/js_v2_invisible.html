@@ -1,6 +1,2 @@
 <script defer async src="https://{{ recaptcha_domain }}/recaptcha/api.js?render=explicit&onload=onCaptchaLoad{% if api_params %}&{{ api_params }}{% endif %}"></script>
-<script>
-    var onCaptchaLoad = function() {
-        window.recaptcha_loaded = true;
-    }
-</script>
+

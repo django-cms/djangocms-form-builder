@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-31 19:53+0100\n"
+"POT-Creation-Date: 2025-11-02 19:00+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -81,7 +81,7 @@ msgid "Form builder"
 msgstr ""
 
 #: cms_plugins/ajax_plugins.py:105
-msgid "No content in response from"
+msgid "No content in response form"
 msgstr ""
 
 #: cms_plugins/ajax_plugins.py:266 entry_model.py:32 forms.py:100 models.py:23
@@ -107,60 +107,60 @@ msgid ""
 "protection will not work.</blockquote>"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:17 cms_plugins/form_plugins.py:212
-#: cms_plugins/form_plugins.py:243
+#: cms_plugins/form_plugins.py:16 cms_plugins/form_plugins.py:211
+#: cms_plugins/form_plugins.py:242
 msgid "Forms"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:20
+#: cms_plugins/form_plugins.py:19
 msgid "Settings"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:72
+#: cms_plugins/form_plugins.py:71
 msgid "Text"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:80
+#: cms_plugins/form_plugins.py:79
 msgid "Email"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:87
+#: cms_plugins/form_plugins.py:86
 msgid "URL"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:94
+#: cms_plugins/form_plugins.py:93
 msgid "Decimal"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:102
+#: cms_plugins/form_plugins.py:101
 msgid "Integer"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:110
+#: cms_plugins/form_plugins.py:109
 msgid "Textarea"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:121
+#: cms_plugins/form_plugins.py:120
 msgid "Date"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:128
+#: cms_plugins/form_plugins.py:127
 msgid "Date and time"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:135
+#: cms_plugins/form_plugins.py:134
 msgid "Time"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:142 models.py:386
+#: cms_plugins/form_plugins.py:141 models.py:386
 msgid "Select"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:161 fields.py:131
+#: cms_plugins/form_plugins.py:160 fields.py:131
 msgid "Choices"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:165
+#: cms_plugins/form_plugins.py:164
 msgid ""
 "Use this field to quick edit choices. Choices can be added (<kbd>+</kbd>), "
 "deleted (<kbd>&times;</kbd>) and updated. On the left side enter the value "
@@ -169,15 +169,15 @@ msgid ""
 "<b>after saving</b> the edits."
 msgstr ""
 
-#: cms_plugins/form_plugins.py:211 models.py:433
+#: cms_plugins/form_plugins.py:210 models.py:433
 msgid "Choice"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:222
+#: cms_plugins/form_plugins.py:221
 msgid "Boolean"
 msgstr ""
 
-#: cms_plugins/form_plugins.py:242 models.py:465
+#: cms_plugins/form_plugins.py:241 models.py:465
 msgid "Submit button"
 msgstr ""
 
@@ -217,7 +217,7 @@ msgstr ""
 msgid "User"
 msgstr ""
 
-#: entry_model.py:108
+#: entry_model.py:114
 msgid "User-entered data"
 msgstr ""
 
@@ -553,7 +553,7 @@ msgstr ""
 msgid "Default"
 msgstr ""
 
-#: templates/djangocms_form_builder/ajax_form.html:119
+#: templates/djangocms_form_builder/ajax_form.html:19
 msgid ""
 "Network connection or server error. Please try again later. We apologize for "
 "the inconvenience."

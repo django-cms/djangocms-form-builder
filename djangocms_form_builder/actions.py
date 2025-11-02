@@ -8,7 +8,7 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
-from djangocms_text_ckeditor.fields import HTMLFormField
+from djangocms_text.fields import HTMLFormField
 from entangled.forms import EntangledModelFormMixin
 
 from . import models

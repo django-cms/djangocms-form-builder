@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-31 19:53+0100\n"
+"POT-Creation-Date: 2025-11-02 19:00+0100\n"
 "PO-Revision-Date: 2023-01-24 13:42+0000\n"
 "Last-Translator: Fabian Braun <fsbraun@gmx.de>, 2025\n"
 "Language-Team: German (https://app.transifex.com/divio/teams/58664/de/)\n"
@@ -54,8 +54,8 @@ msgstr "Empfänger"
 #: actions.py:178
 msgid "Space or newline separated list of email addresses."
 msgstr ""
-"Liste der Email-Empfänger (durch Leerzeichen oder Zeilensprung voneinander "
-"getrennt)"
+"Liste der Email-Empfänger, durch Leerzeichen oder Zeilensprung voneinander "
+"getrennt"
 
 #: actions.py:183
 msgid "Mail template set"
@@ -86,7 +86,7 @@ msgid "Form builder"
 msgstr "Form-Builder"
 
 #: cms_plugins/ajax_plugins.py:105
-msgid "No content in response from"
+msgid "No content in response form"
 msgstr "Kein Inhalt im Antwort-Formular"
 
 #: cms_plugins/ajax_plugins.py:266 entry_model.py:32 forms.py:100 models.py:23
@@ -118,60 +118,60 @@ msgstr ""
 "<code>RECAPTCHA_PRIVATE_KEY</code> verfügbar sind. Ohne Schlüssel kann keine"
 " Captcha-Überprüfung durchgeführt werden.</blockquote>"
 
-#: cms_plugins/form_plugins.py:17 cms_plugins/form_plugins.py:212
-#: cms_plugins/form_plugins.py:243
+#: cms_plugins/form_plugins.py:16 cms_plugins/form_plugins.py:211
+#: cms_plugins/form_plugins.py:242
 msgid "Forms"
 msgstr "Formulare"
 
-#: cms_plugins/form_plugins.py:20
+#: cms_plugins/form_plugins.py:19
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: cms_plugins/form_plugins.py:72
+#: cms_plugins/form_plugins.py:71
 msgid "Text"
 msgstr "Text"
 
-#: cms_plugins/form_plugins.py:80
+#: cms_plugins/form_plugins.py:79
 msgid "Email"
 msgstr "Email"
 
-#: cms_plugins/form_plugins.py:87
+#: cms_plugins/form_plugins.py:86
 msgid "URL"
 msgstr "URL"
 
-#: cms_plugins/form_plugins.py:94
+#: cms_plugins/form_plugins.py:93
 msgid "Decimal"
 msgstr "Dezimalzahl"
 
-#: cms_plugins/form_plugins.py:102
+#: cms_plugins/form_plugins.py:101
 msgid "Integer"
 msgstr "Ganze Zahl"
 
-#: cms_plugins/form_plugins.py:110
+#: cms_plugins/form_plugins.py:109
 msgid "Textarea"
 msgstr "Textfeld"
 
-#: cms_plugins/form_plugins.py:121
+#: cms_plugins/form_plugins.py:120
 msgid "Date"
 msgstr "Datum"
 
-#: cms_plugins/form_plugins.py:128
+#: cms_plugins/form_plugins.py:127
 msgid "Date and time"
 msgstr "Datum und Uhrzeit"
 
-#: cms_plugins/form_plugins.py:135
+#: cms_plugins/form_plugins.py:134
 msgid "Time"
 msgstr "Uhrzeit"
 
-#: cms_plugins/form_plugins.py:142 models.py:386
+#: cms_plugins/form_plugins.py:141 models.py:386
 msgid "Select"
 msgstr "Auswahl"
 
-#: cms_plugins/form_plugins.py:161 fields.py:131
+#: cms_plugins/form_plugins.py:160 fields.py:131
 msgid "Choices"
 msgstr "Optionen"
 
-#: cms_plugins/form_plugins.py:165
+#: cms_plugins/form_plugins.py:164
 msgid ""
 "Use this field to quick edit choices. Choices can be added (<kbd>+</kbd>), "
 "deleted (<kbd>&times;</kbd>) and updated. On the left side enter the value "
@@ -185,15 +185,15 @@ msgstr ""
 "Text, der dem Nutzer angezeigt wird. Die Reihenfolge der Optionen kann im "
 "Struktur-Baum geändert werden, <b>nachdem die Eingaben gespeichert sind.</b>"
 
-#: cms_plugins/form_plugins.py:211 models.py:433
+#: cms_plugins/form_plugins.py:210 models.py:433
 msgid "Choice"
 msgstr "Option"
 
-#: cms_plugins/form_plugins.py:222
+#: cms_plugins/form_plugins.py:221
 msgid "Boolean"
 msgstr "Ja/Nein-Feld"
 
-#: cms_plugins/form_plugins.py:242 models.py:465
+#: cms_plugins/form_plugins.py:241 models.py:465
 msgid "Submit button"
 msgstr "Absende-Button"
 
@@ -233,7 +233,7 @@ msgstr "Formular-Einträge"
 msgid "User"
 msgstr "Nutzer"
 
-#: entry_model.py:108
+#: entry_model.py:114
 msgid "User-entered data"
 msgstr "Nutzer-Eingaben"
 
@@ -295,7 +295,7 @@ msgstr ""
 
 #: forms.py:124 models.py:50
 msgid "User can reopen form"
-msgstr "Nutzer kann Formular wider öffnen"
+msgstr "Nutzer kann Formular wieder öffnen"
 
 #: forms.py:127 models.py:52
 msgid "Requires \"Login required\" to be checked to work."
@@ -602,7 +602,7 @@ msgstr "hCaptcha"
 msgid "Default"
 msgstr "Standard"
 
-#: templates/djangocms_form_builder/ajax_form.html:119
+#: templates/djangocms_form_builder/ajax_form.html:19
 msgid ""
 "Network connection or server error. Please try again later. We apologize for"
 " the inconvenience."

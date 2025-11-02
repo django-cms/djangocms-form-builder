@@ -102,7 +102,7 @@ class AjaxFormMixin(FormMixin):
             )
         else:
             errors, result, redir, content = (
-                [_("No content in response from")],
+                [_("No content in response form")],
                 "error",
                 "",
                 "",
