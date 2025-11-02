@@ -8,7 +8,7 @@ function getErrorMessage() {
 }
 
 function djangocms_form_builder_form(form) {
-    function feedback(node, data) {
+    const feedback = (node, data) => {
         if (data.result === 'success') {
             const range = document.createRange();
             const fragment = range.createContextualFragment(data.content);
@@ -91,22 +91,16 @@ function djangocms_form_builder_form(form) {
         }
     }
 
-    function submitEvent(event) {
-        event.preventDefault();
-        post_ajax(form);
-    }
-
-    function post_ajax(node) {
+    const post_ajax = (node) => {
         fetch(node.getAttribute('action'),{
             method: 'POST',
             body: new URLSearchParams(new FormData(node)),
             }
-        ).then(function (response) {
+        ).then((response) => {
             return response.json();
-            }
-        ).then(function (data) {
+        }).then((data) => {
             feedback(node, data);
-        }).catch(function (json) {
+        }).catch((json) => {
             console.error(json);
             alert(getErrorMessage());
         });
@@ -116,12 +110,12 @@ function djangocms_form_builder_form(form) {
     if (recaptcha.length === 1) {
             let submitButton = form.querySelector('input[type="submit"]');
             submitButton.setAttribute("disabled", "");
-            let checkExist = setInterval(function () {
+            let checkExist = setInterval(() => {
                 if (window.hasOwnProperty("recaptcha_loaded")) {
                     clearInterval(checkExist);
                     submitButton.removeAttribute("disabled");
                     let gid = grecaptcha.render(recaptcha[0], {
-                        "callback": function (token) {
+                        "callback": (token) => {
                             form.getElementsByClassName("g-recaptcha-response")[0].value = token;
                             post_ajax(form);
                             grecaptcha.reset(gid);
@@ -129,7 +123,7 @@ function djangocms_form_builder_form(form) {
                     });
                     if(!form.dataset.submitEvent) {
                         form.dataset.submitEvent = true;
-                        form.addEventListener('submit', function (event) {
+                        form.addEventListener('submit', (event) => {
                             event.preventDefault();
                             grecaptcha.execute(gid);
                         });
@@ -139,7 +133,7 @@ function djangocms_form_builder_form(form) {
         }
     else if (!form.dataset.submitEvent) {
                 form.dataset.submitEvent = true;
-                form.addEventListener('submit', function (event) {
+                form.addEventListener('submit', (event) => {
                     event.preventDefault();
                     post_ajax(form);
                 });
@@ -151,11 +145,8 @@ function reCaptchaOnLoadCallback() {
     window.recaptcha_loaded = true;
 };
 
-(function () {
-    function initForms() {
-        for (let form of document.getElementsByClassName('djangocms-form-builder-ajax-form')) {
-            djangocms_form_builder_form(form);
-        }
+window.addEventListener('load', () => {
+    for (let form of document.getElementsByClassName('djangocms-form-builder-ajax-form')) {
+        djangocms_form_builder_form(form);
     }
-    window.addEventListener('load', initForms);
-})();
+});
