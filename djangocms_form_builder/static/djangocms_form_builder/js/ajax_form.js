@@ -35,6 +35,7 @@ function djangocms_form_builder_form(form) {
             }
             if (node.dataset.results) {
                 let target = document.getElementById(node.dataset.results);
+                target.innerHTML = ""; // Clear previous content to avoid duplicates
                 const range = document.createRange();
                 const fragment = range.createContextualFragment(data.content);
                 target.appendChild(fragment);
