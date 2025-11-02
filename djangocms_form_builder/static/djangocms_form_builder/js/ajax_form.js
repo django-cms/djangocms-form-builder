@@ -114,37 +114,37 @@ function djangocms_form_builder_form(form) {
 
     let recaptcha = form.getElementsByClassName('g-recaptcha');
     if (recaptcha.length === 1) {
-        let submitButton = form.querySelector('input[type="submit"]');
-        submitButton.setAttribute("disabled", "");
-        let checkExist = setInterval(function () {
-            if (window.hasOwnProperty("recaptcha_loaded")) {
-                clearInterval(checkExist);
-                submitButton.removeAttribute("disabled");
-                let gid = grecaptcha.render(recaptcha[0], {
-                    "callback": function (token) {
-                        form.getElementsByClassName("g-recaptcha-response")[0].value = token;
-                        post_ajax(form);
-                        grecaptcha.reset(gid);
-                    },
-                });
-                if(!form.dataset.submitEvent) {
-                    form.dataset.submitEvent = true;
-                    form.addEventListener('submit', function (event) {
-                        event.preventDefault();
-                        grecaptcha.execute(gid);
+            let submitButton = form.querySelector('input[type="submit"]');
+            submitButton.setAttribute("disabled", "");
+            let checkExist = setInterval(function () {
+                if (window.hasOwnProperty("recaptcha_loaded")) {
+                    clearInterval(checkExist);
+                    submitButton.removeAttribute("disabled");
+                    let gid = grecaptcha.render(recaptcha[0], {
+                        "callback": function (token) {
+                            form.getElementsByClassName("g-recaptcha-response")[0].value = token;
+                            post_ajax(form);
+                            grecaptcha.reset(gid);
+                        },
                     });
+                    if(!form.dataset.submitEvent) {
+                        form.dataset.submitEvent = true;
+                        form.addEventListener('submit', function (event) {
+                            event.preventDefault();
+                            grecaptcha.execute(gid);
+                        });
+                    }
                 }
-            }
-        }, 100);
-    } else {
-        if(!form.dataset.submitEvent) {
-            form.dataset.submitEvent = true;
-            form.addEventListener('submit', function (event) {
-                event.preventDefault();
-                post_ajax(form);
-            });
+            }, 100);
         }
-    }
+    else if (!form.dataset.submitEvent) {
+                form.dataset.submitEvent = true;
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    post_ajax(form);
+                });
+            }
+
 }
 
 function reCaptchaOnLoadCallback() {
