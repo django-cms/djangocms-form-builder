@@ -2,6 +2,12 @@
 Changelog
 =========
 
+0.4.0 (2025-11-03)
+==================
+
+* feat: French and Dutch locales
+* fix: Form entries admin compatibility with latest django-entangled (#32)
+
 0.3.2 (2025-03-04)
 ==================
 
