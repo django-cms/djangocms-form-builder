@@ -25,7 +25,7 @@ function djangocms_form_builder_form(form) {
                     li[0].remove();
                 }
             }
-            for (let group of node.getElementsByClassName('.form-group')) {
+            for (let group of node.getElementsByClassName('form-group')) {
                 group.classList.add('has-feedback has-success is-valid');
                 group.classList.remove('has-error is-invalid');
                 let invalid = group.getElementsByClassName('invalid-feedback');
