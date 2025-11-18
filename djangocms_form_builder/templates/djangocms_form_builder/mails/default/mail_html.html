@@ -10,12 +10,10 @@
     </thead>
     <tbody>
     {% for field, value in cleaned_data.items %}
-        {% if field != 'captcha_field' %}
-            <tr>
-                <td>{{ field }}</td>
-                <td>{{ value }}</td>
-            </tr>
-        {% endif %}
+    <tr>
+        <td>{{ field }}</td>
+        <td>{{ value }}</td>
+    </tr>
     {% endfor %}
     <tr>
         <td>{% translate "time" %}</td>
