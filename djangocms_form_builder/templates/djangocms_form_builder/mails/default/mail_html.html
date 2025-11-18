@@ -1,11 +1,11 @@
 {% load i18n %}
-<h1>{% trans "Form submission" %}</h1>
-<p>{% if user %}{% trans "by" %} {{ user.firstname }} {{ user.lastname }} ({{ user.username }}){% else %}{% trans "by anonymous" %}{% endif %}</p>
+<h1>{% translate "Form submission" %}</h1>
+<p>{% if user %}{% translate "by" %} {{ user.firstname }} {{ user.lastname }} ({{ user.username }}){% else %}{% translate "by anonymous" %}{% endif %}</p>
 <table>
     <thead>
     <tr>
-        <th>{% trans "Field" %}</th>
-        <th>{% trans "Value" %}</th>
+        <th>{% translate "Field" %}</th>
+        <th>{% translate "Value" %}</th>
     </tr>
     </thead>
     <tbody>
@@ -16,15 +16,15 @@
     </tr>
     {% endfor %}
     <tr>
-        <td>{% trans "time" %}</td>
+        <td>{% translate "time" %}</td>
         <td>{% now "H:i d/m/Y" %}</td>
     </tr>
     <tr>
-        <td>{% trans "user agent" %}</td>
+        <td>{% translate "user agent" %}</td>
         <td>{{ user_agent }}</td>
     </tr>
     <tr>
-        <td>{% trans "referer" %}</td>
+        <td>{% translate "referer" %}</td>
         <td>{{ referer }}</td>
     </tr>
     </tbody>
