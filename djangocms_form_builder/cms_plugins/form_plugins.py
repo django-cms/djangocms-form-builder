@@ -28,6 +28,7 @@ class FormElementPlugin(CMSPluginBase):
                 "fields": (
                     ("field_label", "field_name"),
                     ("field_required", "field_placeholder"),
+                    "field_help_text",
                 )
             },
         ),

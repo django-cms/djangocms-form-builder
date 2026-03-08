@@ -299,6 +299,7 @@ class FormFieldMixin(EntangledModelFormMixin):
                 "field_label",
                 "field_placeholder",
                 "field_required",
+                "field_help_text",
             ]
         }
 
@@ -329,6 +330,13 @@ class FormFieldMixin(EntangledModelFormMixin):
         help_text=_(
             "If selected form will not accept submissions with with empty data"
         ),
+    )
+    field_help_text = forms.CharField(
+        label=_("Help text"),
+        initial="",
+        required=False,
+        help_text=_("Help text shown below the field."),
+        widget=forms.Textarea,
     )
 
 
@@ -587,6 +595,7 @@ class SubmitButtonForm(
         entangled_fields = {
             "config": [
                 "submit_cta",
+                "form_submit_context",
             ]
         }
 
@@ -595,3 +604,5 @@ class SubmitButtonForm(
         initial=_("Submit"),
         required=False,
     )
+
+    form_submit_context = forms.ChoiceField()
