@@ -45,7 +45,10 @@ class SimpleFrontendForm(forms.Form):
                 raise ValidationError(
                     _("Please login before submitting this form."), code="unauthorized"
                 )
-        return super().clean()
+
+        cleaned_data = super().clean()
+        cleaned_data.pop("captcha_field", None)
+        return cleaned_data
 
     def save(self):
         results = {}
