@@ -26,6 +26,10 @@ jobs:
             requirements-file: dj60_cms51.txt
           - python-version: "3.11"
             requirements-file: dj60_cms51.txt
+          - python-version: "3.14"
+            requirements-file: dj42_cms311.txt
+          - python-version: "3.14"
+            requirements-file: dj42_cms41.txt
         os: [
             ubuntu-latest,
         ]
