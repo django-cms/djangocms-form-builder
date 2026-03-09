@@ -215,6 +215,8 @@ class SendMailAction(FormAction):
             subject = render_to_string(
                 f"djangocms_form_builder/mails/{template_set}/subject.txt", context
             )
+            # Strip beginning and ending new lines
+            subject = subject.strip()
         except TemplateDoesNotExist:
             subject = self.subject % dict(form_name=context["form_name"])
 

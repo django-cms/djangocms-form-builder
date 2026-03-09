@@ -105,6 +105,8 @@ def render_widget(form, form_field, **kwargs):
         if input_type not in ("checkbox", "radio"):
             field_sep += " form-floating"  # TODO: Only true for Bootstrap5
     div_attrs = attrs_for_widget(field.field.widget, "div", field_sep)
+    if field.field.required:
+        div_attrs["class"] = div_attrs.get("class", "") + " required"
     div_attrs = " ".join([f'{key}="{value}"' for key, value in div_attrs.items()])
     grp_attrs = attrs_for_widget(field.field.widget, "group")
     errors = "".join(
