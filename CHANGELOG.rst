@@ -7,7 +7,7 @@ Changelog
 
 * feat: Add required class to form widget div attributes by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/35
 * feat: Add help text for form fields and submit button context by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/40
-* fix: Strip email subject to remove new lines chars by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/36
+* fix: Strip email subject to remove newline characters by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/36
 * fix: Avoid reverse in apps.ready() since it is not async safe by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/39
 * fix: Exclude captcha field from mail by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/37
 
