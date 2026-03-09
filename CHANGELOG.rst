@@ -2,6 +2,20 @@
 Changelog
 =========
 
+0.5.0 (2026-03-09)
+==================
+
+* feat: Add required class to form widget div attributes by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/35
+* feat: Add help text for form fields and submit button context by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/40
+* fix: Strip email subject to remove new lines chars by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/36
+* fix: Avoid reverse in apps.ready() since it is not async safe by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/39
+* fix: Exclude captcha field from mail by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/37
+
+**New Contributor**
+
+* @pierreben made their first contribution in https://github.com/django-cms/djangocms-form-builder/pull/35
+
+
 0.4.0 (2025-11-03)
 ==================
 
@@ -20,6 +34,8 @@ Changelog
 * fix: Correct send_mail recipients parameter in action.py by @fdik in https://github.com/django-cms/djangocms-form-builder/pull/22
 * docs: Update Codecov link in  README.rst by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/23
 * fix: prevent duplicate submit buttons in forms by @earthcomfy in https://github.com/django-cms/djangocms-form-builder/pull/27
+
+**New Contributors**
 
 * @fdik made their first contribution in https://github.com/django-cms/djangocms-form-builder/pull/22
 * @earthcomfy made their first contribution in https://github.com/django-cms/djangocms-form-builder/pull/27
@@ -40,7 +56,7 @@ Changelog
 * docs: Updated README.rst to show where to add actions by @arunk in https://github.com/django-cms/djangocms-form-builder/pull/14
 * chore: Added venv/ directory to .gitignore by @arunk in https://github.com/django-cms/djangocms-form-builder/pull/15
 
-**New Contributors**
+**New Contributor**
 * @arunk made their first contribution in https://github.com/django-cms/djangocms-form-builder/pull/13
 
 
@@ -53,7 +69,7 @@ Changelog
 * feat: move to hatch build process by @fsbraun
 * ci: Add tests for registry by @fsbraun in https://github.com/fsbraun/djangocms-form-builder/pull/5
 
-New Contributors
+**New Contributor**
 
 * @svandeneertwegh made their first contribution in https://github.com/fsbraun/djangocms-form-builder/pull/4
 
