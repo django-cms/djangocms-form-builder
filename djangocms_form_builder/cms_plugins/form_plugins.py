@@ -154,6 +154,7 @@ class SelectPlugin(mixin_factory("SelectField"), FormElementPlugin):
                     ("field_label", "field_name"),
                     "field_select",
                     "field_required",
+                    "field_help_text",
                 )
             },
         ),
@@ -210,7 +211,7 @@ class SelectPlugin(mixin_factory("SelectField"), FormElementPlugin):
 class ChoicePlugin(mixin_factory("ChoiceField"), FormElementPlugin):
     name = _("Choice")
     module = _("Forms")
-    fieldsets = ((None, {"fields": (("value", "verbose"),)}),)
+    fieldsets = ((None, {"fields": (("value", "verbose"))}),)
     model = models.Choice
     form = forms.ChoiceForm
     require_parent = True
@@ -231,6 +232,7 @@ class BooleanFieldPlugin(mixin_factory("BooleanField"), FormElementPlugin):
                     ("field_label", "field_name"),
                     "field_as_switch",
                     "field_required",
+                    "field_help_text",
                 )
             },
         ),
@@ -248,7 +250,8 @@ class SubmitPlugin(mixin_factory("SubmitButton"), FormElementPlugin):
             {
                 "fields": (
                     ("field_name", "field_label"),
-                    ("submit_cta",),
+                    "submit_cta",
+                    "form_submit_context",
                 )
             },
         ),

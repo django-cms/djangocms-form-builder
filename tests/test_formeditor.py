@@ -115,6 +115,43 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
         self.assertIn('value="Submit Form"', content)
         self.assertNotIn('value="Submit"', content)
 
+    def test_submit_button_renders_context_class(self):
+        form = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="test-form",
+        )
+        add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form,
+            language=self.language,
+            config=dict(
+                field_name="text_field",
+            ),
+        )
+        add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.SubmitPlugin.__name__,
+            target=form,
+            language=self.language,
+            config=dict(
+                submit_cta="Send",
+                form_submit_context="secondary",
+            ),
+        )
+        self.publish(self.page, self.language)
+        with self.login_user_context(self.superuser):
+            response = self.client.get(self.request_url)
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertEqual(content.count('type="submit"'), 1)
+        self.assertIn('value="Send"', content)
+        self.assertIn('class="btn btn-secondary"', content)
+
     def test_auto_submit_button_does_not_appear_with_nested_button(self):
         form = add_plugin(
             placeholder=self.placeholder,

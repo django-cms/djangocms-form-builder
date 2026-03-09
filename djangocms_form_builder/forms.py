@@ -605,4 +605,8 @@ class SubmitButtonForm(
         required=False,
     )
 
-    form_submit_context = forms.ChoiceField()
+    form_submit_context = forms.ChoiceField(
+        label=_("Button context"),
+        choices=constants.SUBMIT_BUTTON_CHOICES,
+        initial=constants.SUBMIT_BUTTON_CHOICES[0][0],
+    )
