@@ -126,7 +126,7 @@ form
         div.frontend-button-group
         input[property="opacity"][value="10"]
         + label.btn-grp {
-        color: var(--dca-black, var(--body-fg, #000) !important;
+        color: var(--dca-black, var(--body-fg, #000)) !important;
     }
 }
 form
