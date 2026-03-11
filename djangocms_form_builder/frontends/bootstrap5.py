@@ -37,10 +37,7 @@ if not getattr(django_settings, "DJANGO_FORM_BUILDER_COLOR_STYLE_CHOICES", False
     if not getattr(django_settings, "DJANGOCMS_FRONTEND_COLOR_STYLE_CHOICES", False):
         SUBMIT_BUTTON_CHOICES = DEFAULT_COLOR_STYLE_CHOICES
     else:
-        SUBMIT_BUTTON_CHOICES = [
-            (f"mb-{key}", value)
-            for key, value in django_settings.DJANGOCMS_FRONTEND_COLOR_STYLE_CHOICES
-        ]
+        SUBMIT_BUTTON_CHOICES = django_settings.DJANGOCMS_FRONTEND_COLOR_STYLE_CHOICES
 else:
     SUBMIT_BUTTON_CHOICES = django_settings.DJANGO_FORM_BUILDER_COLOR_STYLE_CHOICES
 
