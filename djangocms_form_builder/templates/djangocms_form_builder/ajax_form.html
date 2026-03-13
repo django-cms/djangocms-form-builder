@@ -20,6 +20,12 @@
     src="{% static 'djangocms_form_builder/js/ajax_form.js' %}"></script>
 {% endaddtoblock %}
 
+{% if form.fields.captcha_field %}
+    {% addtoblock 'css' %}
+    <link rel="stylesheet" href="{% static 'djangocms_form_builder/css/altcha.css' %}">
+    {% endaddtoblock %}
+{% endif %}
+
 {% if instance.config.captcha_widget %}
     {% addtoblock 'js' %}<script src="https://www.google.com/recaptcha/api.js?onload=reCaptchaOnLoadCallback&render=explicit" async defer></script>{% endaddtoblock %}
 {% endif %}

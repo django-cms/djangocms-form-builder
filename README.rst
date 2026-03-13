@@ -169,6 +169,14 @@ Upon form submission a ``save()`` method of the form (if it has one). After exec
 Actions are not available for Django forms. Any actions to be performed upon submission should reside in its ``save()`` method.
 
 
+Configuring Altcha CAPTCHA
+==========================
+
+**djangocms-form-builder** can use `django-altcha <https://github.com/aboutcode-org/django-altcha/tree/main>`_ for a self-hosted, privacy-friendly CAPTCHA. To enable it: install **django-altcha** (e.g. ``pip install django-altcha`` from the `django-altcha repository <https://github.com/aboutcode-org/django-altcha/tree/main>`_), add ``django_altcha`` to ``INSTALLED_APPS``, and follow the `django-altcha configuration instructions <https://github.com/aboutcode-org/django-altcha/tree/main>`_. Then, in the form plugin settings, choose **Altcha** as the captcha widget. Recommended Django settings include ``ALTCHA_HMAC_KEY`` (required for signing challenges) and ``ALTCHA_INCLUDE_TRANSLATIONS`` (to load Altcha UI translations).
+
+The setting **ALTCHA_FIELD_OPTIONS** lets you override the default options passed to django-altcha's ``AltchaField``. It is a dictionary of options supported by the field (see `AltchaField.default_options <https://github.com/aboutcode-org/django-altcha/blob/main/django_altcha/__init__.py#L134>`_). For example, set ``ALTCHA_FIELD_OPTIONS = {"floating": True, "language": "fr"}`` in your project settings to enable floating UI and French language.
+
+
 .. |pypi| image:: https://badge.fury.io/py/djangocms-form-builder.svg
    :target: http://badge.fury.io/py/djangocms-form-builder
 
