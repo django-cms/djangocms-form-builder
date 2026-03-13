@@ -149,6 +149,11 @@ def render_widget(form, form_field, **kwargs):
 @register.simple_tag(takes_context=False)
 def render_recaptcha_widget(form):
     if recaptcha.installed:
+        captcha_field = form.fields[recaptcha.field_name]
+        if captcha_field.widget.__class__.__name__ == "AltchaWidget":
+            return form.fields["captcha_field"].widget.render(
+                name=recaptcha.field_name, value="", attrs={}
+            )
         return render_widget(form, recaptcha.field_name)
     return ""
 
