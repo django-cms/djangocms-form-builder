@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "djangocms_form_builder",
     "sekizai",
     "tests.test_app",
+    "django_altcha",
 ]
 
 try:  # V4 test?
