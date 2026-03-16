@@ -39,10 +39,10 @@ class SubmitButtonChoicesTestCase(TestCase):
             ("primary", "Primary"),
             ("danger", "Danger"),
         )
-        expected = [
-            ("mb-primary", "Primary"),
-            ("mb-danger", "Danger"),
-        ]
+        expected = (
+            ("primary", "Primary"),
+            ("danger", "Danger"),
+        )
 
         with override_settings(
             DJANGO_FORM_BUILDER_COLOR_STYLE_CHOICES=None,
@@ -59,7 +59,7 @@ class SubmitButtonChoicesTestCase(TestCase):
         frontend_choices = (("primary", "Primary"),)
 
         with override_settings(
-            DJANGO_FORM_BUILDER_COLOR_STYLE_CHOICES=builder_choices,
+            DJANGOCMS_FORM_BUILDER_COLOR_STYLE_CHOICES=builder_choices,
             DJANGOCMS_FRONTEND_COLOR_STYLE_CHOICES=frontend_choices,
         ):
             importlib.reload(bootstrap5_module)
@@ -71,7 +71,7 @@ class SubmitButtonChoicesTestCase(TestCase):
     def test_submit_button_choices_default_foundation6(self):
         with override_settings(
             DJANGOCMS_FRONTEND_FRAMEWORK="foundation6",
-            DJANGO_FORM_BUILDER_COLOR_STYLE_CHOICES=None,
+            DJANGOCMS_FORM_BUILDER_COLOR_STYLE_CHOICES=None,
             DJANGOCMS_FRONTEND_COLOR_STYLE_CHOICES=None,
         ):
             importlib.reload(builder_settings_module)
