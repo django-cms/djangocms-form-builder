@@ -1,5 +1,5 @@
 import json
-from unittest import skipIf
+from unittest import mock, skipIf
 
 from cms import __version__ as cms_version
 from cms.api import add_plugin
@@ -11,6 +11,7 @@ from django.urls import reverse
 from djangocms_form_builder import cms_plugins
 from djangocms_form_builder.models import FormEntry
 from djangocms_form_builder.views import AjaxView, register_form_view
+from tests.helpers import make_valid_altcha_payload
 
 from .fixtures import TestFixture
 
@@ -701,8 +702,10 @@ class FormPluginTestCase(TestFixture, CMSTestCase):
 class AjaxFormMixinTestCase(TestFixture, CMSTestCase):
     """Tests for AjaxFormMixin methods"""
 
-    def test_form_valid_with_redirect_url(self):
+    @mock.patch("altcha.verify_solution")
+    def test_form_valid_with_redirect_url(self, mock_verify_solution):
         """Test form_valid returns correct JSON with redirect URL"""
+        mock_verify_solution.return_value = (True, None)
         form_plugin = add_plugin(
             placeholder=self.placeholder,
             plugin_type=cms_plugins.FormPlugin.__name__,
@@ -730,7 +733,12 @@ class AjaxFormMixinTestCase(TestFixture, CMSTestCase):
         form_class = plugin_instance.create_form_class_from_plugins()
         form_class.Meta.options["redirect"] = "/success/"
 
-        form = form_class(data={"data": "test"}, request=plugin_instance.request)
+        valid_payload = make_valid_altcha_payload()
+        form = form_class(
+            data={"data": "test", "captcha_field": valid_payload},
+            request=plugin_instance.request,
+        )
+
         self.assertTrue(form.is_valid())
 
         response = plugin_instance.form_valid(form)

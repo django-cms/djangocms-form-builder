@@ -101,6 +101,8 @@ DATABASES = {
     }
 }
 
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
 CMS_TEMPLATES = (("page.html", "Page"),)
 
 SITE_ID = 1
@@ -108,5 +110,4 @@ SITE_ID = 1
 ROOT_URLCONF = "tests.urls"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-ALTCHA_HMAC_KEY = "7f613114d817c04f8d139389cc6d725b8ef1aa7a29b1c79900a77aae7150ba3434729f015629c1814b6176f973848f4f4ffdfc6101ba046a0e9e05f3ccae45e7"
+ALTCHA_HMAC_KEY = "altcha-insecure-hmac-0123456789abcdef"
