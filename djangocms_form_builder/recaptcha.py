@@ -29,12 +29,6 @@ if apps.is_installed("captcha"):
 
 if apps.is_installed("hcaptcha"):
     """Soft dependency on django-hcaptcha for hcaptcha"""
-
-    from hcaptcha.fields import hCaptchaField  # NOQA
-    from hcaptcha.widgets import hCaptchaWidget  # NOQA
-
-    CAPTCHA_FIELDS["hcaptcha"] = hCaptchaField
-
     CAPTCHA_CHOICES += (("hcaptcha", _("hCaptcha")),)
 
 
