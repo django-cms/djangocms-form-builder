@@ -204,6 +204,7 @@ class CharField(FormField):
         return self.field_name, forms.CharField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
             widget=forms.TextInput(
                 attrs=dict(placeholder=self.config.get("field_placeholder", ""))
             ),
@@ -219,6 +220,7 @@ class EmailField(FormField):
         return self.field_name, forms.EmailField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
             widget=forms.EmailInput(
                 attrs=dict(placeholder=self.config.get("field_placeholder", ""))
             ),
@@ -234,6 +236,7 @@ class UrlField(FormField):
         return self.field_name, forms.URLField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
             widget=forms.URLInput(
                 attrs=dict(placeholder=self.config.get("field_placeholder", ""))
             ),
@@ -274,6 +277,7 @@ class DecimalField(FormField):
         return self.field_name, DecimalField.StrDecimalField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
             min_value=coerce_decimal(self.config.get("min_value", None)),
             max_value=coerce_decimal(self.config.get("max_value", None)),
             decimal_places=self.config.get("decimal_places", None),
@@ -293,6 +297,7 @@ class IntegerField(FormField):
         return self.field_name, forms.IntegerField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
             widget=DecimalField.NumberInput(
                 attrs=dict(placeholder=self.config.get("field_placeholder", "")),
             ),
@@ -308,6 +313,7 @@ class TextareaField(FormField):
         return self.field_name, forms.CharField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
             widget=forms.Textarea(
                 attrs=dict(
                     rows=self.config.get("field_rows", 10),
@@ -330,6 +336,7 @@ class DateField(FormField):
         return self.field_name, forms.DateField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
             widget=DateField.DateInput(
                 attrs=dict(placeholder=self.config.get("field_placeholder", "")),
             ),
@@ -356,6 +363,7 @@ class DateTimeField(FormField):
         return self.field_name, DateTimeField.DateTimeField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
             widget=DateTimeField.DateTimeInput(
                 attrs=dict(placeholder=self.config.get("field_placeholder", "")),
             ),
@@ -374,6 +382,7 @@ class TimeField(FormField):
         return self.field_name, forms.TimeField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
             widget=TimeField.TimeInput(
                 attrs=dict(placeholder=self.config.get("field_placeholder", "")),
             ),
@@ -422,6 +431,7 @@ class Select(FormField):
         return self.field_name, field(
             label=self.config.get("field_label", ""),
             required=required,
+            help_text=self.config.get("field_help_text", ""),
             choices=choices,
             widget=widget,
         )
@@ -449,6 +459,7 @@ class BooleanField(FormField):
         return self.field_name, forms.BooleanField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
             widget=SwitchInput()
             if self.config.get("field_as_switch", False)
             else forms.CheckboxInput(),

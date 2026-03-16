@@ -1,3 +1,4 @@
+import re
 from unittest import skipIf
 
 from cms import __version__ as cms_version
@@ -40,6 +41,7 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
                 "field_label": "Full Name",
                 "field_required": True,
                 "field_placeholder": "Enter your name",
+                "field_help_text": "This help text should render below the field.",
             },
         )
         char_field.initialize_from_form()
@@ -75,6 +77,16 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         self.assertIn('name="full_name"', content)
         self.assertIn("Full Name", content)
         self.assertIn('placeholder="Enter your name"', content)
+        self.assertIn("This help text should render below the field.", content)
+        match = re.search(
+            r'name="full_name"[^>]*aria-describedby="(hints_[^"]+)"', content
+        )
+        self.assertIsNotNone(match)
+        hints_id = match.group(1)
+        self.assertIn(
+            f'id="{hints_id}" class="form-text">This help text should render below the field.</div>',
+            content,
+        )
 
         # Check EmailField rendered
         self.assertIn('name="email"', content)
@@ -252,6 +264,11 @@ class TemplateTagsTestCase(CMSTestCase):
         self.assertIn('name="name"', rendered)
         self.assertIn("Full Name", rendered)
         self.assertIn("Enter your full name", rendered)
+        self.assertIn('aria-describedby="hints_id_name"', rendered)
+        self.assertIn(
+            'id="hints_id_name" class="form-text">Enter your full name</div>',
+            rendered,
+        )
 
     def test_render_widget_with_errors(self):
         """Test {% render_widget %} shows validation errors"""
