@@ -179,6 +179,7 @@ class CharFieldModelTests(TestFixture, CMSTestCase):
                 "field_label": "Username",
                 "field_required": True,
                 "field_placeholder": "Enter username",
+                "field_help_text": "Pick a unique username.",
             },
         )
         name, form_field = field.get_form_field()
@@ -187,6 +188,7 @@ class CharFieldModelTests(TestFixture, CMSTestCase):
         self.assertIsInstance(form_field, forms.CharField)
         self.assertEqual(form_field.label, "Username")
         self.assertTrue(form_field.required)
+        self.assertEqual(form_field.help_text, "Pick a unique username.")
         self.assertEqual(form_field.widget.attrs["placeholder"], "Enter username")
 
 
@@ -203,6 +205,7 @@ class EmailFieldModelTests(TestFixture, CMSTestCase):
                 "field_label": "Email",
                 "field_required": False,
                 "field_placeholder": "you@example.com",
+                "field_help_text": "We will never share your email.",
             },
         )
         name, form_field = field.get_form_field()
@@ -210,6 +213,7 @@ class EmailFieldModelTests(TestFixture, CMSTestCase):
         self.assertEqual(name, "email")
         self.assertIsInstance(form_field, forms.EmailField)
         self.assertFalse(form_field.required)
+        self.assertEqual(form_field.help_text, "We will never share your email.")
 
 
 class UrlFieldModelTests(TestFixture, CMSTestCase):
@@ -224,12 +228,14 @@ class UrlFieldModelTests(TestFixture, CMSTestCase):
                 "field_name": "website",
                 "field_label": "Website",
                 "field_required": False,
+                "field_help_text": "Include https:// if possible.",
             },
         )
         name, form_field = field.get_form_field()
 
         self.assertEqual(name, "website")
         self.assertIsInstance(form_field, forms.URLField)
+        self.assertEqual(form_field.help_text, "Include https:// if possible.")
 
 
 class DecimalFieldModelTests(TestFixture, CMSTestCase):
@@ -244,6 +250,7 @@ class DecimalFieldModelTests(TestFixture, CMSTestCase):
                 "field_name": "amount",
                 "field_label": "Amount",
                 "field_required": True,
+                "field_help_text": "Enter an amount in EUR.",
                 "min_value": "0.00",
                 "max_value": "1000.00",
                 "decimal_places": 2,
@@ -253,6 +260,7 @@ class DecimalFieldModelTests(TestFixture, CMSTestCase):
 
         self.assertEqual(name, "amount")
         self.assertIsInstance(form_field, DecimalField.StrDecimalField)
+        self.assertEqual(form_field.help_text, "Enter an amount in EUR.")
         self.assertEqual(form_field.min_value, Decimal("0.00"))
         self.assertEqual(form_field.max_value, Decimal("1000.00"))
         self.assertEqual(form_field.decimal_places, 2)
@@ -291,12 +299,14 @@ class IntegerFieldModelTests(TestFixture, CMSTestCase):
                 "field_name": "age",
                 "field_label": "Age",
                 "field_required": True,
+                "field_help_text": "Must be a whole number.",
             },
         )
         name, form_field = field.get_form_field()
 
         self.assertEqual(name, "age")
         self.assertIsInstance(form_field, forms.IntegerField)
+        self.assertEqual(form_field.help_text, "Must be a whole number.")
 
 
 class TextareaFieldModelTests(TestFixture, CMSTestCase):
@@ -311,6 +321,7 @@ class TextareaFieldModelTests(TestFixture, CMSTestCase):
                 "field_name": "comments",
                 "field_label": "Comments",
                 "field_required": False,
+                "field_help_text": "Share any additional details.",
                 "field_rows": 5,
                 "field_placeholder": "Your comments",
             },
@@ -319,6 +330,7 @@ class TextareaFieldModelTests(TestFixture, CMSTestCase):
 
         self.assertEqual(name, "comments")
         self.assertIsInstance(form_field.widget, forms.Textarea)
+        self.assertEqual(form_field.help_text, "Share any additional details.")
         self.assertEqual(form_field.widget.attrs["rows"], 5)
 
 
@@ -334,6 +346,7 @@ class DateFieldModelTests(TestFixture, CMSTestCase):
                 "field_name": "birthdate",
                 "field_label": "Birth Date",
                 "field_required": True,
+                "field_help_text": "Use the format YYYY-MM-DD.",
             },
         )
         name, form_field = field.get_form_field()
@@ -342,6 +355,7 @@ class DateFieldModelTests(TestFixture, CMSTestCase):
         self.assertIsInstance(form_field, forms.DateField)
         self.assertIsInstance(form_field.widget, DateField.DateInput)
         self.assertEqual(form_field.widget.input_type, "date")
+        self.assertEqual(form_field.help_text, "Use the format YYYY-MM-DD.")
 
 
 class DateTimeFieldModelTests(TestFixture, CMSTestCase):
@@ -356,6 +370,7 @@ class DateTimeFieldModelTests(TestFixture, CMSTestCase):
                 "field_name": "appointment",
                 "field_label": "Appointment",
                 "field_required": True,
+                "field_help_text": "Select a date and time.",
             },
         )
         name, form_field = field.get_form_field()
@@ -363,6 +378,7 @@ class DateTimeFieldModelTests(TestFixture, CMSTestCase):
         self.assertEqual(name, "appointment")
         self.assertIsInstance(form_field, DateTimeField.DateTimeField)
         self.assertEqual(form_field.widget.input_type, "datetime-local")
+        self.assertEqual(form_field.help_text, "Select a date and time.")
 
     def test_datetimefield_prepare_value_parses_string(self):
         """Test DateTimeField.prepare_value parses datetime strings"""
@@ -384,6 +400,7 @@ class TimeFieldModelTests(TestFixture, CMSTestCase):
                 "field_name": "meeting_time",
                 "field_label": "Meeting Time",
                 "field_required": False,
+                "field_help_text": "Choose a time.",
             },
         )
         name, form_field = field.get_form_field()
@@ -391,6 +408,7 @@ class TimeFieldModelTests(TestFixture, CMSTestCase):
         self.assertEqual(name, "meeting_time")
         self.assertIsInstance(form_field, forms.TimeField)
         self.assertEqual(form_field.widget.input_type, "time")
+        self.assertEqual(form_field.help_text, "Choose a time.")
 
 
 class SelectFieldModelTests(TestFixture, CMSTestCase):
@@ -407,6 +425,7 @@ class SelectFieldModelTests(TestFixture, CMSTestCase):
                 "field_label": "Country",
                 "field_required": True,
                 "field_select": "select",
+                "field_help_text": "Pick your country of residence.",
             },
         )
 
@@ -424,6 +443,7 @@ class SelectFieldModelTests(TestFixture, CMSTestCase):
         self.assertEqual(name, "country")
         self.assertIsInstance(form_field, forms.ChoiceField)
         self.assertIsInstance(form_field.widget, forms.Select)
+        self.assertEqual(form_field.help_text, "Pick your country of residence.")
 
     def test_select_get_form_field_radio(self):
         """Test Select with radio widget"""
@@ -435,11 +455,13 @@ class SelectFieldModelTests(TestFixture, CMSTestCase):
                 "field_label": "Option",
                 "field_required": False,
                 "field_select": "radio",
+                "field_help_text": "Select one option.",
             },
         )
 
         name, form_field = select.get_form_field()
         self.assertIsInstance(form_field.widget, forms.RadioSelect)
+        self.assertEqual(form_field.help_text, "Select one option.")
 
     def test_select_get_form_field_multiselect(self):
         """Test Select with multiple choice"""
@@ -451,12 +473,14 @@ class SelectFieldModelTests(TestFixture, CMSTestCase):
                 "field_label": "Tags",
                 "field_required": False,
                 "field_select": "multiselect",
+                "field_help_text": "You can select multiple tags.",
             },
         )
 
         name, form_field = select.get_form_field()
         self.assertIsInstance(form_field, forms.MultipleChoiceField)
         self.assertIsInstance(form_field.widget, forms.SelectMultiple)
+        self.assertEqual(form_field.help_text, "You can select multiple tags.")
 
     def test_select_get_form_field_checkbox(self):
         """Test Select with checkbox widget"""
@@ -468,12 +492,14 @@ class SelectFieldModelTests(TestFixture, CMSTestCase):
                 "field_label": "Interests",
                 "field_required": False,
                 "field_select": "checkbox",
+                "field_help_text": "Select all that apply.",
             },
         )
 
         name, form_field = select.get_form_field()
         self.assertIsInstance(form_field, forms.MultipleChoiceField)
         self.assertIsInstance(form_field.widget, forms.CheckboxSelectMultiple)
+        self.assertEqual(form_field.help_text, "Select all that apply.")
 
     def test_select_no_selection_added_when_not_required(self):
         """Test that 'No selection' is added for non-required single selects"""
@@ -485,10 +511,12 @@ class SelectFieldModelTests(TestFixture, CMSTestCase):
                 "field_label": "Optional",
                 "field_required": False,
                 "field_select": "select",
+                "field_help_text": "This field is optional.",
             },
         )
 
         name, form_field = select.get_form_field()
+        self.assertEqual(form_field.help_text, "This field is optional.")
         choices = form_field.choices
         # First choice should be empty/no selection
         self.assertEqual(choices[0][0], "")
@@ -522,6 +550,7 @@ class BooleanFieldModelTests(TestFixture, CMSTestCase):
                 "field_label": "I agree",
                 "field_required": True,
                 "field_as_switch": False,
+                "field_help_text": "You must agree before continuing.",
             },
         )
         name, form_field = field.get_form_field()
@@ -529,6 +558,7 @@ class BooleanFieldModelTests(TestFixture, CMSTestCase):
         self.assertEqual(name, "agree")
         self.assertIsInstance(form_field, forms.BooleanField)
         self.assertIsInstance(form_field.widget, forms.CheckboxInput)
+        self.assertEqual(form_field.help_text, "You must agree before continuing.")
 
     def test_booleanfield_get_form_field_switch(self):
         """Test BooleanField with switch widget"""
@@ -540,11 +570,13 @@ class BooleanFieldModelTests(TestFixture, CMSTestCase):
                 "field_label": "Enable notifications",
                 "field_required": False,
                 "field_as_switch": True,
+                "field_help_text": "Turn this on to receive updates.",
             },
         )
         name, form_field = field.get_form_field()
 
         self.assertIsInstance(form_field.widget, SwitchInput)
+        self.assertEqual(form_field.help_text, "Turn this on to receive updates.")
 
 
 class SubmitButtonModelTests(TestFixture, CMSTestCase):

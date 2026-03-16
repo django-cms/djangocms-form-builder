@@ -11,10 +11,7 @@ framework = importlib.import_module(
 default_attr = framework.default_attr  # NOQA
 attr_dict = framework.attr_dict  # NOQA
 DEFAULT_FIELD_SEP = framework.DEFAULT_FIELD_SEP  # NOQA
-
-# default_attr = settings.default_attr  # NOQA
-# attr_dict = settings.attr_dict  # NOQA
-# DEFAULT_FIELD_SEP = settings.DEFAULT_FIELD_SEP  # NOQA
+SUBMIT_BUTTON_CHOICES = framework.SUBMIT_BUTTON_CHOICES  # NOQA
 
 CHOICE_FIELDS = (
     (

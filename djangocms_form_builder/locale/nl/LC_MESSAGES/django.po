@@ -2,24 +2,24 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-# 
+#
 # Translators:
 # Stefan van den Eertwegh <stefan@corebyte.nl>, 2025
 # Fabian Braun <fsbraun@gmx.de>, 2025
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-02 19:00+0100\n"
+"POT-Creation-Date: 2026-03-09 09:13+0100\n"
 "PO-Revision-Date: 2023-01-24 13:42+0000\n"
 "Last-Translator: Fabian Braun <fsbraun@gmx.de>, 2025\n"
 "Language-Team: Dutch (https://app.transifex.com/divio/teams/58664/nl/)\n"
+"Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: nl\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: __init__.py:33
@@ -60,23 +60,23 @@ msgstr "Door spaties of nieuwe regels gescheiden lijst met e-mailadressen."
 msgid "Mail template set"
 msgstr "Zet e-mail sjabloon"
 
-#: actions.py:241
+#: actions.py:243
 msgid "Success message"
 msgstr "Succesvol bericht"
 
-#: actions.py:251
+#: actions.py:253
 msgid "Message"
 msgstr "Bericht"
 
-#: actions.py:253
+#: actions.py:255
 msgid "<p>Thank you for your submission.</p>"
 msgstr "<p>Bedankt voor je inzending.</p>"
 
-#: actions.py:276
+#: actions.py:278
 msgid "Redirect after submission"
 msgstr "Omleiding na inzending"
 
-#: actions.py:286
+#: actions.py:288
 msgid "Link"
 msgstr "Link"
 
@@ -88,7 +88,7 @@ msgstr "Formulier bouwen"
 msgid "No content in response form"
 msgstr "Geen content in reactie van formulier"
 
-#: cms_plugins/ajax_plugins.py:266 entry_model.py:32 forms.py:100 models.py:23
+#: cms_plugins/ajax_plugins.py:266 entry_model.py:32 forms.py:103 models.py:23
 #: models.py:26
 msgid "Form"
 msgstr "Formulier"
@@ -104,20 +104,20 @@ msgstr "Captcha"
 #: cms_plugins/ajax_plugins.py:329
 #, python-brace-format
 msgid ""
-"<blockquote style=\"color: var(--error-fg);\">Please get a public and secret"
-" key from <a href=\"{key_link}\" target=\"_blank\">Google</a> and ensure "
-"that they are available through django settings "
-"<code>RECAPTCHA_PUBLIC_KEY</code> and <code>RECAPTCHA_PRIVATE_KEY</code>. "
-"Without these keys captcha protection will not work.</blockquote>"
+"<blockquote style=\"color: var(--error-fg);\">Please get a public and secret "
+"key from <a href=\"{key_link}\" target=\"_blank\">Google</a> and ensure that "
+"they are available through django settings <code>RECAPTCHA_PUBLIC_KEY</code> "
+"and <code>RECAPTCHA_PRIVATE_KEY</code>. Without these keys captcha "
+"protection will not work.</blockquote>"
 msgstr ""
 "<blockquote style=\"color: var(--error-fg);\">Probeer aub om een public en "
-"secret key te ontvangen van <a href=\"{key_link}\" "
-"target=\"_blank\">Google</a> en zet ze in django settings "
-"<code>RECAPTCHA_PUBLIC_KEY</code> en <code>RECAPTCHA_PRIVATE_KEY</code>. "
-"Zonder deze zal de captcha niet werken. </blockquote>"
+"secret key te ontvangen van <a href=\"{key_link}\" target=\"_blank\">Google</"
+"a> en zet ze in django settings <code>RECAPTCHA_PUBLIC_KEY</code> en "
+"<code>RECAPTCHA_PRIVATE_KEY</code>. Zonder deze zal de captcha niet werken. "
+"</blockquote>"
 
-#: cms_plugins/form_plugins.py:16 cms_plugins/form_plugins.py:211
-#: cms_plugins/form_plugins.py:242
+#: cms_plugins/form_plugins.py:16 cms_plugins/form_plugins.py:213
+#: cms_plugins/form_plugins.py:245
 msgid "Forms"
 msgstr "Formulieren"
 
@@ -125,51 +125,51 @@ msgstr "Formulieren"
 msgid "Settings"
 msgstr "Instellingen"
 
-#: cms_plugins/form_plugins.py:71
+#: cms_plugins/form_plugins.py:72
 msgid "Text"
 msgstr "Tekst"
 
-#: cms_plugins/form_plugins.py:79
+#: cms_plugins/form_plugins.py:80
 msgid "Email"
 msgstr "E-mail"
 
-#: cms_plugins/form_plugins.py:86
+#: cms_plugins/form_plugins.py:87
 msgid "URL"
 msgstr "URL"
 
-#: cms_plugins/form_plugins.py:93
+#: cms_plugins/form_plugins.py:94
 msgid "Decimal"
 msgstr "Decimaal"
 
-#: cms_plugins/form_plugins.py:101
+#: cms_plugins/form_plugins.py:102
 msgid "Integer"
 msgstr "Nummer"
 
-#: cms_plugins/form_plugins.py:109
+#: cms_plugins/form_plugins.py:110
 msgid "Textarea"
 msgstr "Grote tekst"
 
-#: cms_plugins/form_plugins.py:120
+#: cms_plugins/form_plugins.py:121
 msgid "Date"
 msgstr "Datum"
 
-#: cms_plugins/form_plugins.py:127
+#: cms_plugins/form_plugins.py:128
 msgid "Date and time"
 msgstr "Datum en tijd"
 
-#: cms_plugins/form_plugins.py:134
+#: cms_plugins/form_plugins.py:135
 msgid "Time"
 msgstr "Tijd"
 
-#: cms_plugins/form_plugins.py:141 models.py:386
+#: cms_plugins/form_plugins.py:142 models.py:395
 msgid "Select"
 msgstr "Selecteer"
 
-#: cms_plugins/form_plugins.py:160 fields.py:131
+#: cms_plugins/form_plugins.py:162 fields.py:131
 msgid "Choices"
 msgstr "Opties"
 
-#: cms_plugins/form_plugins.py:164
+#: cms_plugins/form_plugins.py:166
 msgid ""
 "Use this field to quick edit choices. Choices can be added (<kbd>+</kbd>), "
 "deleted (<kbd>&times;</kbd>) and updated. On the left side enter the value "
@@ -177,46 +177,46 @@ msgid ""
 "to the user. The order of choices can be adjusted in the structure tree "
 "<b>after saving</b> the edits."
 msgstr ""
-"Gebruik dit veld om snel keuzes te bewerken. Keuzes kunnen worden toegevoegd"
-" <kbd>+</kbd>, verwijderd <kbd>(&times;)</kbd> en bijgewerkt. Voer links de "
-"waarde in die in de database moet worden opgeslagen. Voer rechts de tekst in"
-" die aan de gebruiker moet worden getoond. De volgorde van de keuzes kan in "
+"Gebruik dit veld om snel keuzes te bewerken. Keuzes kunnen worden toegevoegd "
+"<kbd>+</kbd>, verwijderd <kbd>(&times;)</kbd> en bijgewerkt. Voer links de "
+"waarde in die in de database moet worden opgeslagen. Voer rechts de tekst in "
+"die aan de gebruiker moet worden getoond. De volgorde van de keuzes kan in "
 "de boomstructuur worden aangepast <b>nadat de wijzigingen</b> zijn "
 "opgeslagen."
 
-#: cms_plugins/form_plugins.py:210 models.py:433
+#: cms_plugins/form_plugins.py:212 models.py:443
 msgid "Choice"
 msgstr "Kies"
 
-#: cms_plugins/form_plugins.py:221
+#: cms_plugins/form_plugins.py:223
 msgid "Boolean"
 msgstr "Ja / Nee"
 
-#: cms_plugins/form_plugins.py:241 models.py:465
+#: cms_plugins/form_plugins.py:244 models.py:476
 msgid "Submit button"
 msgstr "Plaatsen knop"
 
-#: constants.py:21
+#: constants.py:18
 msgid "Single choice"
 msgstr "Enkele keus"
 
-#: constants.py:23
+#: constants.py:20
 msgid "Drop down"
 msgstr "Drop down"
 
-#: constants.py:24
+#: constants.py:21
 msgid "Radio buttons"
 msgstr "Radio button"
 
-#: constants.py:28
+#: constants.py:25
 msgid "Multiple choice"
 msgstr "Meerdere opties"
 
-#: constants.py:30
+#: constants.py:27
 msgid "Checkboxes"
 msgstr "Checkboxes"
 
-#: constants.py:31
+#: constants.py:28
 msgid "List"
 msgstr "Lijst"
 
@@ -264,27 +264,27 @@ msgstr "Selecteer de HTML tag in gebruik."
 msgid "Please login before submitting this form."
 msgstr "Please login before submitting this form."
 
-#: forms.py:58
+#: forms.py:61
 msgid "Action not available any more"
 msgstr "Actie is niet meer beschikbaar"
 
-#: forms.py:60
+#: forms.py:63
 msgid "No action registered"
 msgstr "Geen actie geregistreerd"
 
-#: forms.py:105
+#: forms.py:108
 msgid "Form identifier"
 msgstr "Formulier identificatie"
 
-#: forms.py:111
+#: forms.py:114
 msgid "Slug that allows to uniquely identify forms."
 msgstr "Slug waarmee formulieren ​​geïdentificeerd kunnen worden."
 
-#: forms.py:114 models.py:41
+#: forms.py:117 models.py:41
 msgid "Login required to submit form"
 msgstr "Login required to submit form"
 
-#: forms.py:118 models.py:45
+#: forms.py:121 models.py:45
 msgid ""
 "To avoid issues with user experience use this type of form only on pages, "
 "which require login."
@@ -292,49 +292,50 @@ msgstr ""
 "Om issues te voorkomen met gebruikers vaardigheden gebruik deze type of "
 "formulier alleen op pagina's welke login verwachtte"
 
-#: forms.py:124 models.py:50
+#: forms.py:127 models.py:50
 msgid "User can reopen form"
 msgstr "Gebruiker kan formulier heropenen"
 
-#: forms.py:127 models.py:52
+#: forms.py:130 models.py:52
 msgid "Requires \"Login required\" to be checked to work."
 msgstr "Requires \"Login required\" to be checked to work."
 
-#: forms.py:131 models.py:59
+#: forms.py:134 models.py:59
 msgid "Margin between fields"
 msgstr "Margin tussen de velden"
 
-#: forms.py:138 models.py:55
+#: forms.py:141 models.py:55
 msgid "Floating labels"
 msgstr "Floating labels"
 
-#: forms.py:144 models.py:64
+#: forms.py:147 models.py:64
 msgid "Actions to be taken after form submission"
 msgstr "Actie in gebruik na het plaatsen van het formulier"
 
-#: forms.py:152
+#: forms.py:155
 msgid "Captcha widget"
 msgstr "Captcha widget"
 
-#: forms.py:158 models.py:86
+#: forms.py:161 models.py:86
 #, python-brace-format
-msgid "Read more in the <a href=\"{link}\" target=\"_blank\">documentation</a>."
-msgstr "Lees meer in de <a href=\"{link}\" target=\"_blank\"> documentatie </a>."
+msgid ""
+"Read more in the <a href=\"{link}\" target=\"_blank\">documentation</a>."
+msgstr ""
+"Lees meer in de <a href=\"{link}\" target=\"_blank\"> documentatie </a>."
 
-#: forms.py:163 models.py:91
+#: forms.py:166 models.py:91
 msgid "Minimum score requirement"
 msgstr "Minimum vereiste score"
 
-#: forms.py:169 models.py:97
+#: forms.py:172 models.py:97
 msgid "Only for reCaptcha v3: Minimum score required to accept challenge."
-msgstr ""
-"Alleen voor reCaptcha v3: Minimum vereiste score voor werking captcha."
+msgstr "Alleen voor reCaptcha v3: Minimum vereiste score voor werking captcha."
 
-#: forms.py:173 models.py:101
+#: forms.py:176 models.py:101
 msgid "Recaptcha configuration parameters"
 msgstr "Recaptcha configuratie parameters"
 
-#: forms.py:176 models.py:104
+#: forms.py:179 models.py:104
 #, python-brace-format
 msgid ""
 "The reCAPTCHA widget supports several <a href=\"{attr_link}\" "
@@ -351,18 +352,17 @@ msgstr ""
 "target=\"_blank\">parameters</a>. Voeg deze API-parameters toe als "
 "attributen, bijvoorbeeld <code>hl</code> om de taal in te stellen."
 
-#: forms.py:212
+#: forms.py:215
 msgid "Please provide a form name to be able to evaluate form submissions."
-msgstr ""
-"Geef aub. de formulier naam om te evalueren van formulier inzendingen."
+msgstr "Geef aub. de formulier naam om te evalueren van formulier inzendingen."
 
-#: forms.py:227
+#: forms.py:230
 msgid "Please select \"Save form submission\" to allow users to reopen forms."
 msgstr ""
 "Selecteer aub. \"Save form submission\" om gebruikers toe te staan "
 "formulieren te heropenen."
 
-#: forms.py:230
+#: forms.py:233
 msgid ""
 "Please select the action \"Save form submission\" to allow users to reopen "
 "forms."
@@ -370,7 +370,7 @@ msgstr ""
 "Selecteer aub. \"Save form submission\" om gebruikers toe te staan "
 "formulieren te heropenen."
 
-#: forms.py:238
+#: forms.py:241
 msgid ""
 "No form action to save form contents available. Users will not be able to "
 "reopen a form."
@@ -378,162 +378,181 @@ msgstr ""
 "Geen formulier actie om content op te slaan is beschikbaar. Gebruikers "
 "zullen niet kundig zijn op dit formulier te openen."
 
-#: forms.py:247
+#: forms.py:250
 msgid ""
 "At least one action needs to be selected for the form to have an effect."
 msgstr ""
 "Op zijn minst een actie moet geselecteerd worden voor dit formulier om "
 "effect te hebben."
 
-#: forms.py:256
+#: forms.py:259
 #, python-format
 msgid "Users can only reopen forms if they are logged in. %(remedy)s"
 msgstr ""
 "Gebruikers kunnen alleen heropenen van formulieren als ze ingelogd zijn. "
 "%(remedy)s"
 
-#: forms.py:260
+#: forms.py:263
 msgid "Either enable this."
 msgstr "Schakel dit in."
 
-#: forms.py:261
+#: forms.py:264
 msgid "Or disable this."
 msgstr "Of schakel dit uit."
 
-#: forms.py:285
+#: forms.py:288
 msgid "This name is reserved. Please chose a different one."
 msgstr "Deze naam is gereserveerd. Kies aub. een andere."
 
-#: forms.py:306
+#: forms.py:310
 msgid "Field name"
 msgstr "Veld naam"
 
-#: forms.py:308
+#: forms.py:312
 msgid ""
 "Internal field name consisting of letters, numbers, underscores or hyphens"
 msgstr ""
 "Interne veld naam bevat minimaal letters, nummers, underscores of hyphens"
 
-#: forms.py:314
+#: forms.py:318
 msgid "Label"
 msgstr "Label"
 
-#: forms.py:316
+#: forms.py:320
 msgid "Field label shown to the user describing the entity to be entered"
 msgstr ""
-"Veldlabel dat aan de gebruiker wordt getoond en dat de in te voeren entiteit"
-" beschrijft"
+"Veldlabel dat aan de gebruiker wordt getoond en dat de in te voeren entiteit "
+"beschrijft"
 
-#: forms.py:321
+#: forms.py:325
 msgid "Placeholder"
 msgstr "Placeholder"
 
-#: forms.py:322
+#: forms.py:326
 msgid "Example input shown muted in an empty field"
 msgstr "Voorbeeld input geeft een leeg veld weer"
 
-#: forms.py:326
+#: forms.py:330
 msgid "Required"
 msgstr "Verplicht"
 
-#: forms.py:330
+#: forms.py:334
 msgid "If selected form will not accept submissions with with empty data"
 msgstr ""
 "als geselecteerd formulier niet de inzending wil accepteren met lege data"
 
-#: forms.py:346 forms.py:441
+#: forms.py:338
+msgid "Help text"
+msgstr "Helptekst"
+
+#: forms.py:341
+msgid "Help text shown below the field."
+msgstr "Helptekst die onder het veld wordt weergegeven."
+
+#: forms.py:357 forms.py:452
 msgid "Minimum text length"
 msgstr "Minimum tekst lengte"
 
-#: forms.py:351 forms.py:446
+#: forms.py:362 forms.py:457
 msgid "Maximum text length"
 msgstr "Maximum tekst lengte"
 
-#: forms.py:383 forms.py:411
+#: forms.py:394 forms.py:422
 msgid "Minimum value"
 msgstr "Minimum value"
 
-#: forms.py:388 forms.py:416
+#: forms.py:399 forms.py:427
 msgid "Maximum value"
 msgstr "Maximum value"
 
-#: forms.py:391
+#: forms.py:402
 msgid "Decimal places"
 msgstr "Decimale plaatsen"
 
-#: forms.py:434
+#: forms.py:445
 msgid "Rows"
 msgstr "Rijen"
 
-#: forms.py:438
+#: forms.py:449
 msgid "Defines the vertical size of the text area in number of rows."
 msgstr "Definieer de verticale grootte of de lange tekst in nummer van rijen."
 
-#: forms.py:459 forms.py:471 forms.py:481
+#: forms.py:470 forms.py:482 forms.py:492
 msgid "Not visible on most browsers."
 msgstr "Niet zichtbaar bij de meeste browsers."
 
-#: forms.py:500
+#: forms.py:511
 msgid "Selection type"
 msgstr "Selectie type"
 
-#: forms.py:520
+#: forms.py:531
 msgid ""
 "For a required multiple choice fild select the <b>list</b> selection type."
 msgstr ""
 "Voor een verplicht meerder keuze optie ingevuld, selecteer de <b>lijst</b> "
 "selectie type."
 
-#: forms.py:524
+#: forms.py:535
 msgid "Checkbox multiple choice field <b>must not be required</b>."
 msgstr "Checkbox meerdere keuze opties <b> moet niet verplicht zijn </b>."
 
-#: forms.py:542
-#: templates/djangocms_form_builder/mails/default/mail_html.html:8
+#: forms.py:553 templates/djangocms_form_builder/mails/default/mail_html.html:8
 msgid "Value"
 msgstr "Value"
 
-#: forms.py:544
+#: forms.py:555
 msgid "Stored in database if the choice is selected."
 msgstr "Opslagen in database als de optie is geselecteerd."
 
-#: forms.py:547
+#: forms.py:558
 msgid "Display text"
 msgstr "Tekst weergeven"
 
-#: forms.py:549
+#: forms.py:560
 msgid "Representation of choice displayed to the user."
 msgstr "Weergave van de keuze die aan de gebruiker wordt getoond."
 
-#: forms.py:565
+#: forms.py:576
 msgid "Layout"
 msgstr "Layout"
 
-#: forms.py:569
+#: forms.py:580
 msgid "Checkbox"
 msgstr "Checkbox"
 
-#: forms.py:569
+#: forms.py:580
 msgid "Switch"
 msgstr "Wissel"
 
-#: forms.py:577
+#: forms.py:588
 msgid ""
-"If checked, the form can only be submitted if the checkbox is checked or the"
-" switch set to on."
+"If checked, the form can only be submitted if the checkbox is checked or the "
+"switch set to on."
 msgstr ""
 "Als dit selectievakje is aangevinkt, kan het formulier alleen worden "
 "verzonden als het selectievakje is aangevinkt of de schakelaar op 'aan' "
 "staat."
 
-#: forms.py:594
+#: forms.py:606
 msgid "Button label"
 msgstr "Knop label"
 
-#: forms.py:595 templates/djangocms_form_builder/bootstrap5/form.html:11
+#: forms.py:607 templates/djangocms_form_builder/bootstrap5/form.html:11
 #: templates/djangocms_form_builder/bootstrap5/widgets/submit.html:1
 msgid "Submit"
 msgstr "Plaatsen"
+
+#: forms.py:612
+msgid "Button context"
+msgstr "Context"
+
+#: frontends/bootstrap5.py:32 frontends/foundation6.py:29
+msgid "Primary"
+msgstr "Primair"
+
+#: frontends/bootstrap5.py:33 frontends/foundation6.py:30
+msgid "Secondary"
+msgstr "Secundair"
 
 #: models.py:32
 msgid "Form name"
@@ -551,35 +570,35 @@ msgstr "Formulier veld item"
 msgid "Character field"
 msgstr "Karakter's veld"
 
-#: models.py:216
+#: models.py:217
 msgid "Email field"
 msgstr "E-mail veld"
 
-#: models.py:231
+#: models.py:233
 msgid "URL field"
 msgstr "URL veld"
 
-#: models.py:246
+#: models.py:249
 msgid "Decimal field"
 msgstr "Decimaal veld"
 
-#: models.py:290
+#: models.py:294
 msgid "Integer field"
 msgstr "Nummer veld"
 
-#: models.py:305
+#: models.py:310
 msgid "Text field"
 msgstr "Tekst veld"
 
-#: models.py:324 models.py:342 models.py:368
+#: models.py:330 models.py:349 models.py:376
 msgid "Date field"
 msgstr "Datum veld"
 
-#: models.py:389
+#: models.py:398
 msgid "No selection"
 msgstr "Geen selectie"
 
-#: models.py:446
+#: models.py:456
 msgid "Boolean field"
 msgstr "Ja / Nee veld"
 
@@ -601,8 +620,8 @@ msgstr "Standaard"
 
 #: templates/djangocms_form_builder/ajax_form.html:19
 msgid ""
-"Network connection or server error. Please try again later. We apologize for"
-" the inconvenience."
+"Network connection or server error. Please try again later. We apologize for "
+"the inconvenience."
 msgstr ""
 "Netwerk connectie of server error. Probeer het aub opnieuw. Onze       "
 "excuses voor het ongemak."
