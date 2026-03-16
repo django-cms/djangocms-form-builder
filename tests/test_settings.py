@@ -1,5 +1,7 @@
 import os
 
+from django.urls import reverse_lazy
+
 
 class DisableMigrations(dict):
     def __contains__(self, item):
@@ -111,3 +113,6 @@ ROOT_URLCONF = "tests.urls"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 ALTCHA_HMAC_KEY = "altcha-insecure-hmac-0123456789abcdef"
+ALTCHA_FIELD_OPTIONS = {
+    "challengeurl": reverse_lazy("altcha_challenge"),
+}
