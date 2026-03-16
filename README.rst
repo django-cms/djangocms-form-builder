@@ -174,22 +174,57 @@ Configuring Altcha CAPTCHA
 
 **djangocms-form-builder** can use `django-altcha <https://github.com/aboutcode-org/django-altcha/tree/main>`_ for a self-hosted, privacy-friendly CAPTCHA.
 
-To enable it:
+**1. Install and enable django-altcha**
 
-1. Install **django-altcha** (e.g. ``pip install django-altcha`` from the `django-altcha repository <https://github.com/aboutcode-org/django-altcha/tree/main>`_).
-2. Add ``django_altcha`` to ``INSTALLED_APPS`` and follow the `django-altcha configuration instructions <https://github.com/aboutcode-org/django-altcha/tree/main>`_.
-3. In the form plugin settings, choose **Altcha** as the captcha widget.
+-  Install the package (e.g. ``pip install django-altcha`` from the `django-altcha repository <https://github.com/aboutcode-org/django-altcha/tree/main>`_).
+-  Add ``django_altcha`` to ``INSTALLED_APPS`` and follow the `django-altcha configuration instructions <https://github.com/aboutcode-org/django-altcha/tree/main>`_.
 
-Recommended Django settings:
+**2. Configure where challenges come from**
 
--  **ALTCHA_HMAC_KEY** — required for signing challenges.
--  **ALTCHA_INCLUDE_TRANSLATIONS** — set to ``True`` to load Altcha UI translations.
+You can either have Django generate challenges (built-in) or use an external challenge server (e.g. Altcha Sentinel).
+
+**Option A — Django generates challenges (built-in, no external service)**
+
+Add a URL route so the widget can request a new challenge::
+
+    from django.urls import path
+    from django_altcha import AltchaChallengeView
+
+    urlpatterns = [
+        path("altcha/challenge/", AltchaChallengeView.as_view(), name="altcha_challenge"),
+    ]
+
+In your project settings, point the widget to that URL and set a secret HMAC key (see django-altcha docs to generate one)::
+
+    from django.urls import reverse_lazy
+
+    ALTCHA_HMAC_KEY = "your-secret-hmac-key"  # required for built-in mode
+    ALTCHA_FIELD_OPTIONS = {
+        "challengeurl": reverse_lazy("altcha_challenge"),
+    }
+
+**Option B — External challenge server (e.g. Altcha Sentinel)**
+
+If you use an external API to generate challenges, set only the challenge URL (no ``ALTCHA_HMAC_KEY`` needed)::
+
+    ALTCHA_FIELD_OPTIONS = {
+        "challengeurl": "https://altcha.your-domain.example/api/v1/challenge?apiKey=YOUR_API_KEY",
+    }
+
+**3. Use Altcha in the form plugin**
+
+In the form plugin settings in the CMS, choose **Altcha** as the captcha widget.
+
+**Recommended Django settings**
+
+-  **ALTCHA_HMAC_KEY** — required only for Option A (built-in challenges). Keep it secret.
+-  **ALTCHA_INCLUDE_TRANSLATIONS** — set to ``True`` to load Altcha UI translations (e.g. checkbox label in the user’s language).
 
 **ALTCHA_FIELD_OPTIONS**
 
 The setting **ALTCHA_FIELD_OPTIONS** lets you override the default options passed to django-altcha's ``AltchaField``. It is a dictionary of options supported by the field (see `AltchaField.default_options <https://github.com/aboutcode-org/django-altcha/blob/main/django_altcha/__init__.py#L134>`_). Example: enable floating UI and French language::
 
-    ALTCHA_FIELD_OPTIONS = {"floating": True, "language": "fr"}
+    ALTCHA_FIELD_OPTIONS = {"challengeurl": reverse_lazy("altcha_challenge"), "floating": True, "language": "fr"}
 
 
 .. |pypi| image:: https://badge.fury.io/py/djangocms-form-builder.svg
