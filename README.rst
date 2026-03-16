@@ -172,7 +172,9 @@ Actions are not available for Django forms. Any actions to be performed upon sub
 Configuring Altcha CAPTCHA
 ==========================
 
-**djangocms-form-builder** can use `django-altcha <https://github.com/aboutcode-org/django-altcha/tree/main>`_ for a self-hosted, privacy-friendly CAPTCHA.
+`Altcha <https://altcha.org/>`_ is an open-source, GDPR-compliant, Proof-of-Work CAPTCHA: no tracking, no cookies, and no external calls when used in built-in mode. For widget and integration details, see the `Altcha documentation <https://altcha.org/docs/v2/>`_.
+
+**djangocms-form-builder** integrates `django-altcha <https://github.com/aboutcode-org/django-altcha/tree/main>`_ so you can add Altcha to form plugins. You can use either Django’s built-in challenge view (fully self-hosted) or an external challenge server such as `Altcha Sentinel <https://altcha.org/>`_.
 
 **1. Install and enable django-altcha**
 
