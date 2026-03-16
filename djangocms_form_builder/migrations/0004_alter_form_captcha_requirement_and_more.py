@@ -2,9 +2,11 @@
 
 from django.db import migrations, models
 
+from djangocms_form_builder import recaptcha
+from djangocms_form_builder.settings import EMPTY_CHOICE
+
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("djangocms_form_builder", "0003_auto_20230129_1950"),
     ]
@@ -26,8 +28,8 @@ class Migration(migrations.Migration):
             name="captcha_widget",
             field=models.CharField(
                 blank=True,
-                choices=[("", "-----"), ("altcha", "Altcha")],
-                default="v2-invisible",
+                choices=EMPTY_CHOICE + recaptcha.CAPTCHA_CHOICES,
+                default=recaptcha.CAPTCHA_CHOICES[0][0] if recaptcha.installed else "",
                 help_text='Read more in the <a href="https://developers.google.com/recaptcha" target="_blank">documentation</a>.',
                 max_length=16,
                 verbose_name="captcha widget",

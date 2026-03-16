@@ -154,7 +154,7 @@ class FormsForm(mixin_factory("Form"), EntangledModelForm):
     captcha_widget = forms.ChoiceField(
         label=_("Captcha widget"),
         required=False,
-        initial="v2-invisible" if recaptcha.installed else "",
+        initial=recaptcha.CAPTCHA_CHOICES[0][0] if recaptcha.installed else "",
         choices=settings.EMPTY_CHOICE + recaptcha.CAPTCHA_CHOICES,
         help_text=mark_safe_lazy(
             _(
