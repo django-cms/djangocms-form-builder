@@ -28,14 +28,6 @@ else:
             self.form = form
 
 
-if apps.is_installed("django_altcha"):
-    from django_altcha import AltchaWidget
-
-    altcha_installed = True
-else:
-    altcha_installed = False
-
-
 @register.filter
 def add_placeholder(form):
     """Adds placeholder based on a form field's title"""
@@ -157,12 +149,6 @@ def render_widget(form, form_field, **kwargs):
 @register.simple_tag(takes_context=False)
 def render_recaptcha_widget(form):
     if recaptcha.installed:
-        captcha_field = form.fields[recaptcha.field_name]
-        if altcha_installed:
-            if isinstance(captcha_field.widget, AltchaWidget):
-                return form.fields["captcha_field"].widget.render(
-                    name=recaptcha.field_name, value="", attrs={}
-                )
         return render_widget(form, recaptcha.field_name)
     return ""
 
