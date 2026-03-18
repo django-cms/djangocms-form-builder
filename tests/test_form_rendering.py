@@ -6,7 +6,7 @@ from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 from django import forms
 from django.template import Context, Template
-from django.test import RequestFactory, override_settings
+from django.test import RequestFactory
 
 from djangocms_form_builder import cms_plugins, recaptcha
 
