@@ -34,3 +34,4 @@ local.sqlite
 /filer_public_thumbnails/
 /private/sass/bootstrap/
 /htmlcov/
+.history/

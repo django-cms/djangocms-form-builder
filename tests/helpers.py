@@ -1,3 +1,5 @@
+import base64
+import json
 import os
 from tempfile import mkdtemp
 
@@ -124,3 +126,17 @@ def get_filer_folder(folder_name="test_folder", parent=None):
     )
 
     return filer_object
+
+
+ALTCHA_TEST_CHALLENGE = "test-challenge-123"
+
+
+def make_valid_altcha_payload(challenge=ALTCHA_TEST_CHALLENGE):
+    """Make a valid altcha payload
+
+    From : https://github.com/aboutcode-org/django-altcha/blob/main/tests/test_field.py
+    """
+    payload_dict = {"challenge": challenge}
+    json_str = json.dumps(payload_dict)
+    encoded_bytes = base64.b64encode(json_str.encode("utf-8"))
+    return encoded_bytes.decode("utf-8")

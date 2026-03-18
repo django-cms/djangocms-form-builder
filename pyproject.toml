@@ -52,6 +52,9 @@ dependencies = [
 reCaptcha = [
     "django-recaptcha",
 ]
+altcha = [
+    "django-altcha",
+]
 
 [project.urls]
 Homepage = "https://github.com/fsbraun/djangocms-form-builder"
