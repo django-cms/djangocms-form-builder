@@ -23,6 +23,20 @@ class CSValues(forms.CharField):
         return value
 
 
+def _is_file_entry_value(value):
+    """Whether ``value`` in ``entry_data`` is a stored file or list of files."""
+    if isinstance(value, dict) and value.get("_form_builder_file"):
+        return True
+    if (
+        isinstance(value, list)
+        and value
+        and isinstance(value[0], dict)
+        and value[0].get("_form_builder_file")
+    ):
+        return True
+    return False
+
+
 class FormEntry(models.Model):
     class Meta:
         verbose_name = _("Form entry")
@@ -51,11 +65,17 @@ class FormEntry(models.Model):
     entry_created_at = models.DateTimeField(auto_now_add=True)
     entry_updated_at = models.DateTimeField(auto_now=True)
 
+    def get_file_entry_data_keys(self):
+        """Keys in ``entry_data`` that hold uploaded file(s); shown in admin as readonly links."""
+        return [k for k, v in self.entry_data.items() if _is_file_entry_value(v)]
+
     def get_admin_form(self):
         entangled_fields = []
         fields = {}
         for key, value in self.entry_data.items():
-            if isinstance(value, str):
+            if _is_file_entry_value(value):
+                continue
+            elif isinstance(value, str):
                 entangled_fields.append(key)
                 fields[key] = forms.CharField(
                     label=key,
@@ -116,7 +136,8 @@ class FormEntry(models.Model):
                     "fields": tuple(
                         key
                         for key, value in self.entry_data.items()
-                        if isinstance(
+                        if not _is_file_entry_value(value)
+                        and isinstance(
                             value, (str, tuple, list, bool, decimal.Decimal, int)
                         )
                     )

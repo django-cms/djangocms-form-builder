@@ -96,6 +96,7 @@ Contents
    :maxdepth: 3
 
    forms
+   file_validation
    howto_guides
    reference
 
