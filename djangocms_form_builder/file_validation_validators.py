@@ -135,6 +135,21 @@ class BaseFilePresetValidator:
     Instances are callable with the same signature as a preset function.
     """
 
+    helper: typing.Callable[..., None] | None = None
+    option_name: str | None = None
+
+    def __init__(self, **options):
+        if not self.option_name:
+            raise TypeError(
+                f"{self.__class__.__name__} must define option_name to be instantiated."
+            )
+        try:
+            self._option_value = options[self.option_name]
+        except KeyError as exc:
+            raise TypeError(
+                f"{self.__class__.__name__} requires option {self.option_name!r}"
+            ) from exc
+
     def __call__(
         self,
         uploaded_file: UploadedFile,
@@ -158,24 +173,16 @@ class BaseFilePresetValidator:
         request,
         field_name: str,
     ) -> None:
-        raise NotImplementedError
+        if self.helper is None:
+            raise NotImplementedError
+        self.helper(uploaded_file, self._option_value, field_name=field_name)
 
 
 class MaxSizePresetValidator(BaseFilePresetValidator):
     """Preset class: maximum file size in bytes (``validate_options``: ``{"max_bytes": int}``)."""
 
-    def __init__(self, max_bytes: int):
-        self.max_bytes = max_bytes
-
-    def validate(
-        self,
-        uploaded_file: UploadedFile,
-        *,
-        user,
-        request,
-        field_name: str,
-    ) -> None:
-        enforce_max_size(uploaded_file, self.max_bytes, field_name=field_name)
+    helper = enforce_max_size
+    option_name = "max_bytes"
 
 
 class ExtensionPresetValidator(BaseFilePresetValidator):
@@ -184,22 +191,8 @@ class ExtensionPresetValidator(BaseFilePresetValidator):
     (``validate_options``: ``{"allowed_extensions": [".pdf", "png", ...]}``).
     """
 
-    def __init__(self, allowed_extensions: typing.Iterable[str]):
-        self.allowed_extensions = tuple(allowed_extensions)
-
-    def validate(
-        self,
-        uploaded_file: UploadedFile,
-        *,
-        user,
-        request,
-        field_name: str,
-    ) -> None:
-        enforce_extension(
-            uploaded_file,
-            self.allowed_extensions,
-            field_name=field_name,
-        )
+    helper = enforce_extension
+    option_name = "allowed_extensions"
 
 
 class MimeFilenamePresetValidator(BaseFilePresetValidator):
@@ -208,19 +201,5 @@ class MimeFilenamePresetValidator(BaseFilePresetValidator):
     (``validate_options``: ``{"allowed_patterns": ["application/pdf", "image/", ...]}``).
     """
 
-    def __init__(self, allowed_patterns: typing.Iterable[str]):
-        self.allowed_patterns = tuple(allowed_patterns)
-
-    def validate(
-        self,
-        uploaded_file: UploadedFile,
-        *,
-        user,
-        request,
-        field_name: str,
-    ) -> None:
-        enforce_mime_from_filename(
-            uploaded_file,
-            self.allowed_patterns,
-            field_name=field_name,
-        )
+    helper = enforce_mime_from_filename
+    option_name = "allowed_patterns"

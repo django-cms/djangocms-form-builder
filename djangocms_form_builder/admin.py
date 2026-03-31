@@ -60,28 +60,24 @@ class FormEntryAdmin(admin.ModelAdmin):
 
     @staticmethod
     def format_entry_file_field(obj, key):
-        value = obj.entry_data.get(key)
-        if isinstance(value, dict) and value.get("_form_builder_file"):
+        items = FormEntry.get_file_entry_items(obj.entry_data.get(key))
+        if not items:
+            return "—"
+        if len(items) == 1:
+            value = items[0]
             return format_html(
                 '<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>',
                 value["url"],
                 value["filename"],
             )
-        if (
-            isinstance(value, list)
-            and value
-            and isinstance(value[0], dict)
-            and value[0].get("_form_builder_file")
-        ):
-            return format_html(
-                "<ul>{}</ul>",
-                format_html_join(
-                    "",
-                    '<li><a href="{}" target="_blank" rel="noopener noreferrer">{}</a></li>',
-                    ((d["url"], d["filename"]) for d in value),
-                ),
-            )
-        return "—"
+        return format_html(
+            "<ul>{}</ul>",
+            format_html_join(
+                "",
+                '<li><a href="{}" target="_blank" rel="noopener noreferrer">{}</a></li>',
+                ((d["url"], d["filename"]) for d in items),
+            ),
+        )
 
     def __getattr__(self, name):
         if name.startswith("entry_file_"):

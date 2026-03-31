@@ -1,5 +1,6 @@
 """Tests for ValidatedFileField and MultipleUploadedFilesField."""
 
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
@@ -110,6 +111,31 @@ class ValidatedFileFieldTests(SimpleTestCase):
 
 
 class MultipleUploadedFilesFieldTests(SimpleTestCase):
+    def test_clean_optional_allows_empty(self):
+        field = MultipleUploadedFilesField(
+            preset_keys=[],
+            user=None,
+            request=None,
+            field_name="f",
+            required=False,
+        )
+        self.assertEqual(field.clean(None), [])
+        self.assertEqual(field.clean([]), [])
+
+    def test_clean_required_rejects_empty(self):
+        field = MultipleUploadedFilesField(
+            preset_keys=[],
+            user=None,
+            request=None,
+            field_name="f",
+            required=True,
+        )
+        required_message = str(field.error_messages["required"])
+        with self.assertRaisesMessage(ValidationError, required_message):
+            field.clean(None)
+        with self.assertRaisesMessage(ValidationError, required_message):
+            field.clean([])
+
     @override_settings(
         DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
             "ok": {"label": "OK", "validate": f"{__name__}.preset_accept"},

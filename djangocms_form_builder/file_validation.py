@@ -72,6 +72,9 @@ def allowed_extensions_for_accept_attribute(preset_keys: list) -> str | None:
         _normalize_extension,
     )
 
+    # ``accept`` is a browser-side hint only. We intentionally derive it from
+    # extension-based presets and keep server-side validation authoritative for
+    # any other preset types.
     registry = get_validation_preset_registry()
     intersection: frozenset | None = None
     for key in preset_keys:
@@ -168,7 +171,13 @@ def validate_form_builder_file(
         return
     registry = get_validation_preset_registry()
     for key in preset_keys:
-        entry = registry[key]
+        try:
+            entry = registry[key]
+        except KeyError as exc:
+            raise ImproperlyConfigured(
+                f"Unknown file validation preset key '{key}' in "
+                "DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS"
+            ) from exc
         target = import_string(entry["validate"])
         opts = entry.get("validate_options") or {}
         if entry.get("filer_validator"):

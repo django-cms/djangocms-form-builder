@@ -25,16 +25,7 @@ class CSValues(forms.CharField):
 
 def _is_file_entry_value(value):
     """Whether ``value`` in ``entry_data`` is a stored file or list of files."""
-    if isinstance(value, dict) and value.get("_form_builder_file"):
-        return True
-    if (
-        isinstance(value, list)
-        and value
-        and isinstance(value[0], dict)
-        and value[0].get("_form_builder_file")
-    ):
-        return True
-    return False
+    return bool(FormEntry.get_file_entry_items(value))
 
 
 class FormEntry(models.Model):
@@ -64,6 +55,25 @@ class FormEntry(models.Model):
     )
     entry_created_at = models.DateTimeField(auto_now_add=True)
     entry_updated_at = models.DateTimeField(auto_now=True)
+
+    @staticmethod
+    def get_file_entry_items(value):
+        """
+        Normalize an ``entry_data`` value representing one or many stored files.
+
+        Returns a list of file metadata dicts, or an empty list when the value
+        is not a file payload.
+        """
+        if isinstance(value, dict) and value.get("_form_builder_file"):
+            return [value]
+        if (
+            isinstance(value, list)
+            and value
+            and isinstance(value[0], dict)
+            and value[0].get("_form_builder_file")
+        ):
+            return value
+        return []
 
     def get_file_entry_data_keys(self):
         """Keys in ``entry_data`` that hold uploaded file(s); shown in admin as readonly links."""

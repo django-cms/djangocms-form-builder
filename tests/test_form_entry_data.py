@@ -13,6 +13,11 @@ class SerializeCleanedDataTests(TestCase):
         data = serialize_cleaned_data_for_entry({"a": "text", "b": 1})
         self.assertEqual(data, {"a": "text", "b": 1})
 
+    def test_passes_through_non_file_lists(self):
+        cleaned_data = {"choices": ["a", "b"]}
+        data = serialize_cleaned_data_for_entry(cleaned_data)
+        self.assertEqual(data, cleaned_data)
+
     def test_stores_upload_metadata(self):
         with self.settings(MEDIA_ROOT=tempfile.mkdtemp()):
             f = SimpleUploadedFile("note.txt", b"hello", content_type="text/plain")
