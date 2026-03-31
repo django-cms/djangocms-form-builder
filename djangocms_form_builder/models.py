@@ -14,6 +14,7 @@ from . import recaptcha, settings
 from .entry_model import FormEntry  # NoQA
 from .fields import AttributesField
 from .helpers import coerce_decimal, mark_safe_lazy
+from .upload_form_fields import MultipleUploadedFilesField, ValidatedFileField
 
 MAX_LENGTH = 256
 
@@ -185,9 +186,12 @@ class FormField(CMSPlugin):
             getattr(form, "Meta", None), "entangled_fields", {}
         ).get("config", ())
         for field in entangled_fields:
-            self.config.setdefault(
-                field, {} if field == "attributes" else form[field].initial or ""
-            )
+            if field == "attributes":
+                default = {}
+            else:
+                fv = form[field].initial
+                default = fv if fv is not None else ""
+            self.config.setdefault(field, default)
         return self
 
     def get_short_description(self):
@@ -200,7 +204,7 @@ class CharField(FormField):
         proxy = True
         verbose_name = _("Character field")
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         return self.field_name, forms.CharField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
@@ -216,7 +220,7 @@ class EmailField(FormField):
         proxy = True
         verbose_name = _("Email field")
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         return self.field_name, forms.EmailField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
@@ -232,7 +236,7 @@ class UrlField(FormField):
         proxy = True
         verbose_name = _("URL field")
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         return self.field_name, forms.URLField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
@@ -273,7 +277,7 @@ class DecimalField(FormField):
                 value = str(value)
             return value
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         return self.field_name, DecimalField.StrDecimalField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
@@ -293,7 +297,7 @@ class IntegerField(FormField):
         proxy = True
         verbose_name = _("Integer field")
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         return self.field_name, forms.IntegerField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
@@ -309,7 +313,7 @@ class TextareaField(FormField):
         proxy = True
         verbose_name = _("Text field")
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         return self.field_name, forms.CharField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
@@ -332,7 +336,7 @@ class DateField(FormField):
     class DateInput(forms.DateInput):
         input_type = "date"
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         return self.field_name, forms.DateField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
@@ -359,7 +363,7 @@ class DateTimeField(FormField):
     class DateTimeInput(forms.DateTimeInput):
         input_type = "datetime-local"
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         return self.field_name, DateTimeField.DateTimeField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
@@ -378,7 +382,7 @@ class TimeField(FormField):
     class TimeInput(forms.TimeInput):
         input_type = "time"
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         return self.field_name, forms.TimeField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
@@ -408,7 +412,7 @@ class Select(FormField):
                 )
         return self._choices
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         multiple_choice = self.config.get("field_select", "") in (
             "multiselect",
             "checkbox",
@@ -455,7 +459,7 @@ class BooleanField(FormField):
         proxy = True
         verbose_name = _("Boolean field")
 
-    def get_form_field(self):
+    def get_form_field(self, request=None):
         return self.field_name, forms.BooleanField(
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
@@ -463,6 +467,46 @@ class BooleanField(FormField):
             widget=SwitchInput()
             if self.config.get("field_as_switch", False)
             else forms.CheckboxInput(),
+        )
+
+
+class FileField(FormField):
+    class Meta:
+        proxy = True
+        verbose_name = _("File upload")
+
+    def get_form_field(self, request=None):
+        user = getattr(request, "user", None) if request else None
+        raw = self.config.get("field_file_validation_presets")
+        preset_keys = list(raw) if isinstance(raw, (list, tuple)) else []
+        return self.field_name, ValidatedFileField(
+            label=self.config.get("field_label", ""),
+            required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
+            preset_keys=preset_keys,
+            user=user,
+            request=request,
+            field_name=self.field_name,
+        )
+
+
+class MultipleFileField(FormField):
+    class Meta:
+        proxy = True
+        verbose_name = _("Multiple file upload")
+
+    def get_form_field(self, request=None):
+        user = getattr(request, "user", None) if request else None
+        raw = self.config.get("field_file_validation_presets")
+        preset_keys = list(raw) if isinstance(raw, (list, tuple)) else []
+        return self.field_name, MultipleUploadedFilesField(
+            label=self.config.get("field_label", ""),
+            required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
+            preset_keys=preset_keys,
+            user=user,
+            request=request,
+            field_name=self.field_name,
         )
 
 

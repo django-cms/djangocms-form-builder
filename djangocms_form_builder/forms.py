@@ -15,6 +15,7 @@ from . import (
 )
 from .entry_model import FormEntry
 from .fields import AttributesFormField, ButtonGroup, ChoicesFormField
+from .file_validation import validation_preset_choice_tuples
 from .helpers import get_option, mark_safe_lazy
 
 
@@ -559,6 +560,61 @@ class ChoiceForm(EntangledModelForm):
         required=True,
         help_text=_("Representation of choice displayed to the user."),
     )
+
+
+class FileFieldForm(mixin_factory("FileField"), FormFieldMixin, EntangledModelForm):
+    class Meta:
+        model = models.FormField
+        entangled_fields = {
+            "config": [
+                "field_file_validation_presets",
+            ]
+        }
+
+    field_file_validation_presets = forms.MultipleChoiceField(
+        label=_("Validation presets"),
+        required=False,
+        choices=[],
+        help_text=_(
+            "Choose a rule to control which file types or sizes users can upload. Leave empty to allow all files permitted by default."
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields[
+            "field_file_validation_presets"
+        ].choices = validation_preset_choice_tuples()
+        self.fields["field_placeholder"].widget = forms.HiddenInput()
+
+
+class MultipleFileFieldForm(
+    mixin_factory("MultipleFileField"), FormFieldMixin, EntangledModelForm
+):
+    class Meta:
+        model = models.FormField
+        entangled_fields = {
+            "config": [
+                "field_file_validation_presets",
+            ]
+        }
+
+    field_file_validation_presets = forms.MultipleChoiceField(
+        label=_("Validation presets"),
+        required=False,
+        initial=[],
+        choices=[],
+        help_text=_(
+            "Choose a rule to control which file types or sizes users can upload. Leave empty to allow all files permitted by default (applied to each uploaded file in order)."
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields[
+            "field_file_validation_presets"
+        ].choices = validation_preset_choice_tuples()
+        self.fields["field_placeholder"].widget = forms.HiddenInput()
 
 
 class BooleanFieldForm(

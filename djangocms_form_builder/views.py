@@ -2,7 +2,7 @@ import hashlib
 
 from cms.models import CMSPlugin
 from django.core.exceptions import ValidationError
-from django.http import Http404, JsonResponse, QueryDict
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from django.utils.translation import gettext as _
@@ -114,7 +114,9 @@ class AjaxView(View):
         if "instance_id" in kwargs:
             plugin, instance = self.plugin_instance(kwargs["instance_id"])
             if hasattr(plugin, "ajax_post"):
-                request.POST = QueryDict(request.body)
+                # Do not read request.body or replace request.POST: multipart
+                # requests already populate POST/FILES; re-parsing raises
+                # RawPostDataException and would drop uploaded files.
                 try:
                     params = (
                         self.decode_path(kwargs["parameter"])
@@ -165,7 +167,6 @@ class AjaxView(View):
         if "instance_id" in kwargs:
             plugin, instance = self.plugin_instance(kwargs["instance_id"])
             if hasattr(plugin, "ajax_get"):
-                request.GET = QueryDict(request.body)
                 try:
                     params = (
                         self.decode_path(kwargs["parameter"])

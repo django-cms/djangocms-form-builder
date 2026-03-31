@@ -13,6 +13,7 @@ from entangled.forms import EntangledModelFormMixin
 
 from . import models
 from .entry_model import FormEntry
+from .form_entry_data import serialize_cleaned_data_for_entry
 from .helpers import get_option, insert_fields
 from .settings import MAIL_TEMPLATE_SETS
 
@@ -125,7 +126,7 @@ class SaveToDBAction(FormAction):
             }
         defaults.update(
             {
-                "entry_data": form.cleaned_data,
+                "entry_data": serialize_cleaned_data_for_entry(form.cleaned_data),
                 "html_headers": dict(
                     user_agent=request.headers["User-Agent"],
                     referer=request.headers["Referer"],
