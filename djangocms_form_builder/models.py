@@ -79,7 +79,7 @@ class Form(CMSPlugin):
         verbose_name=_("captcha widget"),
         max_length=16,
         blank=True,
-        default="v2-invisible" if recaptcha.installed else "",
+        default=recaptcha.CAPTCHA_CHOICES[0][0] if recaptcha.installed else "",
         choices=settings.EMPTY_CHOICE + recaptcha.CAPTCHA_CHOICES,
         help_text=mark_safe_lazy(
             _(
