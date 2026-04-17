@@ -186,6 +186,91 @@ To launch the tests, run:
     . .venv/bin/activate
     python3 run_tests.py
 
+Configuring Altcha CAPTCHA
+==========================
+
+`Altcha <https://altcha.org/>`_ is an open-source, GDPR-compliant, Proof-of-Work CAPTCHA: no tracking, no cookies, and no external calls when used in built-in mode. For widget and integration details, see the `Altcha documentation <https://altcha.org/docs/v2/>`_.
+
+**djangocms-form-builder** integrates `django-altcha <https://github.com/aboutcode-org/django-altcha/tree/main>`_ so you can add Altcha to form plugins. You can use either Django’s built-in challenge view (fully self-hosted) or an external challenge server such as `Altcha Sentinel <https://altcha.org/>`_.
+
+**1. Install and enable django-altcha**
+
+-  Install the package (e.g. ``pip install django-altcha`` from the `django-altcha repository <https://github.com/aboutcode-org/django-altcha/tree/main>`_).
+-  Add ``django_altcha`` to ``INSTALLED_APPS`` and follow the `django-altcha configuration instructions <https://github.com/aboutcode-org/django-altcha/tree/main>`_.
+
+**2. Configure where challenges come from**
+
+You can either have Django generate challenges (built-in) or use an external challenge server (e.g. Altcha Sentinel).
+
+**Option A — Django generates challenges (built-in, no external service)**
+
+Add a URL route so the widget can request a new challenge::
+
+    from django.urls import path
+    from django_altcha import AltchaChallengeView
+
+    urlpatterns = [
+        path("altcha/challenge/", AltchaChallengeView.as_view(), name="altcha_challenge"),
+    ]
+
+In your project settings, point the widget to that URL and set a secret HMAC key (see django-altcha docs to generate one)::
+
+    from django.urls import reverse_lazy
+
+    ALTCHA_HMAC_KEY = "your-secret-hmac-key"  # required for built-in mode
+    ALTCHA_FIELD_OPTIONS = {
+        "challengeurl": reverse_lazy("altcha_challenge"),
+    }
+
+**Option B — External challenge server (e.g. Altcha Sentinel)**
+
+If you use an external API to generate challenges, set only the challenge URL (no ``ALTCHA_HMAC_KEY`` needed)::
+
+    ALTCHA_FIELD_OPTIONS = {
+        "challengeurl": "https://altcha.your-domain.example/api/v1/challenge?apiKey=YOUR_API_KEY",
+    }
+
+**3. Use Altcha in the form plugin**
+
+In the form plugin settings in the CMS, choose **Altcha** as the captcha widget.
+
+**Recommended Django settings**
+
+-  **ALTCHA_HMAC_KEY** — required only for Option A (built-in challenges). Keep it secret.
+-  **ALTCHA_INCLUDE_TRANSLATIONS** — set to ``True`` to load Altcha UI translations (e.g. checkbox label in the user’s language).
+
+**ALTCHA_FIELD_OPTIONS**
+
+The setting **ALTCHA_FIELD_OPTIONS** lets you override the default options passed to django-altcha's ``AltchaField``. It is a dictionary of options supported by the field (see `AltchaField.default_options <https://github.com/aboutcode-org/django-altcha/blob/main/django_altcha/__init__.py#L134>`_). Example: enable floating UI and French language::
+
+    ALTCHA_FIELD_OPTIONS = {"challengeurl": reverse_lazy("altcha_challenge"), "floating": True, "language": "fr"}
+
+**Workaround: Altcha script URLs (django-altcha)**
+
+Some **django-altcha** versions have static urls of JS files hardcoded, which create an issue when using in production environments. A fix is tracked in `django-altcha PR #38 <https://github.com/aboutcode-org/django-altcha/pull/38>`_.
+
+Until that ships in a release, override ``ALTCHA_JS_URL`` and ``ALTCHA_JS_TRANSLATIONS_URL`` so URLs are resolved lazily when the widget renders. You can do this in your project settings.py file:
+
+    def _lazy_static(path):
+        """Resolve static(path) only when stringified (e.g. in templates)."""
+
+        class _LazyStaticUrl:
+            __slots__ = ("_path",)
+
+            def __init__(self, path):
+                self._path = path
+
+            def __str__(self):
+                from django.templatetags.static import static
+
+                return static(self._path)
+
+        return _LazyStaticUrl(path)
+
+    ALTCHA_JS_URL = _lazy_static("altcha/altcha.min.js")
+    ALTCHA_JS_TRANSLATIONS_URL = _lazy_static("altcha/dist_i18n/all.min.js")
+
+
 .. |pypi| image:: https://badge.fury.io/py/djangocms-form-builder.svg
    :target: http://badge.fury.io/py/djangocms-form-builder
 

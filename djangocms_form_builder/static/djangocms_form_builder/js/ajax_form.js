@@ -7,6 +7,14 @@ function getErrorMessage() {
     return "Network connection or server error. Please try again later. We apologize for the inconvenience.";
 }
 
+function resetAltchaWidget(container) {
+    // debugger;
+    const widget = container && container.querySelector("altcha-widget");
+    if (widget && typeof widget.reset === "function") {
+        widget.reset();
+    }
+}
+
 function djangocms_form_builder_form(form) {
     const feedback = (node, data) => {
         if (data.result === 'success') {
@@ -41,6 +49,7 @@ function djangocms_form_builder_form(form) {
                 target.appendChild(fragment);
             }
         } else if (data.result === 'invalid form') {
+            resetAltchaWidget(node);
             for (let invalid of node.getElementsByClassName('all-invalid')) {
                 invalid.classList.add('d-none');
                 let li = invalid.getElementsByTagName('li');
@@ -91,6 +100,7 @@ function djangocms_form_builder_form(form) {
             }
             node.classList.add('was-validated');
         } else if (data.result === 'error') {
+            resetAltchaWidget(node);
             alert(data.errors[0]);
         }
         if ('redirect' in data) {

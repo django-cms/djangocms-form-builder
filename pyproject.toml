@@ -58,6 +58,9 @@ tests = [
     "djangocms-text",
     "djangocms-link",
 ]
+altcha = [
+    "django-altcha",
+]
 
 [project.urls]
 Homepage = "https://github.com/django-cms/djangocms-form-builder"

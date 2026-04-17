@@ -2,6 +2,8 @@ from django.apps import apps
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
+from djangocms_form_builder.settings import ALTCHA_FIELD_OPTIONS
+
 from .helpers import coerce_decimal
 
 CAPTCHA_WIDGETS = {}
@@ -36,6 +38,10 @@ if apps.is_installed("hcaptcha"):
 
     CAPTCHA_CHOICES += (("hcaptcha", _("hCaptcha")),)
 
+
+if apps.is_installed("django_altcha"):
+    CAPTCHA_CHOICES += (("altcha", _("Altcha")),)
+
 if len(CAPTCHA_CHOICES) > 0:
     installed = True
 else:
@@ -63,6 +69,12 @@ def get_recaptcha_field(instance):
         )  # installing recaptcha 3 ?
     if not widget_params["api_params"]:
         del widget_params["api_params"]
+
+    if instance.captcha_widget == "altcha":
+        from django_altcha import AltchaField
+
+        return AltchaField(**ALTCHA_FIELD_OPTIONS)
+
     return CAPTCHA_FIELDS[instance.captcha_widget](
         widget=CAPTCHA_WIDGETS[instance.captcha_widget](**widget_params), label=""
     )

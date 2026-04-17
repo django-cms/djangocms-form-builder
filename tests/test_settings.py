@@ -1,5 +1,7 @@
 import os
 
+from django.urls import reverse_lazy
+
 
 class DisableMigrations(dict):
     def __contains__(self, item):
@@ -28,6 +30,7 @@ INSTALLED_APPS = [
     "djangocms_form_builder",
     "sekizai",
     "tests.test_app",
+    "django_altcha",
 ]
 
 try:  # V4 test?
@@ -100,6 +103,8 @@ DATABASES = {
     }
 }
 
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
 CMS_TEMPLATES = (("page.html", "Page"),)
 
 SITE_ID = 1
@@ -109,3 +114,7 @@ ROOT_URLCONF = "tests.urls"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CMS_CONFIRM_VERSION4 = True
+ALTCHA_HMAC_KEY = "altcha-insecure-hmac-0123456789abcdef"
+ALTCHA_FIELD_OPTIONS = {
+    "challengeurl": reverse_lazy("altcha_challenge"),
+}

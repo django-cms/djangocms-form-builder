@@ -14,3 +14,5 @@ wheel
 black
 pre-commit
 svglib!=1.6.0
+django-entangled
+django-altcha
