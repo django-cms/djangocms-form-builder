@@ -43,6 +43,11 @@ else:
     SPACER_SIZE_CHOICES = django_settings.DJANGO_FORM_BUILDER_SPACER_CHOICES
 
 
+ALTCHA_FIELD_OPTIONS = getattr(
+    django_settings, "ALTCHA_FIELD_OPTIONS", {}
+)  # See https://github.com/aboutcode-org/django-altcha/blob/9d0895f5f77fec058272821502cbb71d0cabab50/django_altcha/__init__.py#L134 for config options
+
+
 def render_factory(cls, theme_module, render_module):
     parents = tuple(
         getattr(module, cls, None)

@@ -8,7 +8,7 @@ from django import forms
 from django.template import Context, Template
 from django.test import RequestFactory
 
-from djangocms_form_builder import cms_plugins
+from djangocms_form_builder import cms_plugins, recaptcha
 
 from .fixtures import TestFixture
 
@@ -227,6 +227,52 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         self.assertIn("form-floating", content)
         self.assertIn('name="username"', content)
 
+    def test_render_form_with_altcha(self):
+        """Test rendering form with Altcha field"""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="altcha-form",
+            captcha_widget="altcha",
+        )
+
+        # Add CharField
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": "full_name",
+                "field_label": "Full Name",
+                "field_required": True,
+                "field_placeholder": "Enter your name",
+                "field_help_text": "This help text should render below the field.",
+            },
+        )
+        char_field.initialize_from_form()
+
+        self.publish(self.page, self.language)
+
+        with self.login_user_context(self.superuser):
+            response = self.client.get(self.request_url)
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+
+        # Check CharField rendered
+        self.assertIn('name="full_name"', content)
+        self.assertIn("Full Name", content)
+        self.assertIn('placeholder="Enter your name"', content)
+        self.assertIn("This help text should render below the field.", content)
+        self.assertIn('id="captcha_field', content)
+        self.assertIn('type="hidden"', content)
+        self.assertIn('name="captcha_field"', content)
+        self.assertIn('challengeurl="/altcha/challenge/"', content)
+        self.assertIn("altcha.min.js", content)
+
 
 class TemplateTagsTestCase(CMSTestCase):
     """Tests for template tags in djangocms_form_builder"""
@@ -340,6 +386,25 @@ class TemplateTagsTestCase(CMSTestCase):
 
         # Should return empty string when recaptcha not installed
         self.assertEqual(rendered.strip(), "")
+
+
+class AltchaIntegrationTestCase(TestFixture, CMSTestCase):
+    """Tests for Altcha CAPTCHA integration (run only when django_altcha is installed)."""
+
+    def test_altcha_in_captcha_choices_when_installed(self):
+        """Altcha choice is available when django_altcha is installed."""
+        choices_values = [choice[0] for choice in recaptcha.CAPTCHA_CHOICES]
+        self.assertIn("altcha", choices_values)
+
+    def test_get_recaptcha_field_returns_altcha_field_when_altcha_selected(self):
+        """get_recaptcha_field returns an AltchaField when captcha_widget is 'altcha'."""
+        from django_altcha import AltchaField
+
+        instance = type(
+            "MockInstance", (), {"captcha_widget": "altcha", "captcha_config": {}}
+        )()
+        field = recaptcha.get_recaptcha_field(instance)
+        self.assertIsInstance(field, AltchaField)
 
 
 class FormSubmissionRenderingTestCase(TestFixture, CMSTestCase):
