@@ -81,14 +81,19 @@ class AjaxView(View):
         return params
 
     @staticmethod
-    def plugin_instance(pk):
+    def plugin_instance(pk, admin_user):
         try:
             plugin = CMSPlugin.objects.select_related(*SELECT_RELATED).get(pk=pk)
         except CMSPlugin.DoesNotExist:
             raise Http404
         if "placeholder__content_type" in SELECT_RELATED:
             source_model = plugin.placeholder.content_type.model_class()
-            get_object_or_404(source_model, pk=plugin.placeholder.object_id)
+            if admin_user and hasattr(source_model, "admin_manager"):
+                get_object_or_404(
+                    source_model.admin_manager, pk=plugin.placeholder.object_id
+                )
+            else:
+                get_object_or_404(source_model, pk=plugin.placeholder.object_id)
         plugin.__class__ = plugin.get_plugin_class()
         instance = (
             plugin.model.objects.get(cmsplugin_ptr=plugin.id)
@@ -125,7 +130,9 @@ class AjaxView(View):
                              processing.
         """
         if "instance_id" in kwargs:
-            plugin, instance = self.plugin_instance(kwargs["instance_id"])
+            plugin, instance = self.plugin_instance(
+                kwargs["instance_id"], admin_user=request.user.is_staff
+            )
             if hasattr(plugin, "ajax_post"):
                 request.POST = QueryDict(request.body)
                 try:
