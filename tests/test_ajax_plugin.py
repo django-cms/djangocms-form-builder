@@ -497,18 +497,17 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         char_field.initialize_from_form()
         return form_plugin
 
-    @skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")
     def test_ajax_get_returns_form_content(self):
         """Test that AJAX GET request is rejected with HTTP 405"""
         form_plugin = self._create_simple_form_plugin("simple-ajax-get")
         self.publish(self.page, self.language)
 
         url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
-
-        with self.login_user_context(self.superuser):
-            response = self.client.get(url, headers={"accept": "application/json"})
+        response = self.client.get(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
 
         self.assertEqual(response.status_code, 405)
+        self.assertIsInstance(response, HttpResponseNotAllowed)
+        self.assertEqual(response["Allow"], "POST")
 
     def test_ajax_post_simple_form_submission(self):
         """Test that AJAX POST submits a simple form plugin"""
