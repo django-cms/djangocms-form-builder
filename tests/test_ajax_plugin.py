@@ -1,5 +1,6 @@
 import json
 from unittest import mock, skipIf
+from urllib.parse import urlencode
 
 from cms import __version__ as cms_version
 from cms.api import add_plugin
@@ -472,11 +473,65 @@ class RegisterFormViewTestCase(CMSTestCase):
 class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
     """Tests for AJAX GET requests"""
 
+    def _create_simple_form_plugin(self, form_name="simple-ajax-form"):
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name=form_name,
+            captcha_widget="",
+        )
+
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": "simple_field",
+                "field_label": "Simple Field",
+                "field_required": True,
+            },
+        )
+        char_field.initialize_from_form()
+        return form_plugin
+
+    @skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")
     def test_ajax_get_returns_form_content(self):
-        """Test that AJAX GET request returns form content"""
-        # Skip this test as GET requests need special handling in the plugin
-        # The ajax_get method requires get_context_data which needs proper setup
-        self.skipTest("AJAX GET requires more complex setup with context data")
+        """Test that AJAX GET request is rejected with HTTP 405"""
+        form_plugin = self._create_simple_form_plugin("simple-ajax-get")
+        self.publish(self.page, self.language)
+
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.get(url, headers={"accept": "application/json"})
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_ajax_post_simple_form_submission(self):
+        """Test that AJAX POST submits a simple form plugin"""
+        form_plugin = self._create_simple_form_plugin("simple-ajax-post")
+        self.publish(self.page, self.language)
+
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data=urlencode({"simple_field": "posted value"}),
+                content_type="application/x-www-form-urlencoded",
+                headers={"accept": "application/json"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response, JsonResponse)
+
+        json_data = response.json()
+        self.assertIn("result", json_data)
+        self.assertIn(json_data["result"], ["success", "error"])
+        self.assertIn("field_errors", json_data)
 
 
 @skipIf(cms_version < "4", "Form plugin tests require django CMS 4 or higher")
