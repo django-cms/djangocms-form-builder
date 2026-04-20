@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 from cms import __version__ as cms_version
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
-from django.http import JsonResponse
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.test import RequestFactory
 from django.urls import reverse
 
@@ -503,7 +503,7 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         self.publish(self.page, self.language)
 
         url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
-        response = self.client.get(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        response = self.client.get(url, headers={"x-requested-with": "XMLHttpRequest"})
 
         self.assertEqual(response.status_code, 405)
         self.assertIsInstance(response, HttpResponseNotAllowed)

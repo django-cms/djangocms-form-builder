@@ -75,7 +75,14 @@ class AjaxView(View):
 
     @staticmethod
     def plugin_instance(pk):
-        plugin = get_object_or_404(CMSPlugin, pk=pk)
+        try:
+            plugin = CMSPlugin.objects.select_related(
+                "placeholder", "placeholder__content_type"
+            ).get(pk=pk)
+        except CMSPlugin.DoesNotExist:
+            raise Http404
+        source_model = plugin.placeholder.content_type.model_class()
+        get_object_or_404(source_model, pk=plugin.placeholder.object_id)
         plugin.__class__ = plugin.get_plugin_class()
         instance = (
             plugin.model.objects.get(cmsplugin_ptr=plugin.id)
