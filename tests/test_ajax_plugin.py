@@ -54,7 +54,7 @@ class AjaxViewTestCase(TestFixture, CMSTestCase):
             form_name="test-form",
         )
 
-        plugin, instance = AjaxView.plugin_instance(form_plugin.pk)
+        plugin, instance = AjaxView.plugin_instance(form_plugin.pk, admin_user=True)
 
         self.assertIsNotNone(plugin)
         self.assertIsNotNone(instance)
@@ -66,7 +66,7 @@ class AjaxViewTestCase(TestFixture, CMSTestCase):
         from django.http import Http404
 
         with self.assertRaises(Http404):
-            AjaxView.plugin_instance(99999)
+            AjaxView.plugin_instance(99999, admin_user=True)
 
     @skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")
     def test_dispatch_with_json_accept_header_post(self):

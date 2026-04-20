@@ -183,7 +183,9 @@ class AjaxView(View):
               the `_formview_pool` and calls its `ajax_get` or `get` method if available.
         """
         if "instance_id" in kwargs:
-            plugin, instance = self.plugin_instance(kwargs["instance_id"])
+            plugin, instance = self.plugin_instance(
+                kwargs["instance_id"], admin_user=request.user.is_staff
+            )
             if hasattr(plugin, "ajax_get"):
                 request.GET = QueryDict(request.body)
                 try:
