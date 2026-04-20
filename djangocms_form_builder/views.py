@@ -1,5 +1,6 @@
 import hashlib
 
+from cms import __version__ as cms_version
 from cms.models import CMSPlugin
 from django.core.exceptions import ValidationError
 from django.http import Http404, JsonResponse, QueryDict
@@ -9,6 +10,12 @@ from django.utils.translation import gettext as _
 from django.views import View
 
 _formview_pool = {}
+
+
+if cms_version < "4":
+    SELECT_RELATED = ("placeholder",)
+else:
+    SELECT_RELATED = ("placeholder", "placeholder__content_type")
 
 
 def register_form_view(cls, slug=None):
@@ -76,13 +83,12 @@ class AjaxView(View):
     @staticmethod
     def plugin_instance(pk):
         try:
-            plugin = CMSPlugin.objects.select_related(
-                "placeholder", "placeholder__content_type"
-            ).get(pk=pk)
+            plugin = CMSPlugin.objects.select_related(*SELECT_RELATED).get(pk=pk)
         except CMSPlugin.DoesNotExist:
             raise Http404
-        source_model = plugin.placeholder.content_type.model_class()
-        get_object_or_404(source_model, pk=plugin.placeholder.object_id)
+        if "placeholder__content_type" in SELECT_RELATED:
+            source_model = plugin.placeholder.content_type.model_class()
+            get_object_or_404(source_model, pk=plugin.placeholder.object_id)
         plugin.__class__ = plugin.get_plugin_class()
         instance = (
             plugin.model.objects.get(cmsplugin_ptr=plugin.id)
