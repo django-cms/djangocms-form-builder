@@ -246,32 +246,6 @@ The setting **ALTCHA_FIELD_OPTIONS** lets you override the default options passe
 
     ALTCHA_FIELD_OPTIONS = {"challengeurl": reverse_lazy("altcha_challenge"), "floating": True, "language": "fr"}
 
-**Workaround: Altcha script URLs (django-altcha)**
-
-Some **django-altcha** versions have static urls of JS files hardcoded, which create an issue when using in production environments. A fix is tracked in `django-altcha PR #38 <https://github.com/aboutcode-org/django-altcha/pull/38>`_.
-
-Until that ships in a release, override ``ALTCHA_JS_URL`` and ``ALTCHA_JS_TRANSLATIONS_URL`` so URLs are resolved lazily when the widget renders. You can do this in your project settings.py file:
-
-    def _lazy_static(path):
-        """Resolve static(path) only when stringified (e.g. in templates)."""
-
-        class _LazyStaticUrl:
-            __slots__ = ("_path",)
-
-            def __init__(self, path):
-                self._path = path
-
-            def __str__(self):
-                from django.templatetags.static import static
-
-                return static(self._path)
-
-        return _LazyStaticUrl(path)
-
-    ALTCHA_JS_URL = _lazy_static("altcha/altcha.min.js")
-    ALTCHA_JS_TRANSLATIONS_URL = _lazy_static("altcha/dist_i18n/all.min.js")
-
-
 .. |pypi| image:: https://badge.fury.io/py/djangocms-form-builder.svg
    :target: http://badge.fury.io/py/djangocms-form-builder
 

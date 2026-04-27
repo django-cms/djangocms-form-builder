@@ -59,7 +59,7 @@ tests = [
     "djangocms-link",
 ]
 altcha = [
-    "django-altcha",
+    "django-altcha>=1.0.0",
 ]
 
 [project.urls]

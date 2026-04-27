@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.template.context_processors import csrf
 from django.template.loader import render_to_string
 from django.urls import NoReverseMatch, reverse
@@ -27,7 +27,7 @@ class CMSAjaxBase(CMSPluginBase):
         return JsonResponse({})
 
     def ajax_get(self, request, instance, parameter):
-        return JsonResponse({})
+        return HttpResponseNotAllowed(["POST"])
 
 
 class AjaxFormMixin(FormMixin):
@@ -84,7 +84,7 @@ class AjaxFormMixin(FormMixin):
             if hasattr(form, get_success_context):
                 get_success_context = getattr(form, get_success_context)
                 context.update(get_success_context(self.request, self.instance, form))
-            print(context)
+
             errors, result, redir, content = (
                 [],
                 context.get("result", "success"),
@@ -195,32 +195,6 @@ class AjaxFormMixin(FormMixin):
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
-
-    def ajax_get(self, request, instance, parameter=None):
-        if parameter is None:
-            parameter = {}
-        self.request = request
-        self.instance = instance
-        self.parameter = parameter
-        context = self.get_context_data(**parameter)
-        errors, redirect, content = (
-            [],
-            "",
-            render_to_string(self.template_name, context.flatten(), self.request),
-        )
-        return JsonResponse(
-            {
-                "result": (
-                    ("result" if redirect == "result" else "success")
-                    if errors == []
-                    else "error"
-                ),
-                "redirect": redirect,
-                "errors": errors,
-                "field_errors": {},
-                "content": content,
-            }
-        )
 
 
 class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
