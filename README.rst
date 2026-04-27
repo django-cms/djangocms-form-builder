@@ -177,7 +177,7 @@ Install test dependencies:
 
     python3 -m venv .venv
     . .venv/bin/activate
-    python3 -m pip install -e ".[tests]"
+    python3 -m pip install -e ".[altcha,tests]"
 
 To launch the tests, run:
 
