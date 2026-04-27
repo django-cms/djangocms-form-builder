@@ -1,10 +1,11 @@
 import json
 from unittest import mock, skipIf
+from urllib.parse import urlencode
 
 from cms import __version__ as cms_version
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
-from django.http import JsonResponse
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.test import RequestFactory
 from django.urls import reverse
 
@@ -53,7 +54,7 @@ class AjaxViewTestCase(TestFixture, CMSTestCase):
             form_name="test-form",
         )
 
-        plugin, instance = AjaxView.plugin_instance(form_plugin.pk)
+        plugin, instance = AjaxView.plugin_instance(form_plugin.pk, admin_user=True)
 
         self.assertIsNotNone(plugin)
         self.assertIsNotNone(instance)
@@ -65,7 +66,7 @@ class AjaxViewTestCase(TestFixture, CMSTestCase):
         from django.http import Http404
 
         with self.assertRaises(Http404):
-            AjaxView.plugin_instance(99999)
+            AjaxView.plugin_instance(99999, admin_user=True)
 
     @skipIf(cms_version < "4", "Form rendering tests require django CMS 4 or higher")
     def test_dispatch_with_json_accept_header_post(self):
@@ -472,11 +473,64 @@ class RegisterFormViewTestCase(CMSTestCase):
 class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
     """Tests for AJAX GET requests"""
 
+    def _create_simple_form_plugin(self, form_name="simple-ajax-form"):
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name=form_name,
+            captcha_widget="",
+        )
+
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": "simple_field",
+                "field_label": "Simple Field",
+                "field_required": True,
+            },
+        )
+        char_field.initialize_from_form()
+        return form_plugin
+
     def test_ajax_get_returns_form_content(self):
-        """Test that AJAX GET request returns form content"""
-        # Skip this test as GET requests need special handling in the plugin
-        # The ajax_get method requires get_context_data which needs proper setup
-        self.skipTest("AJAX GET requires more complex setup with context data")
+        """Test that AJAX GET request is rejected with HTTP 405"""
+        form_plugin = self._create_simple_form_plugin("simple-ajax-get")
+        self.publish(self.page, self.language)
+
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+        response = self.client.get(url, headers={"x-requested-with": "XMLHttpRequest"})
+
+        self.assertEqual(response.status_code, 405)
+        self.assertIsInstance(response, HttpResponseNotAllowed)
+        self.assertEqual(response["Allow"], "POST")
+
+    def test_ajax_post_simple_form_submission(self):
+        """Test that AJAX POST submits a simple form plugin"""
+        form_plugin = self._create_simple_form_plugin("simple-ajax-post")
+        self.publish(self.page, self.language)
+
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data=urlencode({"simple_field": "posted value"}),
+                content_type="application/x-www-form-urlencoded",
+                headers={"accept": "application/json"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response, JsonResponse)
+
+        json_data = response.json()
+        self.assertIn("result", json_data)
+        self.assertIn(json_data["result"], ["success", "error"])
+        self.assertIn("field_errors", json_data)
 
 
 @skipIf(cms_version < "4", "Form plugin tests require django CMS 4 or higher")
