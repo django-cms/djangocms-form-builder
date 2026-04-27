@@ -53,7 +53,7 @@ reCaptcha = [
     "django-recaptcha",
 ]
 altcha = [
-    "django-altcha",
+    "django-altcha>=1.0.0",
 ]
 
 [project.urls]
