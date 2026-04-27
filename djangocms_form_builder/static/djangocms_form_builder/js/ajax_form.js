@@ -111,24 +111,11 @@ function djangocms_form_builder_form(form) {
           .catch(() => null);
     }
 
-    const post_ajax = (node) => {
-        const tokenPromise = form.csrfToken
-            ? Promise.resolve(form.csrfToken)
-            : fetchCsrfToken(node).then((token) => {
-                form.csrfToken = token;
-                return token;
-            });
-
-        tokenPromise.then((csrfToken) => {
-            const headers = {};
-            if (csrfToken) {
-                headers['X-CSRFToken'] = csrfToken;
-            }
-            return fetch(node.getAttribute('action'),{
-                method: 'POST',
-                headers: headers,
-                body: new URLSearchParams(new FormData(node)),
-            });
+    const submitForm = (node, headers) => {
+        return fetch(node.getAttribute('action'),{
+            method: 'POST',
+            headers: headers,
+            body: new URLSearchParams(new FormData(node)),
         }).then((response) => {
             return response.json();
         }).then((data) => {
@@ -136,6 +123,25 @@ function djangocms_form_builder_form(form) {
         }).catch((json) => {
             console.error(json);
             alert(getErrorMessage());
+        });
+    }
+
+    const post_ajax = (node) => {
+        // If the form already carries an inline csrfmiddlewaretoken (rendered when
+        // CSRF_COOKIE_HTTPONLY is on), submit as-is - the token rides in the body.
+        if (node.querySelector('input[name="csrfmiddlewaretoken"]')) {
+            return submitForm(node, {});
+        }
+        // Otherwise fetch the token from the JSON GET endpoint and send it as a
+        // header. Cache it on the form node so subsequent submits skip the GET.
+        const tokenPromise = form.csrfToken
+            ? Promise.resolve(form.csrfToken)
+            : fetchCsrfToken(node).then((token) => {
+                form.csrfToken = token;
+                return token;
+            });
+        tokenPromise.then((csrfToken) => {
+            return submitForm(node, csrfToken ? { 'X-CSRFToken': csrfToken } : {});
         });
     }
 

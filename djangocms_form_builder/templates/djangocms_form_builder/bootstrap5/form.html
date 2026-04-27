@@ -5,6 +5,7 @@
               class="djangocms-form-builder-ajax-form"
               novalidate action="{% url 'form_builder:ajaxview' instance.id %}"
               method="post">
+            {% if csrf_cookie_httponly %}{% csrf_token %}{% endif %}
             {% include 'djangocms_form_builder/ajax_form.html' with form=form instance=instance tracking=instance.tracking_code RECAPTCHA_PUBLIC_KEY=RECAPTCHA_PUBLIC_KEY %}
             {% if not has_submit_button %}
                 <input type="submit" value="{{ instance.form_submit_message|default:_("Submit") }}"

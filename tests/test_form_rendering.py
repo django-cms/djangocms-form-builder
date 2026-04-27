@@ -6,7 +6,7 @@ from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 from django import forms
 from django.template import Context, Template
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 
 from djangocms_form_builder import cms_plugins, recaptcha
 
@@ -452,12 +452,7 @@ class FormSubmissionRenderingTestCase(TestFixture, CMSTestCase):
         self.assertEqual(json_data["result"], "invalid form")
         self.assertIn("field_errors", json_data)
 
-    def test_form_csrf_token_not_rendered(self):
-        """CSRF token must not be rendered inside the form so the HTML stays cacheable.
-
-        The token is read from the csrftoken cookie by ajax_form.js and sent as the
-        X-CSRFToken header instead.
-        """
+    def _render_form_page(self):
         form_plugin = add_plugin(
             placeholder=self.placeholder,
             plugin_type=cms_plugins.FormPlugin.__name__,
@@ -465,8 +460,6 @@ class FormSubmissionRenderingTestCase(TestFixture, CMSTestCase):
             form_selection="",
             form_name="csrf-test",
         )
-
-        # Add at least one field so form renders
         char_field = add_plugin(
             placeholder=self.placeholder,
             plugin_type=cms_plugins.CharFieldPlugin.__name__,
@@ -478,14 +471,28 @@ class FormSubmissionRenderingTestCase(TestFixture, CMSTestCase):
             },
         )
         char_field.initialize_from_form()
-
         self.publish(self.page, self.language)
 
         with self.login_user_context(self.superuser):
             response = self.client.get(self.request_url)
+        return response
+
+    @override_settings(CSRF_COOKIE_HTTPONLY=False)
+    def test_form_csrf_token_not_rendered_when_cookie_readable(self):
+        """With the default CSRF_COOKIE_HTTPONLY=False, the form HTML is cacheable
+        and the token is fetched at submit time via the JSON GET endpoint."""
+        response = self._render_form_page()
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-
-        # CSRF token must NOT be present in the rendered form (cacheable HTML)
         self.assertNotIn('name="csrfmiddlewaretoken"', content)
+
+    @override_settings(CSRF_COOKIE_HTTPONLY=True)
+    def test_form_csrf_token_rendered_when_cookie_httponly(self):
+        """With CSRF_COOKIE_HTTPONLY=True, JS cannot read the cookie so the token
+        must be embedded inline (and the plugin is non-cacheable)."""
+        response = self._render_form_page()
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('name="csrfmiddlewaretoken"', content)
