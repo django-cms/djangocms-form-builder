@@ -14,6 +14,7 @@ from . import recaptcha, settings
 from .entry_model import FormEntry  # NoQA
 from .fields import AttributesField
 from .helpers import coerce_decimal, mark_safe_lazy
+from .upload_form_fields import MultipleUploadedFilesField, ValidatedFileField
 
 MAX_LENGTH = 256
 
@@ -185,9 +186,12 @@ class FormField(CMSPlugin):
             getattr(form, "Meta", None), "entangled_fields", {}
         ).get("config", ())
         for field in entangled_fields:
-            self.config.setdefault(
-                field, {} if field == "attributes" else form[field].initial or ""
-            )
+            if field == "attributes":
+                default = {}
+            else:
+                fv = form[field].initial
+                default = fv if fv is not None else ""
+            self.config.setdefault(field, default)
         return self
 
     def get_short_description(self):
@@ -463,6 +467,40 @@ class BooleanField(FormField):
             widget=SwitchInput()
             if self.config.get("field_as_switch", False)
             else forms.CheckboxInput(),
+        )
+
+
+class FileField(FormField):
+    class Meta:
+        proxy = True
+        verbose_name = _("File upload")
+
+    def get_form_field(self):
+        raw = self.config.get("field_file_validation_presets")
+        preset_keys = list(raw) if isinstance(raw, (list, tuple)) else []
+        return self.field_name, ValidatedFileField(
+            label=self.config.get("field_label", ""),
+            required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
+            preset_keys=preset_keys,
+            field_name=self.field_name,
+        )
+
+
+class MultipleFileField(FormField):
+    class Meta:
+        proxy = True
+        verbose_name = _("Multiple file upload")
+
+    def get_form_field(self):
+        raw = self.config.get("field_file_validation_presets")
+        preset_keys = list(raw) if isinstance(raw, (list, tuple)) else []
+        return self.field_name, MultipleUploadedFilesField(
+            label=self.config.get("field_label", ""),
+            required=self.config.get("field_required", False),
+            help_text=self.config.get("field_help_text", ""),
+            preset_keys=preset_keys,
+            field_name=self.field_name,
         )
 
 

@@ -52,7 +52,7 @@ For a manual install:
 
 - run ``pip install djangocms-form-builder``, **or**
 
--  run ``pip install git+https://github.com/fsbraun/djangocms-form-builder@master#egg=djangocms-form-builder``
+-  run ``pip install git+https://github.com/django-cms/djangocms-form-builder@main#egg=djangocms-form-builder``
 
 -  add ``djangocms_form_builder`` to your ``INSTALLED_APPS``. (If you are using both djangocms-frontend and djangocms-form-builder, add it **after** djangocms-frontend
 
@@ -168,6 +168,24 @@ Upon form submission a ``save()`` method of the form (if it has one). After exec
 
 Actions are not available for Django forms. Any actions to be performed upon submission should reside in its ``save()`` method.
 
+Tests
+=====
+
+Install test dependencies:
+
+.. code-block:: bash
+
+    python3 -m venv .venv
+    . .venv/bin/activate
+    python3 -m pip install -e ".[altcha,tests]"
+    python3 -m pip install djangocms_versioning
+
+To launch the tests, run:
+
+.. code-block:: bash
+
+    . .venv/bin/activate
+    python3 run_tests.py
 
 Configuring Altcha CAPTCHA
 ==========================

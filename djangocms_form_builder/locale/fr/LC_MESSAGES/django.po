@@ -667,3 +667,39 @@ msgstr "referer"
 #: views.py:25
 msgid "Only unique slugs accepted for form views"
 msgstr "Seuls les slugs uniques sont acceptés pour les vues de formulaire."
+
+#: file_validation_validators.py:35
+#, python-format
+msgid "%(size)s MB"
+msgstr "%(size)s Mo"
+
+#: file_validation_validators.py:39
+#, python-format
+msgid "%(size)s KB"
+msgstr "%(size)s Ko"
+
+#: file_validation_validators.py:40
+#, python-format
+msgid "%(n)s bytes"
+msgstr "%(n)s octets"
+
+#: file_validation_validators.py:56
+#, python-format
+msgid "File \"%(name)s\" is too large (maximum %(limit)s)."
+msgstr "Le fichier « %(name)s » est trop volumineux (maximum %(limit)s)."
+
+#: file_validation_validators.py:75
+#, python-format
+msgid ""
+"File \"%(name)s\" has a disallowed extension. Allowed formats: %(allowed)s."
+msgstr ""
+"Le fichier « %(name)s » a une extension non autorisée. Formats autorisés : "
+"%(allowed)s."
+
+#: file_validation_validators.py:117
+#, python-format
+msgid ""
+"File \"%(name)s\" has a disallowed type (%(mime)s). Allowed types: %(allowed)s."
+msgstr ""
+"Le fichier « %(name)s » a un type non autorisé (%(mime)s). Types autorisés : "
+"%(allowed)s."

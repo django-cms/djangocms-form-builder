@@ -52,12 +52,19 @@ dependencies = [
 reCaptcha = [
     "django-recaptcha",
 ]
+tests = [
+    "easy-thumbnails",
+    "django-filer",
+    "djangocms-text",
+    "djangocms-link",
+]
 altcha = [
     "django-altcha>=1.0.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/fsbraun/djangocms-form-builder"
+Homepage = "https://github.com/django-cms/djangocms-form-builder"
+
 
 [tool.hatch.version]
 path = "djangocms_form_builder/__init__.py"

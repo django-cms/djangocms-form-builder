@@ -219,6 +219,22 @@ class ChoicePlugin(mixin_factory("ChoiceField"), FormElementPlugin):
 
 
 @plugin_pool.register_plugin
+class FileFieldPlugin(mixin_factory("FileField"), FormElementPlugin):
+    name = _("File upload")
+    model = models.FileField
+    form = forms.FileFieldForm
+    settings_fields = ("field_file_validation_presets",)
+
+
+@plugin_pool.register_plugin
+class MultipleFileFieldPlugin(mixin_factory("MultipleFileField"), FormElementPlugin):
+    name = _("Multiple file upload")
+    model = models.MultipleFileField
+    form = forms.MultipleFileFieldForm
+    settings_fields = ("field_file_validation_presets",)
+
+
+@plugin_pool.register_plugin
 class BooleanFieldPlugin(mixin_factory("BooleanField"), FormElementPlugin):
     name = _("Boolean")
     model = models.BooleanField

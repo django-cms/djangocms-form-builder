@@ -61,13 +61,23 @@ function djangocms_form_builder_form(form) {
             while (invalid !== undefined && invalid.length > 0) {
                 invalid[0].remove();
             }
+            // Bootstrap 5 only shows .invalid-feedback for :invalid or .is-invalid. Server-side
+            // errors (e.g. wrong file type) do not make the input :invalid once a file is chosen.
+            for (let el of node.querySelectorAll('.is-invalid')) {
+                el.classList.remove('is-invalid');
+            }
             for (const [key, value] of Object.entries(data.field_errors)) {
                 for (const err of value) {
                     if (key.substring(0,7) !== "__all__") {
                         const msg = document.createElement('template');
                         msg.innerHTML = "<div class='invalid-feedback'><strong></strong></div>";
                         msg.content.querySelector('strong').innerText = err;
-                        document.getElementById(key).after(msg.content);
+                        const field = document.getElementById(key);
+                        if (field) {
+                            field.classList.add('is-invalid');
+                            field.classList.remove('is-valid');
+                            field.after(msg.content);
+                        }
                     } else {
                         const msg = document.createElement('template');
                         msg.innerHTML = "<li></li>";
