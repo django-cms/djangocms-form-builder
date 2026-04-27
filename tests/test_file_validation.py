@@ -6,6 +6,7 @@ from django.test import SimpleTestCase, override_settings
 
 from djangocms_form_builder.file_validation import (
     FileValidationError,
+    allowed_extensions_for_accept_attribute,
     validate_form_builder_file,
 )
 from djangocms_form_builder.file_validation_validators import (
@@ -31,6 +32,14 @@ def filer_style_stub(file_name, file, owner, mime_type):
 
 def filer_style_reject(file_name, file, owner, mime_type):
     raise ValidationError("filer says no")
+
+
+def preset_read_all(uploaded_file, *, user, request, field_name):
+    uploaded_file.read()
+
+
+def preset_record_position(uploaded_file, *, user, request, field_name):
+    preset_record_position.last_position = uploaded_file.tell()
 
 
 class DummyClassValidator:
@@ -98,6 +107,26 @@ class ValidateFormBuilderFileTests(SimpleTestCase):
 
     @override_settings(
         DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
+            "read": {"label": "Read bytes", "validate": f"{__name__}.preset_read_all"},
+            "record": {
+                "label": "Record stream position",
+                "validate": f"{__name__}.preset_record_position",
+            },
+        }
+    )
+    def test_runner_rewinds_file_between_presets(self):
+        f = SimpleUploadedFile("a.txt", b"hello", content_type="text/plain")
+        validate_form_builder_file(
+            f,
+            ["read", "record"],
+            user=None,
+            request=None,
+            field_name="doc",
+        )
+        self.assertEqual(preset_record_position.last_position, 0)
+
+    @override_settings(
+        DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
             "small": {
                 "label": "Small files only",
                 "validate": (
@@ -126,6 +155,28 @@ class ValidateFormBuilderFileTests(SimpleTestCase):
             request=None,
             field_name="doc",
         )
+
+    @override_settings(
+        DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
+            "small": {
+                "label": "Small files only",
+                "validate": (
+                    "djangocms_form_builder.file_validation_validators."
+                    "MaxSizePresetValidator"
+                ),
+            },
+        }
+    )
+    def test_class_preset_missing_validate_options_raises_type_error(self):
+        f = SimpleUploadedFile("a.txt", b"hello", content_type="text/plain")
+        with self.assertRaises(TypeError):
+            validate_form_builder_file(
+                f,
+                ["small"],
+                user=None,
+                request=None,
+                field_name="doc",
+            )
 
     @override_settings(
         DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
@@ -177,6 +228,28 @@ class ValidateFormBuilderFileTests(SimpleTestCase):
         )
         _name, _file, _owner, mime = filer_style_stub.last_call
         self.assertEqual(mime, "application/pdf")
+
+    @override_settings(
+        DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
+            "filer": {
+                "label": "Filer-style",
+                "validate": f"{__name__}.filer_style_stub",
+                "filer_validator": True,
+                "validate_options": {"mime_source": "content_type"},
+            },
+        }
+    )
+    def test_filer_validator_mime_source_content_type_fallback(self):
+        f = SimpleUploadedFile("doc.pdf", b"%PDF-1.4", content_type="")
+        validate_form_builder_file(
+            f,
+            ["filer"],
+            user=None,
+            request=None,
+            field_name="doc",
+        )
+        _name, _file, _owner, mime = filer_style_stub.last_call
+        self.assertEqual(mime, "application/octet-stream")
 
     @override_settings(
         DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
@@ -261,3 +334,50 @@ class BuiltinValidatorFunctionTests(SimpleTestCase):
         bad = SimpleUploadedFile("a.txt", b"x", content_type="text/plain")
         with self.assertRaises(FileValidationError):
             enforce_mime_from_filename(bad, ["application/pdf"], field_name="a")
+
+
+class AcceptAttributeTests(SimpleTestCase):
+    @override_settings(
+        DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
+            "images": {
+                "label": "Images",
+                "validate": (
+                    "djangocms_form_builder.file_validation_validators."
+                    "ExtensionPresetValidator"
+                ),
+                "validate_options": {"allowed_extensions": [".png"]},
+            },
+            "documents": {
+                "label": "Documents",
+                "validate": (
+                    "djangocms_form_builder.file_validation_validators."
+                    "ExtensionPresetValidator"
+                ),
+                "validate_options": {"allowed_extensions": [".pdf"]},
+            },
+        }
+    )
+    def test_accept_attribute_returns_none_for_empty_intersection(self):
+        self.assertIsNone(
+            allowed_extensions_for_accept_attribute(["images", "documents"])
+        )
+
+    @override_settings(
+        DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
+            "docs": {
+                "label": "Docs",
+                "validate": (
+                    "djangocms_form_builder.file_validation_validators."
+                    "ExtensionPresetValidator"
+                ),
+                "validate_options": {
+                    "allowed_extensions": [".PDF", "pdf", ".pdf", ".PnG"]
+                },
+            },
+        }
+    )
+    def test_accept_attribute_normalizes_and_deduplicates_extensions(self):
+        self.assertEqual(
+            allowed_extensions_for_accept_attribute(["docs"]),
+            ".pdf,.png",
+        )
