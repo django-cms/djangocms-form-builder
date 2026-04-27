@@ -270,6 +270,7 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
     render_template = f"djangocms_form_builder/{settings.framework}/form.html"
     change_form_template = "djangocms_frontend/admin/base.html"
     allow_children = True
+    cache = False
 
     fieldsets = [
         (
