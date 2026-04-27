@@ -3,7 +3,9 @@ from urllib.parse import urlencode
 
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
+from django.conf import settings as django_settings
 from django.http import Http404, HttpResponseNotAllowed, JsonResponse
+from django.middleware.csrf import get_token
 from django.template.context_processors import csrf
 from django.template.loader import render_to_string
 from django.urls import NoReverseMatch, reverse
@@ -27,7 +29,13 @@ class CMSAjaxBase(CMSPluginBase):
         return JsonResponse({})
 
     def ajax_get(self, request, instance, parameter):
-        return HttpResponseNotAllowed(["POST"])
+        # When CSRF_COOKIE_HTTPONLY is set, the site has explicitly chosen to keep
+        # the token away from JavaScript. Don't undermine that by returning it
+        # here - the form template renders {% csrf_token %} inline instead and
+        # the plugin is not cached (see FormPlugin.cache).
+        if django_settings.CSRF_COOKIE_HTTPONLY:
+            return HttpResponseNotAllowed(["POST"])
+        return JsonResponse({"csrf_token": get_token(request)})
 
 
 class AjaxFormMixin(FormMixin):
@@ -230,6 +238,7 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
                 "form": form,
                 "uid": f"{instance.id}{getattr(form, 'slug', '')}-{context['form_counter']}",
                 "has_submit_button": has_submit_button(instance.child_plugin_instances),
+                "csrf_cookie_httponly": django_settings.CSRF_COOKIE_HTTPONLY,
             }
         )
         return context
@@ -244,6 +253,11 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
     render_template = f"djangocms_form_builder/{settings.framework}/form.html"
     change_form_template = "djangocms_frontend/admin/base.html"
     allow_children = True
+    # Form HTML is cache-safe only when the CSRF token can be fetched at submit
+    # time via the JSON GET endpoint. When CSRF_COOKIE_HTTPONLY is on, the token
+    # must be embedded inline by {% csrf_token %}, so the rendered HTML carries
+    # per-request data and cannot be cached.
+    cache = not django_settings.CSRF_COOKIE_HTTPONLY
 
     fieldsets = [
         (
