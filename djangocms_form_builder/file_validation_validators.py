@@ -175,7 +175,8 @@ class BaseFilePresetValidator:
     ) -> None:
         if self.helper is None:
             raise NotImplementedError
-        self.helper(uploaded_file, self._option_value, field_name=field_name)
+        # Read helper from the class to avoid function binding on the instance.
+        type(self).helper(uploaded_file, self._option_value, field_name=field_name)
 
 
 class MaxSizePresetValidator(BaseFilePresetValidator):
