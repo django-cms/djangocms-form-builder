@@ -1,10 +1,4 @@
-"""
-Built-in file checks for form builder presets.
-
-Use the **functions** inside your own preset callables, or register the **classes**
-in ``DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS`` together with
-``validate_options`` (see :func:`djangocms_form_builder.file_validation.validate_form_builder_file`).
-"""
+"""Built-in file checks for form builder preset functions."""
 
 from __future__ import annotations
 
@@ -51,6 +45,8 @@ def enforce_max_size(
     max_bytes: int,
     *,
     field_name: str = "",
+    user=None,
+    request=None,
 ) -> None:
     """Reject if ``uploaded_file.size`` exceeds ``max_bytes``."""
     size = getattr(uploaded_file, "size", None)
@@ -69,6 +65,8 @@ def enforce_extension(
     allowed_extensions: typing.Iterable[str],
     *,
     field_name: str = "",
+    user=None,
+    request=None,
 ) -> None:
     """Reject if the filename suffix is not in ``allowed_extensions`` (e.g. ``".pdf"`` or ``"pdf"``)."""
     allowed = frozenset(_normalize_extension(x) for x in allowed_extensions if x)
@@ -100,6 +98,8 @@ def enforce_mime_from_filename(
     allowed_patterns: typing.Iterable[str],
     *,
     field_name: str = "",
+    user=None,
+    request=None,
 ) -> None:
     """
     Guess MIME type from the filename and reject if it does not match any pattern.
@@ -126,81 +126,3 @@ def enforce_mime_from_filename(
             )
             % {"name": name, "mime": mime, "allowed": allowed_list}
         )
-
-
-class BaseFilePresetValidator:
-    """
-    Subclass and implement :meth:`validate`, or use the concrete validators below.
-
-    Instances are callable with the same signature as a preset function.
-    """
-
-    helper: typing.Callable[..., None] | None = None
-    option_name: str | None = None
-
-    def __init__(self, **options):
-        if not self.option_name:
-            raise TypeError(
-                f"{self.__class__.__name__} must define option_name to be instantiated."
-            )
-        try:
-            self._option_value = options[self.option_name]
-        except KeyError as exc:
-            raise TypeError(
-                f"{self.__class__.__name__} requires option {self.option_name!r}"
-            ) from exc
-
-    def __call__(
-        self,
-        uploaded_file: UploadedFile,
-        *,
-        user,
-        request,
-        field_name: str,
-    ) -> None:
-        self.validate(
-            uploaded_file,
-            user=user,
-            request=request,
-            field_name=field_name,
-        )
-
-    def validate(
-        self,
-        uploaded_file: UploadedFile,
-        *,
-        user,
-        request,
-        field_name: str,
-    ) -> None:
-        if self.helper is None:
-            raise NotImplementedError
-        # Read helper from the class to avoid function binding on the instance.
-        type(self).helper(uploaded_file, self._option_value, field_name=field_name)
-
-
-class MaxSizePresetValidator(BaseFilePresetValidator):
-    """Preset class: maximum file size in bytes (``validate_options``: ``{"max_bytes": int}``)."""
-
-    helper = enforce_max_size
-    option_name = "max_bytes"
-
-
-class ExtensionPresetValidator(BaseFilePresetValidator):
-    """
-    Preset class: allowed filename extensions
-    (``validate_options``: ``{"allowed_extensions": [".pdf", "png", ...]}``).
-    """
-
-    helper = enforce_extension
-    option_name = "allowed_extensions"
-
-
-class MimeFilenamePresetValidator(BaseFilePresetValidator):
-    """
-    Preset class: MIME guessed from filename
-    (``validate_options``: ``{"allowed_patterns": ["application/pdf", "image/", ...]}``).
-    """
-
-    helper = enforce_mime_from_filename
-    option_name = "allowed_patterns"

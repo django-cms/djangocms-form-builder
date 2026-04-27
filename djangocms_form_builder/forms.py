@@ -15,8 +15,12 @@ from . import (
 )
 from .entry_model import FormEntry
 from .fields import AttributesFormField, ButtonGroup, ChoicesFormField
-from .file_validation import validation_preset_choice_tuples
+from .file_validation import (
+    validate_form_builder_file,
+    validation_preset_choice_tuples,
+)
 from .helpers import get_option, mark_safe_lazy
+from .upload_form_fields import MultipleUploadedFilesField, ValidatedFileField
 
 
 class Noop:
@@ -48,8 +52,36 @@ class SimpleFrontendForm(forms.Form):
                 )
 
         cleaned_data = super().clean()
+        self._run_upload_validation(cleaned_data)
         cleaned_data.pop("captcha_field", None)
         return cleaned_data
+
+    def _run_upload_validation(self, cleaned_data):
+        user = getattr(self._request, "user", None)
+        for field_name, form_field in self.fields.items():
+            if not isinstance(
+                form_field, (ValidatedFileField, MultipleUploadedFilesField)
+            ):
+                continue
+            preset_keys = getattr(form_field, "_preset_keys", [])
+            if not preset_keys:
+                continue
+            value = cleaned_data.get(field_name)
+            if isinstance(form_field, MultipleUploadedFilesField):
+                files = value or []
+            else:
+                files = [value] if value else []
+            for uploaded_file in files:
+                try:
+                    validate_form_builder_file(
+                        uploaded_file,
+                        preset_keys,
+                        user=user,
+                        request=self._request,
+                        field_name=field_name,
+                    )
+                except ValidationError as exc:
+                    self.add_error(field_name, exc)
 
     def save(self):
         results = {}

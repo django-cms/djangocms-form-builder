@@ -3,7 +3,7 @@ from decimal import Decimal
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 from django import forms
-from django.test import RequestFactory, TestCase
+from django.test import TestCase
 
 from djangocms_form_builder.models import (
     BooleanField,
@@ -595,8 +595,7 @@ class BooleanFieldModelTests(TestFixture, CMSTestCase):
                 "field_file_validation_presets": [],
             },
         )
-        request = RequestFactory().get("/")
-        name, form_field = field.get_form_field(request=request)
+        name, form_field = field.get_form_field()
         self.assertEqual(name, "attachment")
         self.assertIsInstance(form_field, ValidatedFileField)
 
@@ -611,8 +610,7 @@ class BooleanFieldModelTests(TestFixture, CMSTestCase):
                 "field_file_validation_presets": [],
             },
         )
-        request = RequestFactory().get("/")
-        name, form_field = field.get_form_field(request=request)
+        name, form_field = field.get_form_field()
         self.assertEqual(name, "attachments")
         self.assertIsInstance(form_field, MultipleUploadedFilesField)
 

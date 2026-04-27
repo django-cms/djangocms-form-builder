@@ -328,7 +328,7 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
             """Recursively traverse children to identify form fields (by them having a method called
             "get_form_field" """
             if hasattr(instance, "get_form_field"):
-                name, field = instance.get_form_field(request=self.request)
+                name, field = instance.get_form_field()
                 fields[name] = field
             if (
                 instance.child_plugin_instances is None

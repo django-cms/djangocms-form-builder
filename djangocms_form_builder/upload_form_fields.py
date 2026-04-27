@@ -1,20 +1,10 @@
 """Form fields for file and multi-file form builder plugins (validation hooks)."""
 
-import typing
-
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from .file_validation import (
-    allowed_extensions_for_accept_attribute,
-    validate_form_builder_file,
-)
-
-if typing.TYPE_CHECKING:
-    from django.http import HttpRequest
-
-    User = typing.Any
+from .file_validation import allowed_extensions_for_accept_attribute
 
 
 class MultiFileInput(forms.FileInput):
@@ -30,41 +20,25 @@ class MultiFileInput(forms.FileInput):
 
 
 class ValidatedFileField(forms.FileField):
-    """FileField that runs validate_form_builder_file after Django's file checks."""
+    """FileField that stores validation preset metadata for form-level validation."""
 
     def __init__(
         self,
         *,
         preset_keys: list,
-        user: "User",
-        request: typing.Optional["HttpRequest"],
         field_name: str,
         **kwargs,
     ):
         self._preset_keys = preset_keys
-        self._user = user
-        self._request = request
         self._field_name = field_name
         super().__init__(**kwargs)
         accept = allowed_extensions_for_accept_attribute(self._preset_keys)
         if accept:
             self.widget.attrs["accept"] = accept
 
-    def clean(self, data, initial=None):
-        f = super().clean(data, initial)
-        if f:
-            validate_form_builder_file(
-                f,
-                self._preset_keys,
-                user=self._user,
-                request=self._request,
-                field_name=self._field_name,
-            )
-        return f
-
 
 class MultipleUploadedFilesField(forms.Field):
-    """Multiple file input with preset validation for each uploaded file."""
+    """Multiple file input with preset metadata for form-level validation."""
 
     needs_multipart_form = True
 
@@ -76,14 +50,10 @@ class MultipleUploadedFilesField(forms.Field):
         self,
         *,
         preset_keys: list,
-        user: "User",
-        request: typing.Optional["HttpRequest"],
         field_name: str,
         **kwargs,
     ):
         self._preset_keys = preset_keys
-        self._user = user
-        self._request = request
         self._field_name = field_name
         kwargs.setdefault("widget", MultiFileInput())
         super().__init__(**kwargs)
@@ -100,13 +70,4 @@ class MultipleUploadedFilesField(forms.Field):
                 )
             return []
         files = value if isinstance(value, (list, tuple)) else [value]
-        for f in files:
-            validate_form_builder_file(
-                f,
-                self._preset_keys,
-                user=self._user,
-                request=self._request,
-                field_name=self._field_name,
-            )
-            f.seek(0)
         return list(files)

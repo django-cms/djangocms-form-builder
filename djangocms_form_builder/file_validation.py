@@ -1,24 +1,17 @@
 """
-File upload validation driven by DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS in Django settings.
+File upload validation driven by DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS.
 
 Each preset maps a key to a dict with at least ``label`` and ``validate`` (dotted path).
+Optional ``validate_options`` is passed as keyword arguments to the function.
 
-* If ``validate`` resolves to a **function**, it is called as::
+``validate`` must resolve to a function called as::
 
-      fn(uploaded_file, *, user, request, field_name)
+    fn(uploaded_file, *, user, request, field_name)
 
-* If ``filer_validator`` is ``True``, ``validate`` must be a **function** using the same
-  signature as django-filer upload validators::
+If ``filer_validator`` is ``True``, the imported function is wrapped from the
+django-filer signature::
 
-      fn(file_name, file, owner, mime_type)
-
-  (no django-filer dependency in this package). ``validate_options`` is not used for
-  class construction; optional ``mime_source`` (see :ref:`filer-style-presets`).
-
-* If it resolves to a **class** whose instances are preset validators (e.g.
-  :class:`djangocms_form_builder.file_validation_validators.MaxSizePresetValidator`),
-  the class is instantiated with ``validate_options`` from the same preset dict, then
-  the instance is called like a function.
+    fn(file_name, file, owner, mime_type)
 
 Callables should raise :exc:`FileValidationError` on failure. The runner rewinds the
 file with ``seek(0)`` after each preset.
@@ -58,8 +51,8 @@ def validation_preset_choice_tuples():
 
 def allowed_extensions_for_accept_attribute(preset_keys: list) -> str | None:
     """
-    Build a comma-separated value for the HTML ``accept`` attribute from presets
-    that use :class:`~djangocms_form_builder.file_validation_validators.ExtensionPresetValidator`.
+    Build a comma-separated value for the HTML ``accept`` attribute from preset
+    metadata ``accept_extensions``.
 
     When several such presets apply, allowed extensions are intersected (same as
     running each check server-side). See
@@ -67,10 +60,7 @@ def allowed_extensions_for_accept_attribute(preset_keys: list) -> str | None:
     """
     if not preset_keys:
         return None
-    from .file_validation_validators import (
-        ExtensionPresetValidator,
-        _normalize_extension,
-    )
+    from .file_validation_validators import _normalize_extension
 
     # ``accept`` is a browser-side hint only. We intentionally derive it from
     # extension-based presets and keep server-side validation authoritative for
@@ -81,17 +71,10 @@ def allowed_extensions_for_accept_attribute(preset_keys: list) -> str | None:
         entry = registry.get(key)
         if not entry:
             continue
-        target = entry.get("validate")
-        opts = entry.get("validate_options") or {}
-        if isinstance(target, str):
-            target = import_string(target)
-        if not isinstance(target, type) or not issubclass(
-            target, ExtensionPresetValidator
-        ):
+        exts_raw = entry.get("accept_extensions")
+        if not isinstance(exts_raw, (list, tuple)):
             continue
-        exts = frozenset(
-            _normalize_extension(x) for x in (opts.get("allowed_extensions") or ()) if x
-        )
+        exts = frozenset(_normalize_extension(x) for x in exts_raw if x)
         if not exts:
             continue
         intersection = exts if intersection is None else (intersection & exts)
@@ -180,20 +163,19 @@ def validate_form_builder_file(
             ) from exc
         target = import_string(entry["validate"])
         opts = entry.get("validate_options") or {}
+        if isinstance(target, type):
+            raise ImproperlyConfigured(
+                'DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS: "validate" must resolve '
+                "to a function, not a class."
+            )
+        call_kwargs = {
+            "user": user,
+            "request": request,
+            "field_name": field_name,
+        }
         if entry.get("filer_validator"):
-            if isinstance(target, type):
-                raise ImproperlyConfigured(
-                    'DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS: when "filer_validator" '
-                    'is True, "validate" must be a function (django-filer-style signature), '
-                    "not a class."
-                )
             target = wrap_filer_style_validator(target, opts)
-        elif isinstance(target, type):
-            target = target(**opts)
-        target(
-            uploaded_file,
-            user=user,
-            request=request,
-            field_name=field_name,
-        )
+        else:
+            call_kwargs = {**opts, **call_kwargs}
+        target(uploaded_file, **call_kwargs)
         uploaded_file.seek(0)

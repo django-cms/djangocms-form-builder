@@ -128,16 +128,15 @@ class ValidateFormBuilderFileTests(SimpleTestCase):
     @override_settings(
         DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
             "small": {
-                "label": "Small files only",
+                "label": "Small files",
                 "validate": (
-                    "djangocms_form_builder.file_validation_validators."
-                    "MaxSizePresetValidator"
+                    "djangocms_form_builder.file_validation_validators.enforce_max_size"
                 ),
                 "validate_options": {"max_bytes": 5},
             },
         }
     )
-    def test_class_preset_with_validate_options(self):
+    def test_helper_function_with_validate_options(self):
         f = SimpleUploadedFile("a.txt", b"hello world", content_type="text/plain")
         with self.assertRaises(FileValidationError):
             validate_form_builder_file(
@@ -158,21 +157,18 @@ class ValidateFormBuilderFileTests(SimpleTestCase):
 
     @override_settings(
         DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
-            "small": {
-                "label": "Small files only",
-                "validate": (
-                    "djangocms_form_builder.file_validation_validators."
-                    "MaxSizePresetValidator"
-                ),
+            "bad": {
+                "label": "Class validator",
+                "validate": f"{__name__}.DummyClassValidator",
             },
         }
     )
-    def test_class_preset_missing_validate_options_raises_type_error(self):
+    def test_class_preset_raises_improperly_configured(self):
         f = SimpleUploadedFile("a.txt", b"hello", content_type="text/plain")
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ImproperlyConfigured):
             validate_form_builder_file(
                 f,
-                ["small"],
+                ["bad"],
                 user=None,
                 request=None,
                 field_name="doc",
@@ -273,26 +269,6 @@ class ValidateFormBuilderFileTests(SimpleTestCase):
 
     @override_settings(
         DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
-            "bad": {
-                "label": "Class with filer flag",
-                "validate": f"{__name__}.DummyClassValidator",
-                "filer_validator": True,
-            },
-        }
-    )
-    def test_filer_validator_with_class_raises_improperly_configured(self):
-        f = SimpleUploadedFile("a.txt", b"x", content_type="text/plain")
-        with self.assertRaises(ImproperlyConfigured):
-            validate_form_builder_file(
-                f,
-                ["bad"],
-                user=None,
-                request=None,
-                field_name="doc",
-            )
-
-    @override_settings(
-        DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
             "boom": {
                 "label": "Raises generic Exception",
                 "validate": f"{__name__}.filer_style_raises_runtime",
@@ -341,19 +317,13 @@ class AcceptAttributeTests(SimpleTestCase):
         DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
             "images": {
                 "label": "Images",
-                "validate": (
-                    "djangocms_form_builder.file_validation_validators."
-                    "ExtensionPresetValidator"
-                ),
-                "validate_options": {"allowed_extensions": [".png"]},
+                "validate": f"{__name__}.preset_accept",
+                "accept_extensions": [".png"],
             },
             "documents": {
                 "label": "Documents",
-                "validate": (
-                    "djangocms_form_builder.file_validation_validators."
-                    "ExtensionPresetValidator"
-                ),
-                "validate_options": {"allowed_extensions": [".pdf"]},
+                "validate": f"{__name__}.preset_accept",
+                "accept_extensions": [".pdf"],
             },
         }
     )
@@ -366,13 +336,8 @@ class AcceptAttributeTests(SimpleTestCase):
         DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
             "docs": {
                 "label": "Docs",
-                "validate": (
-                    "djangocms_form_builder.file_validation_validators."
-                    "ExtensionPresetValidator"
-                ),
-                "validate_options": {
-                    "allowed_extensions": [".PDF", "pdf", ".pdf", ".PnG"]
-                },
+                "validate": f"{__name__}.preset_accept",
+                "accept_extensions": [".PDF", "pdf", ".pdf", ".PnG"],
             },
         }
     )
