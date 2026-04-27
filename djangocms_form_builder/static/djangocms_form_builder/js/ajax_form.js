@@ -102,12 +102,34 @@ function djangocms_form_builder_form(form) {
         }
     }
 
+    const fetchCsrfToken = (node) => {
+        return fetch(node.getAttribute('action'), {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+        }).then((response) => response.json())
+          .then((data) => (data && data.csrf_token) || null)
+          .catch(() => null);
+    }
+
     const post_ajax = (node) => {
-        fetch(node.getAttribute('action'),{
-            method: 'POST',
-            body: new URLSearchParams(new FormData(node)),
+        const tokenPromise = form.csrfToken
+            ? Promise.resolve(form.csrfToken)
+            : fetchCsrfToken(node).then((token) => {
+                form.csrfToken = token;
+                return token;
+            });
+
+        tokenPromise.then((csrfToken) => {
+            const headers = {};
+            if (csrfToken) {
+                headers['X-CSRFToken'] = csrfToken;
             }
-        ).then((response) => {
+            return fetch(node.getAttribute('action'),{
+                method: 'POST',
+                headers: headers,
+                body: new URLSearchParams(new FormData(node)),
+            });
+        }).then((response) => {
             return response.json();
         }).then((data) => {
             feedback(node, data);

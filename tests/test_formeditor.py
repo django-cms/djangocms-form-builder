@@ -44,7 +44,9 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
             response = self.client.get(self.request_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'action="/@form-builder/1"')
-        self.assertContains(response, '<input type="hidden" name="csrfmiddlewaretoken"')
+        self.assertNotContains(
+            response, '<input type="hidden" name="csrfmiddlewaretoken"'
+        )
         for item, cls in cms_plugins.__dict__.items():
             if (
                 inspect.isclass(cls)

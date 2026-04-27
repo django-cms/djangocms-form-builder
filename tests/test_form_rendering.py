@@ -452,8 +452,12 @@ class FormSubmissionRenderingTestCase(TestFixture, CMSTestCase):
         self.assertEqual(json_data["result"], "invalid form")
         self.assertIn("field_errors", json_data)
 
-    def test_form_csrf_token_rendered(self):
-        """Test that CSRF token is present in rendered form"""
+    def test_form_csrf_token_not_rendered(self):
+        """CSRF token must not be rendered inside the form so the HTML stays cacheable.
+
+        The token is read from the csrftoken cookie by ajax_form.js and sent as the
+        X-CSRFToken header instead.
+        """
         form_plugin = add_plugin(
             placeholder=self.placeholder,
             plugin_type=cms_plugins.FormPlugin.__name__,
@@ -483,6 +487,5 @@ class FormSubmissionRenderingTestCase(TestFixture, CMSTestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
 
-        # CSRF token must be present
-        self.assertIn('name="csrfmiddlewaretoken"', content)
-        self.assertIn('type="hidden"', content)
+        # CSRF token must NOT be present in the rendered form (cacheable HTML)
+        self.assertNotIn('name="csrfmiddlewaretoken"', content)

@@ -3,7 +3,8 @@ from urllib.parse import urlencode
 
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
-from django.http import Http404, HttpResponseNotAllowed, JsonResponse
+from django.http import Http404, JsonResponse
+from django.middleware.csrf import get_token
 from django.template.context_processors import csrf
 from django.template.loader import render_to_string
 from django.urls import NoReverseMatch, reverse
@@ -27,7 +28,7 @@ class CMSAjaxBase(CMSPluginBase):
         return JsonResponse({})
 
     def ajax_get(self, request, instance, parameter):
-        return HttpResponseNotAllowed(["POST"])
+        return JsonResponse({"csrf_token": get_token(request)})
 
 
 class AjaxFormMixin(FormMixin):
@@ -244,7 +245,6 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
     render_template = f"djangocms_form_builder/{settings.framework}/form.html"
     change_form_template = "djangocms_frontend/admin/base.html"
     allow_children = True
-    cache = False
 
     fieldsets = [
         (

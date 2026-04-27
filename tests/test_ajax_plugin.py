@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 from cms import __version__ as cms_version
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
-from django.http import HttpResponseNotAllowed, JsonResponse
+from django.http import JsonResponse
 from django.test import RequestFactory
 from django.urls import reverse
 
@@ -497,17 +497,20 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         char_field.initialize_from_form()
         return form_plugin
 
-    def test_ajax_get_returns_form_content(self):
-        """Test that AJAX GET request is rejected with HTTP 405"""
+    def test_ajax_get_returns_csrf_token(self):
+        """AJAX GET returns a fresh CSRF token in the JSON body so ajax_form.js
+        can use it as the X-CSRFToken header on the subsequent POST."""
         form_plugin = self._create_simple_form_plugin("simple-ajax-get")
         self.publish(self.page, self.language)
 
         url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
-        response = self.client.get(url, headers={"x-requested-with": "XMLHttpRequest"})
+        response = self.client.get(url, headers={"accept": "application/json"})
 
-        self.assertEqual(response.status_code, 405)
-        self.assertIsInstance(response, HttpResponseNotAllowed)
-        self.assertEqual(response["Allow"], "POST")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response, JsonResponse)
+        payload = response.json()
+        self.assertIn("csrf_token", payload)
+        self.assertTrue(payload["csrf_token"])
 
     def test_ajax_post_simple_form_submission(self):
         """Test that AJAX POST submits a simple form plugin"""

@@ -41,6 +41,10 @@ class AjaxView(View):
     this view allows django CMS plugins to receive ajax requests if they implement the `ajax_get` and
     `ajax_post` methods. The form plugin implements the `ajax_post` method to handle form submissions.
 
+    GET requests return a freshly-minted CSRF token in the JSON body, which
+    ``ajax_form.js`` uses for the ``X-CSRFToken`` header on the subsequent POST.
+    This works regardless of ``CSRF_COOKIE_HTTPONLY`` or ``CSRF_USE_SESSIONS``.
+
     Methods
     -------
 
