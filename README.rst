@@ -80,6 +80,7 @@ Currently the following form fields are supported:
 * DateField, DateTimeField, TimeField
 * SelectField
 * BooleanField
+* FileField
 
 A Form plugin must not be used within another Form plugin.
 
@@ -245,6 +246,15 @@ In the form plugin settings in the CMS, choose **Altcha** as the captcha widget.
 The setting **ALTCHA_FIELD_OPTIONS** lets you override the default options passed to django-altcha's ``AltchaField``. It is a dictionary of options supported by the field (see `AltchaField.default_options <https://github.com/aboutcode-org/django-altcha/blob/main/django_altcha/__init__.py#L134>`_). Example: enable floating UI and French language::
 
     ALTCHA_FIELD_OPTIONS = {"challengeurl": reverse_lazy("altcha_challenge"), "floating": True, "language": "fr"}
+
+Sending Files
+=============
+
+If you send files using File Upload or Multiple File Upload fields and `default_storage`, the uploaded files will be available if you know/guess their URL (an uuid is added in the file name).
+
+The fields are using `django.core.files.storage.default_storage` by default, but you can specify an alternative storage using `DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE`.
+
+See **File Upload** in the doc for more info.
 
 .. |pypi| image:: https://badge.fury.io/py/djangocms-form-builder.svg
    :target: http://badge.fury.io/py/djangocms-form-builder

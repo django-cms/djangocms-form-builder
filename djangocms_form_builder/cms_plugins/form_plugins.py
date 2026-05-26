@@ -231,7 +231,10 @@ class MultipleFileFieldPlugin(mixin_factory("MultipleFileField"), FormElementPlu
     name = _("Multiple file upload")
     model = models.MultipleFileField
     form = forms.MultipleFileFieldForm
-    settings_fields = ("field_file_validation_presets",)
+    settings_fields = (
+        "max_files",
+        "field_file_validation_presets",
+    )
 
 
 @plugin_pool.register_plugin

@@ -40,8 +40,6 @@ class ValidatedFileField(forms.FileField):
 class MultipleUploadedFilesField(forms.Field):
     """Multiple file input with preset metadata for form-level validation."""
 
-    needs_multipart_form = True
-
     default_error_messages = {
         "required": _("This field is required."),
     }
@@ -50,11 +48,13 @@ class MultipleUploadedFilesField(forms.Field):
         self,
         *,
         preset_keys: list,
+        max_files: int,
         field_name: str,
         **kwargs,
     ):
         self._preset_keys = preset_keys
         self._field_name = field_name
+        self._max_fields = max_files
         kwargs.setdefault("widget", MultiFileInput())
         super().__init__(**kwargs)
         accept = allowed_extensions_for_accept_attribute(self._preset_keys)

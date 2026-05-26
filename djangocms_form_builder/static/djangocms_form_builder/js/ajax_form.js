@@ -122,17 +122,18 @@ function djangocms_form_builder_form(form) {
     }
 
     const submitForm = (node, headers) => {
+        // FormData must be sent as multipart; URLSearchParams drops file inputs.
         return fetch(node.getAttribute('action'),{
             method: 'POST',
             headers: headers,
-            body: new URLSearchParams(new FormData(node)),
+            body: new FormData(node),
+            credentials: 'same-origin',
         }).then((response) => {
             return response.json();
         }).then((data) => {
             feedback(node, data);
         }).catch((json) => {
             console.error(json);
-            alert(getErrorMessage());
         });
     }
 

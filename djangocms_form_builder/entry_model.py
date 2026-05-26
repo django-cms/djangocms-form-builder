@@ -1,9 +1,11 @@
 import decimal
+from pathlib import Path
 
 from django import forms
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
+from django.db.models.signals import pre_delete
 from django.utils.translation import gettext_lazy as _
 from entangled.forms import EntangledModelForm
 
@@ -157,3 +159,35 @@ class FormEntry(models.Model):
 
     def __str__(self):
         return f"{self.form_name} ({self.pk})"
+
+
+def delete_files_form(sender, **kwargs):
+    form_instance = kwargs["instance"]
+    # keep only data related to dicts, like this:
+    # [{'url': 'https://site.ext/media/path-to/file.jpg', 'path': '/path/to/file.jpg', 'filename': 'file.jpg', '_form_builder_file': True}]
+    files_list = [
+        form_instance.entry_data[key]
+        for key in form_instance.entry_data
+        if isinstance(form_instance.entry_data[key], dict)
+        and "_form_builder_file" in form_instance.entry_data[key]
+    ]
+    for file in files_list:
+        if "path" in file:
+            try:
+                Path(file["path"]).unlink()
+            # file already deleted?
+            except Exception as e:
+                # will show up in server logs
+                print(
+                    f"Error while deleting file {file['filename'] if 'filename' in file else file['url']} from form {form_instance}: {e}"
+                )
+        else:
+            # using an external storage?
+            print(
+                f"Cannot delete file {file['filename'] if 'filename' in file else file['url']} since it has no saved path."
+            )
+
+
+pre_delete.connect(
+    delete_files_form, sender=FormEntry, dispatch_uid="formentry.delete_files_form"
+)

@@ -1,5 +1,5 @@
 from django import forms
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.validators import validate_slug
 from django.utils.translation import gettext_lazy as _
 from entangled.forms import EntangledModelForm, EntangledModelFormMixin
@@ -16,6 +16,7 @@ from . import (
 from .entry_model import FormEntry
 from .fields import AttributesFormField, ButtonGroup, ChoicesFormField
 from .file_validation import (
+    FileValidationError,
     validate_form_builder_file,
     validation_preset_choice_tuples,
 )
@@ -63,14 +64,21 @@ class SimpleFrontendForm(forms.Form):
                 form_field, (ValidatedFileField, MultipleUploadedFilesField)
             ):
                 continue
-            preset_keys = getattr(form_field, "_preset_keys", [])
-            if not preset_keys:
-                continue
             value = cleaned_data.get(field_name)
             if isinstance(form_field, MultipleUploadedFilesField):
                 files = value or []
+                max_fields = getattr(form_field, "_max_fields")
+                if len(files) > max_fields:
+                    raise FileValidationError(
+                        _(
+                            f'Too many files were sent in "{field_name}"! This field accepts up to {max_fields} files, and you sent {len(files)}.'
+                        )
+                    )
             else:
                 files = [value] if value else []
+            preset_keys = getattr(form_field, "_preset_keys", [])
+            if not preset_keys:
+                continue
             for uploaded_file in files:
                 try:
                     validate_form_builder_file(
@@ -81,6 +89,8 @@ class SimpleFrontendForm(forms.Form):
                         field_name=field_name,
                     )
                 except ValidationError as exc:
+                    self.add_error(field_name, exc)
+                except ImproperlyConfigured as exc:
                     self.add_error(field_name, exc)
 
     def save(self):
@@ -627,9 +637,20 @@ class MultipleFileFieldForm(
         model = models.FormField
         entangled_fields = {
             "config": [
+                "max_files",
                 "field_file_validation_presets",
             ]
         }
+
+    max_files = forms.IntegerField(
+        label=_("Max files"),
+        min_value=0,
+        initial=2,
+        required=True,
+        help_text=_(
+            "Allowing to upload too many files may crash your website (denial of service attack)."
+        ),
+    )
 
     field_file_validation_presets = forms.MultipleChoiceField(
         label=_("Validation presets"),

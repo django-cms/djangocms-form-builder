@@ -22,36 +22,35 @@ class FormEntryAdmin(admin.ModelAdmin):
             kwargs["form"] = obj.get_admin_form()
         return super().get_form(request, obj, **kwargs)
 
-    @staticmethod
-    def _entry_file_attr_name(key):
+    def entry_file_attr_name(self, key):
         safe = re.sub(r"[^a-zA-Z0-9_]", "_", str(key))
         if safe and safe[0].isdigit():
             safe = "f_" + safe
         return f"entry_file_{safe}"
 
-    def _ensure_entry_file_attr_map(self, obj):
+    def ensure_entry_file_attr_map(self, obj):
         mapping = {}
         for key in obj.get_file_entry_data_keys():
-            mapping[self._entry_file_attr_name(key)] = key
-        self._entry_file_key_by_attr = mapping
+            mapping[self.entry_file_attr_name(key)] = key
+        self.entry_file_key_by_attr = mapping
 
     def get_readonly_fields(self, request, obj=None):
         ro = list(super().get_readonly_fields(request, obj))
         if obj:
-            self._ensure_entry_file_attr_map(obj)
-            ro.extend(self._entry_file_key_by_attr.keys())
+            self.ensure_entry_file_attr_map(obj)
+            ro.extend(self.entry_file_key_by_attr.keys())
         return ro
 
     def get_fieldsets(self, request, obj=None):
         if obj:
-            self._ensure_entry_file_attr_map(obj)
+            self.ensure_entry_file_attr_map(obj)
             fieldsets = list(obj.get_admin_fieldsets())
-            if self._entry_file_key_by_attr:
+            if self.entry_file_key_by_attr:
                 fieldsets.append(
                     (
                         _("Uploaded files"),
                         {
-                            "fields": tuple(self._entry_file_key_by_attr.keys()),
+                            "fields": tuple(self.entry_file_key_by_attr.keys()),
                         },
                     ),
                 )
@@ -82,7 +81,7 @@ class FormEntryAdmin(admin.ModelAdmin):
     def __getattr__(self, name):
         if name.startswith("entry_file_"):
             try:
-                mapping = object.__getattribute__(self, "_entry_file_key_by_attr")
+                mapping = object.__getattribute__(self, "entry_file_key_by_attr")
             except AttributeError:
                 mapping = {}
             if name in mapping:

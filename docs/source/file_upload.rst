@@ -1,6 +1,16 @@
-#######################
- File upload validation
-#######################
+############
+ File upload
+############
+
+You can upload files using the **File upload** and **Multiple file upload** form field
+plugins.
+
+They use `django.core.files.storage.default_storage` by default, but
+you can specify an alternative storage using `DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE`.
+
+Warning, when using default_storage, the files will be url-guessable, and available for
+everyone who may guess/get their URL.
+
 
 The **File upload** and **Multiple file upload** form field plugins optionally run
 validation logic defined in your Django project settings. Each preset is a named

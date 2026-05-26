@@ -500,6 +500,7 @@ class MultipleFileField(FormField):
             required=self.config.get("field_required", False),
             help_text=self.config.get("field_help_text", ""),
             preset_keys=preset_keys,
+            max_files=self.config.get("max_files", 2),
             field_name=self.field_name,
         )
 
