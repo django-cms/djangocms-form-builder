@@ -80,6 +80,7 @@ class MultipleUploadedFilesFieldTests(TestCase):
     def test_clean_optional_allows_empty(self):
         field = MultipleUploadedFilesField(
             preset_keys=[],
+            max_files=2,
             field_name="f",
             required=False,
         )
@@ -89,6 +90,7 @@ class MultipleUploadedFilesFieldTests(TestCase):
     def test_clean_required_rejects_empty(self):
         field = MultipleUploadedFilesField(
             preset_keys=[],
+            max_files=2,
             field_name="f",
             required=True,
         )
@@ -108,6 +110,7 @@ class MultipleUploadedFilesFieldTests(TestCase):
         b = SimpleUploadedFile("b.txt", b"y", content_type="text/plain")
         field = MultipleUploadedFilesField(
             preset_keys=["ok"],
+            max_files=2,
             field_name="f",
             required=True,
         )
@@ -126,6 +129,7 @@ class MultipleUploadedFilesFieldTests(TestCase):
     def test_multi_widget_sets_accept(self):
         field = MultipleUploadedFilesField(
             preset_keys=["ext"],
+            max_files=2,
             field_name="f",
             required=False,
         )
@@ -170,6 +174,7 @@ class FormLevelUploadValidationTests(TestCase):
         class UploadForm(SimpleFrontendForm):
             attachments = MultipleUploadedFilesField(
                 preset_keys=["reject"],
+                max_files=2,
                 field_name="attachments",
                 required=False,
             )

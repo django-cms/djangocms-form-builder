@@ -608,6 +608,7 @@ class BooleanFieldModelTests(TestFixture, CMSTestCase):
                 "field_label": "Attachments",
                 "field_required": False,
                 "field_file_validation_presets": [],
+                "max_files": 2,
             },
         )
         name, form_field = field.get_form_field()
