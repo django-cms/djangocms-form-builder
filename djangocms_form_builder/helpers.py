@@ -136,3 +136,10 @@ def coerce_decimal(value):
         return decimal.Decimal(value)
     except TypeError:
         return None
+
+
+def coerce_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
