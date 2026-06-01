@@ -191,6 +191,44 @@ class CharFieldModelTests(TestFixture, CMSTestCase):
         self.assertEqual(form_field.help_text, "Pick a unique username.")
         self.assertEqual(form_field.widget.attrs["placeholder"], "Enter username")
 
+    def test_charfield_min_max_length_validation(self):
+        """min_length/max_length config is enforced by the generated field"""
+        field = CharField.objects.create(
+            placeholder=self.placeholder,
+            language=self.language,
+            config={
+                "field_name": "username",
+                "field_label": "Username",
+                "min_length": 3,
+                "max_length": 8,
+            },
+        )
+        _, form_field = field.get_form_field()
+
+        self.assertEqual(form_field.min_length, 3)
+        self.assertEqual(form_field.max_length, 8)
+        # HTML attributes are set for client-side hinting
+        self.assertEqual(str(form_field.widget.attrs["minlength"]), "3")
+        self.assertEqual(str(form_field.widget.attrs["maxlength"]), "8")
+        # Server-side validation
+        with self.assertRaises(forms.ValidationError):
+            form_field.clean("ab")
+        with self.assertRaises(forms.ValidationError):
+            form_field.clean("abcdefghi")
+        self.assertEqual(form_field.clean("abcd"), "abcd")
+
+    def test_charfield_without_min_max_length(self):
+        """Missing min_length/max_length config does not add validators"""
+        field = CharField.objects.create(
+            placeholder=self.placeholder,
+            language=self.language,
+            config={"field_name": "username"},
+        )
+        _, form_field = field.get_form_field()
+
+        self.assertIsNone(form_field.min_length)
+        self.assertIsNone(form_field.max_length)
+
 
 class EmailFieldModelTests(TestFixture, CMSTestCase):
     """Test EmailField model"""
@@ -332,6 +370,44 @@ class TextareaFieldModelTests(TestFixture, CMSTestCase):
         self.assertIsInstance(form_field.widget, forms.Textarea)
         self.assertEqual(form_field.help_text, "Share any additional details.")
         self.assertEqual(form_field.widget.attrs["rows"], 5)
+
+    def test_textareafield_min_max_length_validation(self):
+        """min_length/max_length config is enforced by the generated field"""
+        field = TextareaField.objects.create(
+            placeholder=self.placeholder,
+            language=self.language,
+            config={
+                "field_name": "comments",
+                "field_label": "Comments",
+                "min_length": 3,
+                "max_length": 8,
+            },
+        )
+        _, form_field = field.get_form_field()
+
+        self.assertEqual(form_field.min_length, 3)
+        self.assertEqual(form_field.max_length, 8)
+        # HTML attributes are set for client-side hinting
+        self.assertEqual(str(form_field.widget.attrs["minlength"]), "3")
+        self.assertEqual(str(form_field.widget.attrs["maxlength"]), "8")
+        # Server-side validation
+        with self.assertRaises(forms.ValidationError):
+            form_field.clean("ab")
+        with self.assertRaises(forms.ValidationError):
+            form_field.clean("abcdefghi")
+        self.assertEqual(form_field.clean("abcd"), "abcd")
+
+    def test_textareafield_without_min_max_length(self):
+        """Missing min_length/max_length config does not add validators"""
+        field = TextareaField.objects.create(
+            placeholder=self.placeholder,
+            language=self.language,
+            config={"field_name": "comments"},
+        )
+        _, form_field = field.get_form_field()
+
+        self.assertIsNone(form_field.min_length)
+        self.assertIsNone(form_field.max_length)
 
 
 class DateFieldModelTests(TestFixture, CMSTestCase):

@@ -13,7 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from . import recaptcha, settings
 from .entry_model import FormEntry  # NoQA
 from .fields import AttributesField
-from .helpers import coerce_decimal, mark_safe_lazy
+from .helpers import coerce_decimal, coerce_int, mark_safe_lazy
 
 MAX_LENGTH = 256
 
@@ -205,6 +205,8 @@ class CharField(FormField):
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
             help_text=self.config.get("field_help_text", ""),
+            min_length=coerce_int(self.config.get("min_length", None)),
+            max_length=coerce_int(self.config.get("max_length", None)),
             widget=forms.TextInput(
                 attrs=dict(placeholder=self.config.get("field_placeholder", ""))
             ),
@@ -314,6 +316,8 @@ class TextareaField(FormField):
             label=self.config.get("field_label", ""),
             required=self.config.get("field_required", False),
             help_text=self.config.get("field_help_text", ""),
+            min_length=coerce_int(self.config.get("min_length", None)),
+            max_length=coerce_int(self.config.get("max_length", None)),
             widget=forms.Textarea(
                 attrs=dict(
                     rows=self.config.get("field_rows", 10),
