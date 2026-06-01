@@ -6,7 +6,7 @@ except ModuleNotFoundError:
     _ = lambda x: x  # noqa: E731
 
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 _form_registry = {}
 
