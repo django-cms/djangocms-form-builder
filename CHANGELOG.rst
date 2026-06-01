@@ -2,6 +2,22 @@
 Changelog
 =========
 
+0.5.1 (2026-06-01)
+==================
+
+* feat: Allow caching of form plugin by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/52
+* feat: Add Altcha CAPTCHA support by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/43
+* fix: Remove context print on ajax form when form is valid by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/48
+* fix: GET form endpoint caused a server error by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/47
+* fix: FormPlugin should never be in cache by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/50
+* fix: Anonymous users not detected correctly in mail_html.html by @svandeneertwegh in https://github.com/django-cms/djangocms-form-builder/pull/54
+* docs: Update django-altcha related docs and version requirement after… by @pierreben in https://github.com/django-cms/djangocms-form-builder/pull/49
+
+**New Contributors**
+
+* @vinitkumar made their first contribution in https://github.com/django-cms/djangocms-form-builder/pull/45
+
+
 0.5.0 (2026-03-09)
 ==================
 
