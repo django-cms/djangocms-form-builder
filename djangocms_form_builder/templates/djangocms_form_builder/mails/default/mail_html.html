@@ -1,6 +1,6 @@
 {% load i18n %}
 <h1>{% translate "Form submission" %}</h1>
-<p>{% if user %}{% translate "by" %} {{ user.firstname }} {{ user.lastname }} ({{ user.username }}){% else %}{% translate "by anonymous" %}{% endif %}</p>
+<p>{% if user.is_authenticated %}{% translate "by" %} {{ user.first_name }} {{ user.last_name }} ({{ user.username }}){% else %}{% translate "by anonymous" %}{% endif %}</p>
 <table>
     <thead>
     <tr>
