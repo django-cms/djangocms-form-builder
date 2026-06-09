@@ -4,6 +4,7 @@ from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 from django.apps import apps
 from django.contrib.admin.sites import AdminSite
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 
 from djangocms_form_builder.actions import get_registered_actions
@@ -75,6 +76,9 @@ class ActionTestCase(TestFixture, CMSTestCase):
         self.assertEqual(args[0], "Test form form submission")
         self.assertIn("Form submission", args[1])
         self.assertEqual(args[3], ["a@b.c", "d@e.f"])
+        # An anonymous submitter is rendered as "by anonymous", not an empty
+        # user line (request.user is an AnonymousUser, which is truthy).
+        self.assertIn("anonymous", args[1])
 
         # Test with no recipients
         plugin_instance.action_parameters = {
@@ -93,6 +97,56 @@ class ActionTestCase(TestFixture, CMSTestCase):
         args, kwargs = mock_mail_admins.call_args
         self.assertEqual(args[0], "Test form form submission")
         self.assertIn("Form submission", args[1])
+
+    def test_send_mail_action_authenticated_user(self):
+        user = get_user_model().objects.create_user(
+            username="johndoe",
+            first_name="John",
+            last_name="Doe",
+        )
+
+        plugin_instance = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type="FormPlugin",
+            language=self.language,
+            form_name="test_form",
+        )
+        plugin_instance.action_parameters = {
+            "sendemail_recipients": "a@b.c",
+            "sendemail_template": "default",
+        }
+        plugin_instance.form_actions = f'["{self.send_mail_action}"]'
+        plugin_instance.save()
+
+        child_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type="CharFieldPlugin",
+            language=self.language,
+            target=plugin_instance,
+            config={"field_name": "field1"},
+        )
+        child_plugin.save()
+        plugin_instance.child_plugin_instances = [child_plugin]
+        child_plugin.child_plugin_instances = []
+
+        plugin = plugin_instance.get_plugin_class_instance()
+        plugin.instance = plugin_instance
+
+        request = self.get_request("/")
+        request.user = user
+
+        with patch("django.core.mail.send_mail") as mock_send_mail:
+            form = plugin.get_form_class()({}, request=request)
+            form.cleaned_data = {"field1": "value1"}
+            form.save()
+
+        mock_send_mail.assert_called_once()
+        args, kwargs = mock_send_mail.call_args
+        # Authenticated submitter is named using the correct User model fields
+        # (first_name/last_name, not firstname/lastname).
+        self.assertIn("John Doe (johndoe)", kwargs["html_message"])
+        self.assertIn("John Doe (johndoe)", args[1])
+        self.assertNotIn("anonymous", args[1])
 
     def test_save_to_db_action_creates_entry_with_headers(self):
         plugin_instance = add_plugin(
