@@ -5,13 +5,6 @@ from django.utils.translation import gettext_lazy as _
 
 EMPTY_CHOICE = (("", "-----"),)
 
-ADMIN_CSS = getattr(
-    django_settings,
-    "DJANGOCMS_FRONTEND_ADMIN_CSS",
-    {},
-)
-
-
 FORM_OPTIONS = getattr(django_settings, "DJANGOCMS_FORMS_OPTIONS", {})
 MAIL_TEMPLATE_SETS = getattr(
     django_settings, "DJANGOCMS_MAIL_TEMPLATE_SETS", (("default", _("Default")),)
@@ -29,7 +22,6 @@ FORM_TEMPLATE = getattr(
 )
 
 theme_render_path = f"{theme}.frameworks.{framework}"
-theme_forms_path = f"{theme}.forms"
 
 if not getattr(django_settings, "DJANGO_FORM_BUILDER_SPACER_CHOICES", False):
     if not getattr(django_settings, "DJANGOCMS_FRONTEND_SPACER_SIZES", False):
@@ -77,12 +69,4 @@ def get_renderer(my_module):
         my_module = my_module.__name__
     return get_mixins(
         "{name}RenderMixin", theme_render_path, f"{my_module}.frameworks.{framework}"
-    )
-
-
-def get_forms(my_module):
-    if not isinstance(my_module, str):
-        my_module = my_module.__name__
-    return get_mixins(
-        "{name}FormMixin", theme_forms_path, f"{my_module}.frameworks.{framework}"
     )

@@ -1,7 +1,7 @@
 from django import template
 from django.apps import apps
 from django.template.loader import render_to_string
-from django.utils.html import mark_safe
+from django.utils.html import conditional_escape, mark_safe
 
 from .. import constants, recaptcha
 from ..helpers import get_option
@@ -96,7 +96,10 @@ def render_widget(form, form_field, **kwargs):
     label_attr = attrs_for_widget(field.field.widget, "label")
     if field.help_text:
         widget_attr.update({"aria-describedby": f"hints_{field.id_for_label}"})
-        help_text = f'<div id="hints_{field.id_for_label}" class="form-text">{field.help_text}</div>'
+        help_text = (
+            f'<div id="hints_{field.id_for_label}" class="form-text">'
+            f"{conditional_escape(field.help_text)}</div>"
+        )
     else:
         help_text = ""
     input_type = getattr(field.field.widget, "input_type", None)
@@ -110,7 +113,8 @@ def render_widget(form, form_field, **kwargs):
     div_attrs = " ".join([f'{key}="{value}"' for key, value in div_attrs.items()])
     grp_attrs = attrs_for_widget(field.field.widget, "group")
     errors = "".join(
-        f'<div class="invalid-feedback">{error}</div>' for error in field.errors
+        f'<div class="invalid-feedback">{conditional_escape(error)}</div>'
+        for error in field.errors
     )
     if field.field.widget.template_name.rsplit("/", 1)[-1] in (
         "radio.html",
