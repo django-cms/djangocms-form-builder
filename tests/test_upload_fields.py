@@ -8,6 +8,7 @@ from django.utils.datastructures import MultiValueDict
 from djangocms_form_builder.file_validation import FileValidationError
 from djangocms_form_builder.forms import SimpleFrontendForm
 from djangocms_form_builder.upload_form_fields import (
+    PRESET_MISCONFIGURED_MESSAGE,
     MultipleUploadedFilesField,
     ValidatedFileField,
 )
@@ -74,6 +75,60 @@ class ValidatedFileFieldTests(TestCase):
             required=False,
         )
         self.assertEqual(field.widget.attrs["accept"], ".pdf")
+
+
+class StalePresetKeyTests(TestCase):
+    @override_settings(DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={})
+    def test_validated_file_field_rejects_unknown_preset_key(self):
+        field = ValidatedFileField(
+            preset_keys=["removed"],
+            field_name="attachment",
+            required=False,
+        )
+        uploaded = SimpleUploadedFile("a.txt", b"x", content_type="text/plain")
+        with self.assertRaisesMessage(
+            ValidationError, str(PRESET_MISCONFIGURED_MESSAGE)
+        ):
+            field.clean(uploaded)
+
+    @override_settings(DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={})
+    def test_multiple_uploaded_files_field_rejects_unknown_preset_key(self):
+        field = MultipleUploadedFilesField(
+            preset_keys=["removed"],
+            max_files=2,
+            field_name="attachments",
+            required=False,
+        )
+        files = [
+            SimpleUploadedFile("a.txt", b"x"),
+            SimpleUploadedFile("b.txt", b"y"),
+        ]
+        with self.assertRaisesMessage(
+            ValidationError, str(PRESET_MISCONFIGURED_MESSAGE)
+        ):
+            field.clean(files)
+
+    @override_settings(DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={})
+    def test_simple_frontend_form_surfaces_stale_preset_as_field_error(self):
+        class UploadForm(SimpleFrontendForm):
+            attachment = ValidatedFileField(
+                preset_keys=["removed"],
+                field_name="attachment",
+                required=True,
+            )
+
+            class Meta:
+                options = {"login_required": False}
+
+        request = RequestFactory().post("/")
+        request.user = None
+        form = UploadForm(
+            data={},
+            files=MultiValueDict({"attachment": [SimpleUploadedFile("a.txt", b"x")]}),
+            request=request,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("attachment", form.errors)
 
 
 class MultipleUploadedFilesFieldTests(TestCase):

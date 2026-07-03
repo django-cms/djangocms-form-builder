@@ -6,14 +6,47 @@ way as for any other form field. The owning form does not need to know about
 uploads.
 """
 
+import logging
+
 from django import forms
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from .file_validation import (
     allowed_extensions_for_accept_attribute,
     validate_form_builder_file,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def run_upload_preset_validation(
+    uploaded_file,
+    preset_keys,
+    *,
+    user,
+    request,
+    field_name,
+):
+    try:
+        validate_form_builder_file(
+            uploaded_file,
+            preset_keys,
+            user=user,
+            request=request,
+            field_name=field_name,
+        )
+    except ImproperlyConfigured:
+        # log error for dev
+        logger.exception(
+            "File validation preset misconfigured for field %s",
+            field_name,
+        )
+        # show the user a message
+        raise ValidationError(
+            _("This field could not be validated. Contact the site administrator."),
+            code="preset_misconfigured",
+        ) from None
 
 
 class MultiFileInput(forms.FileInput):
@@ -50,9 +83,7 @@ class ValidatedFileField(forms.FileField):
     def clean(self, data, initial=None):
         uploaded_file = super().clean(data, initial)
         if uploaded_file and self._preset_keys:
-            # Raises (a subclass of) ValidationError on failure; the form binds it
-            # to this field automatically.
-            validate_form_builder_file(
+            run_upload_preset_validation(
                 uploaded_file,
                 self._preset_keys,
                 user=getattr(self._request, "user", None),
@@ -120,7 +151,7 @@ class MultipleUploadedFilesField(forms.Field):
             try:
                 cleaned = file_field.clean(uploaded_file)
                 if self._preset_keys:
-                    validate_form_builder_file(
+                    run_upload_preset_validation(
                         cleaned,
                         self._preset_keys,
                         user=user,
@@ -129,6 +160,8 @@ class MultipleUploadedFilesField(forms.Field):
                     )
                 cleaned_files.append(cleaned)
             except ValidationError as exc:
+                if exc.code == "preset_misconfigured":
+                    raise
                 errors.append(exc)
         if errors:
             raise ValidationError(errors)
