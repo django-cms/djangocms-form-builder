@@ -1,4 +1,4 @@
-import re
+import base64
 
 from django.contrib import admin
 from django.utils.html import format_html, format_html_join
@@ -22,35 +22,37 @@ class FormEntryAdmin(admin.ModelAdmin):
             kwargs["form"] = obj.get_admin_form()
         return super().get_form(request, obj, **kwargs)
 
-    def entry_file_attr_name(self, key):
-        safe = re.sub(r"[^a-zA-Z0-9_]", "_", str(key))
-        if safe and safe[0].isdigit():
-            safe = "f_" + safe
-        return f"entry_file_{safe}"
+    @staticmethod
+    def entry_file_attr_name(key):
+        encoded = base64.urlsafe_b64encode(str(key).encode()).decode().rstrip("=")
+        return f"entry_file_{encoded}"
 
-    def ensure_entry_file_attr_map(self, obj):
-        mapping = {}
-        for key in obj.get_file_entry_data_keys():
-            mapping[self.entry_file_attr_name(key)] = key
-        self.entry_file_key_by_attr = mapping
+    @staticmethod
+    def entry_file_key_from_attr(name):
+        encoded = name.removeprefix("entry_file_")
+        padding = (-len(encoded)) % 4
+        return base64.urlsafe_b64decode(encoded + "=" * padding).decode()
 
     def get_readonly_fields(self, request, obj=None):
         ro = list(super().get_readonly_fields(request, obj))
         if obj:
-            self.ensure_entry_file_attr_map(obj)
-            ro.extend(self.entry_file_key_by_attr.keys())
+            ro.extend(
+                self.entry_file_attr_name(k) for k in obj.get_file_entry_data_keys()
+            )
         return ro
 
     def get_fieldsets(self, request, obj=None):
         if obj:
-            self.ensure_entry_file_attr_map(obj)
+            file_fields = [
+                self.entry_file_attr_name(k) for k in obj.get_file_entry_data_keys()
+            ]
             fieldsets = list(obj.get_admin_fieldsets())
-            if self.entry_file_key_by_attr:
+            if file_fields:
                 fieldsets.append(
                     (
                         _("Uploaded files"),
                         {
-                            "fields": tuple(self.entry_file_key_by_attr.keys()),
+                            "fields": tuple(file_fields),
                         },
                     ),
                 )
@@ -81,19 +83,17 @@ class FormEntryAdmin(admin.ModelAdmin):
     def __getattr__(self, name):
         if name.startswith("entry_file_"):
             try:
-                mapping = object.__getattribute__(self, "entry_file_key_by_attr")
-            except AttributeError:
-                mapping = {}
-            if name in mapping:
-                key = mapping[name]
+                key = self.entry_file_key_from_attr(name)
+            except (ValueError, UnicodeDecodeError):
+                raise AttributeError(
+                    f"{type(self).__name__!r} object has no attribute {name!r}"
+                ) from None
 
-                def display(admin, obj, _key=key):
-                    return FormEntryAdmin.format_entry_file_field(obj, _key)
+            def display(admin, obj, _key=key):
+                return FormEntryAdmin.format_entry_file_field(obj, _key)
 
-                display.short_description = key
-                bound = display.__get__(self, type(self))
-                setattr(self, name, bound)
-                return bound
+            display.short_description = key
+            return display.__get__(self, type(self))
         raise AttributeError(
             f"{type(self).__name__!r} object has no attribute {name!r}"
         )
