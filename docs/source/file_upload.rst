@@ -2,14 +2,20 @@
  File upload
 ############
 
+.. warning::
+
+   **Public URLs by default.** File upload fields store files in
+   ``django.core.files.storage.default_storage`` unless you configure
+   ``DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE``. With the default storage,
+   uploaded files are reachable by anyone who knows or guesses their URL (a
+   UUID prefix in the filename only makes guessing harder, not impossible).
+   Use a private storage backend when forms may collect sensitive attachments.
+
 You can upload files using the **File upload** and **Multiple file upload** form field
 plugins.
 
 They use `django.core.files.storage.default_storage` by default, but
 you can specify an alternative storage using `DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE`.
-
-Warning, when using default_storage, the files will be url-guessable, and available for
-everyone who may guess/get their URL.
 
 
 The **File upload** and **Multiple file upload** form field plugins optionally run
@@ -165,7 +171,8 @@ validation runs server-side before final cleaned data is used.
 
 The **Save form submission** action stores ``entry_data`` as JSON. Uploaded files are
 written to ``default_storage`` under ``form_uploads/...``, and each file field becomes
-a dict with ``_form_builder_file``, ``filename``, and ``url``.
+a dict with ``_form_builder_file``, ``filename``, ``name`` (storage-relative path),
+and ``url``.
 
 Plugin admin
 ============

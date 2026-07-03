@@ -250,9 +250,16 @@ The setting **ALTCHA_FIELD_OPTIONS** lets you override the default options passe
 Sending Files
 =============
 
-If you send files using File Upload or Multiple File Upload fields and `default_storage`, the uploaded files will be available if you know/guess their URL (an uuid is added in the file name).
+.. warning::
 
-The fields are using `django.core.files.storage.default_storage` by default, but you can specify an alternative storage using `DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE`.
+   With ``default_storage``, uploaded files are **publicly accessible** to anyone
+   who knows or guesses their URL (a UUID in the filename only makes guessing
+   harder). Configure ``DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE`` to a private
+   storage backend when forms may collect sensitive attachments.
+
+File Upload and Multiple File Upload fields use
+``django.core.files.storage.default_storage`` by default, but you can specify an
+alternative storage using ``DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE``.
 
 See **File Upload** in the doc for more info.
 
