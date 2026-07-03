@@ -562,6 +562,14 @@ class ChoiceForm(EntangledModelForm):
     )
 
 
+FILE_UPLOAD_STORAGE_HELP = _(
+    "Uploaded files are stored via Django file storage. With default_storage, "
+    "anyone who knows or guesses the URL can access them. Set "
+    "DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE to a private storage backend "
+    "for sensitive attachments."
+)
+
+
 class FileFieldForm(mixin_factory("FileField"), FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
@@ -576,8 +584,11 @@ class FileFieldForm(mixin_factory("FileField"), FormFieldMixin, EntangledModelFo
         required=False,
         choices=[],
         help_text=_(
-            "Choose a rule to control which file types or sizes users can upload. Leave empty to allow all files permitted by default."
-        ),
+            "Choose a rule to control which file types or sizes users can upload. "
+            "Leave empty to allow all files permitted by default."
+        )
+        + " "
+        + FILE_UPLOAD_STORAGE_HELP,
     )
 
     def __init__(self, *args, **kwargs):
@@ -602,7 +613,7 @@ class MultipleFileFieldForm(
 
     max_files = forms.IntegerField(
         label=_("Max files"),
-        min_value=0,
+        min_value=1,
         initial=2,
         required=True,
         help_text=_(
@@ -616,8 +627,12 @@ class MultipleFileFieldForm(
         initial=[],
         choices=[],
         help_text=_(
-            "Choose a rule to control which file types or sizes users can upload. Leave empty to allow all files permitted by default (applied to each uploaded file in order)."
-        ),
+            "Choose a rule to control which file types or sizes users can upload. "
+            "Leave empty to allow all files permitted by default (applied to each "
+            "uploaded file in order)."
+        )
+        + " "
+        + FILE_UPLOAD_STORAGE_HELP,
     )
 
     def __init__(self, *args, **kwargs):
