@@ -691,6 +691,20 @@ class BooleanFieldModelTests(TestFixture, CMSTestCase):
         self.assertEqual(name, "attachments")
         self.assertIsInstance(form_field, MultipleUploadedFilesField)
 
+    def test_filefield_threads_request_onto_field(self):
+        """get_form_field passes the request to the field so its validators get context."""
+        field = FileField.objects.create(
+            placeholder=self.placeholder,
+            language=self.language,
+            config={
+                "field_name": "attachment",
+                "field_file_validation_presets": [],
+            },
+        )
+        sentinel = object()
+        _, form_field = field.get_form_field(request=sentinel)
+        self.assertIs(form_field._request, sentinel)
+
 
 class SubmitButtonModelTests(TestFixture, CMSTestCase):
     """Test SubmitButton model"""

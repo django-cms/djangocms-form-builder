@@ -338,11 +338,15 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
         return None
 
     def create_form_class_from_plugins(self):
+        # The form class is rebuilt per request, so fields may capture the request
+        # (e.g. file fields whose validators need the user/request context).
+        request = getattr(self, "request", None)
+
         def traverse(instance):
             """Recursively traverse children to identify form fields (by them having a method called
             "get_form_field" """
             if hasattr(instance, "get_form_field"):
-                name, field = instance.get_form_field()
+                name, field = instance.get_form_field(request=request)
                 fields[name] = field
             if (
                 instance.child_plugin_instances is None
