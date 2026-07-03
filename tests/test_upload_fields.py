@@ -132,6 +132,17 @@ class MultipleUploadedFilesFieldTests(TestCase):
             field.clean(files)
         self.assertEqual(ctx.exception.code, "too_many_files")
 
+    def test_clean_rejects_empty_file(self):
+        field = MultipleUploadedFilesField(
+            preset_keys=[],
+            max_files=2,
+            field_name="f",
+            required=False,
+        )
+        empty = SimpleUploadedFile("empty.txt", b"", content_type="text/plain")
+        with self.assertRaises(ValidationError):
+            field.clean([empty])
+
     @override_settings(
         DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
             "ext": {

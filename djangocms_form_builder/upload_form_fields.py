@@ -112,21 +112,24 @@ class MultipleUploadedFilesField(forms.Field):
                 code="too_many_files",
             )
 
-        if self._preset_keys:
-            user = getattr(self._request, "user", None)
-            errors = []
-            for uploaded_file in files:
-                try:
+        file_field = forms.FileField(required=False)
+        user = getattr(self._request, "user", None)
+        cleaned_files = []
+        errors = []
+        for uploaded_file in files:
+            try:
+                cleaned = file_field.clean(uploaded_file)
+                if self._preset_keys:
                     validate_form_builder_file(
-                        uploaded_file,
+                        cleaned,
                         self._preset_keys,
                         user=user,
                         request=self._request,
                         field_name=self._field_name,
                     )
-                except ValidationError as exc:
-                    errors.append(exc)
-            if errors:
-                # Collected so every bad file is reported, not just the first.
-                raise ValidationError(errors)
-        return files
+                cleaned_files.append(cleaned)
+            except ValidationError as exc:
+                errors.append(exc)
+        if errors:
+            raise ValidationError(errors)
+        return cleaned_files
