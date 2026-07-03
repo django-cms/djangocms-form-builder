@@ -132,8 +132,9 @@ function djangocms_form_builder_form(form) {
             return response.json();
         }).then((data) => {
             feedback(node, data);
-        }).catch((json) => {
-            console.error(json);
+        }).catch((err) => {
+            console.error(err);
+            alert(getErrorMessage());
         });
     }
 
