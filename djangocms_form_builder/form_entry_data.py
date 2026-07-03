@@ -19,22 +19,12 @@ def store_uploaded_file(uploaded_file: UploadedFile) -> dict:
     safe = get_valid_filename(uploaded_file.name) or "upload"
     path = f"form_uploads/{uuid.uuid4().hex}_{safe}"
     saved_name = FILE_FIELD_STORAGE.save(path, uploaded_file)
-    try:
-        return {
-            "_form_builder_file": True,
-            "filename": uploaded_file.name,
-            "url": FILE_FIELD_STORAGE.url(saved_name),
-            "path": FILE_FIELD_STORAGE.path(saved_name),
-        }
-    except Exception:
-        # FILE_FIELD_STORAGE don't implement `path`?
-        # Then do not include it in json, but we won't be able to remove the file if the form
-        # entry is deleted.
-        return {
-            "_form_builder_file": True,
-            "filename": uploaded_file.name,
-            "url": FILE_FIELD_STORAGE.url(saved_name),
-        }
+    return {
+        "_form_builder_file": True,
+        "filename": uploaded_file.name,
+        "name": saved_name,
+        "url": FILE_FIELD_STORAGE.url(saved_name),
+    }
 
 
 def serialize_cleaned_data_for_entry(cleaned_data: dict) -> dict:

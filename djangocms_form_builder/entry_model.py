@@ -1,5 +1,5 @@
 import decimal
-from pathlib import Path
+import logging
 
 from django import forms
 from django.conf import settings
@@ -8,6 +8,10 @@ from django.db import models
 from django.db.models.signals import pre_delete
 from django.utils.translation import gettext_lazy as _
 from entangled.forms import EntangledModelForm
+
+from .settings import FILE_FIELD_STORAGE
+
+logger = logging.getLogger(__name__)
 
 
 class CSValues(forms.CharField):
@@ -161,31 +165,28 @@ class FormEntry(models.Model):
         return f"{self.form_name} ({self.pk})"
 
 
+def delete_stored_file(meta):
+    name = meta.get("name")
+    if name:
+        try:
+            FILE_FIELD_STORAGE.delete(name)
+        except Exception:
+            logger.exception(
+                "Failed to delete uploaded file %s",
+                meta.get("filename", name),
+            )
+    else:
+        logger.warning(
+            "Cannot delete uploaded file %s: no storage name in entry_data",
+            meta.get("filename", meta.get("url", "?")),
+        )
+
+
 def delete_files_form(sender, **kwargs):
     form_instance = kwargs["instance"]
-    # keep only data related to dicts, like this:
-    # [{'url': 'https://site.ext/media/path-to/file.jpg', 'path': '/path/to/file.jpg', 'filename': 'file.jpg', '_form_builder_file': True}]
-    files_list = [
-        form_instance.entry_data[key]
-        for key in form_instance.entry_data
-        if isinstance(form_instance.entry_data[key], dict)
-        and "_form_builder_file" in form_instance.entry_data[key]
-    ]
-    for file in files_list:
-        if "path" in file:
-            try:
-                Path(file["path"]).unlink()
-            # file already deleted?
-            except Exception as e:
-                # will show up in server logs
-                print(
-                    f"Error while deleting file {file['filename'] if 'filename' in file else file['url']} from form {form_instance}: {e}"
-                )
-        else:
-            # using an external storage?
-            print(
-                f"Cannot delete file {file['filename'] if 'filename' in file else file['url']} since it has no saved path."
-            )
+    for value in form_instance.entry_data.values():
+        for meta in FormEntry.get_file_entry_items(value):
+            delete_stored_file(meta)
 
 
 pre_delete.connect(
