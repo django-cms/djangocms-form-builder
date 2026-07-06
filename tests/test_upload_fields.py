@@ -8,7 +8,6 @@ from django.utils.datastructures import MultiValueDict
 from djangocms_form_builder.file_validation import FileValidationError
 from djangocms_form_builder.forms import SimpleFrontendForm
 from djangocms_form_builder.upload_form_fields import (
-    PRESET_MISCONFIGURED_MESSAGE,
     MultipleUploadedFilesField,
     ValidatedFileField,
 )
@@ -86,10 +85,9 @@ class StalePresetKeyTests(TestCase):
             required=False,
         )
         uploaded = SimpleUploadedFile("a.txt", b"x", content_type="text/plain")
-        with self.assertRaisesMessage(
-            ValidationError, str(PRESET_MISCONFIGURED_MESSAGE)
-        ):
+        with self.assertRaises(ValidationError) as ctx:
             field.clean(uploaded)
+        self.assertEqual(ctx.exception.code, "preset_misconfigured")
 
     @override_settings(DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={})
     def test_multiple_uploaded_files_field_rejects_unknown_preset_key(self):
@@ -103,10 +101,9 @@ class StalePresetKeyTests(TestCase):
             SimpleUploadedFile("a.txt", b"x"),
             SimpleUploadedFile("b.txt", b"y"),
         ]
-        with self.assertRaisesMessage(
-            ValidationError, str(PRESET_MISCONFIGURED_MESSAGE)
-        ):
+        with self.assertRaises(ValidationError) as ctx:
             field.clean(files)
+        self.assertEqual(ctx.exception.code, "preset_misconfigured")
 
     @override_settings(DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={})
     def test_simple_frontend_form_surfaces_stale_preset_as_field_error(self):
