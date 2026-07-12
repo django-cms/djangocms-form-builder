@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from cms import __version__ as cms_version
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
@@ -466,7 +467,7 @@ class RegisterFormViewTestCase(CMSTestCase):
 
         register_form_view(FormView1, slug="conflicting-slug")
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ImproperlyConfigured):
             register_form_view(FormView2, slug="conflicting-slug")
 
 

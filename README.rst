@@ -169,6 +169,31 @@ Upon form submission a ``save()`` method of the form (if it has one). After exec
 Actions are not available for Django forms. Any actions to be performed upon submission should reside in its ``save()`` method.
 
 
+Recommendations for public forms
+================================
+
+-  **Enable a captcha on public forms.** Forms without captcha protection have
+   no anti-spam measures and will attract automated submissions. We recommend
+   `Altcha <https://altcha.org/>`_ (see the next section): it is open source,
+   GDPR-compliant and - in built-in mode - works fully self-hosted, without
+   API keys or calls to external services.
+
+-  **Limit how long submissions are kept.** Form submissions stored by the
+   "Save form submission" action may contain personal data. Use the
+   ``prune_form_entries`` management command to enforce a retention policy,
+   e.g., from a cron job::
+
+       python manage.py prune_form_entries --days 90
+
+   ``--form-name <name>`` restricts pruning to a single form, and
+   ``--dry-run`` only reports how many entries would be deleted.
+
+-  **Monitor email delivery.** The "Send email" action does not abort a form
+   submission if sending the email fails. Failures are logged to the
+   ``djangocms_form_builder.actions`` logger - make sure your ``LOGGING``
+   setup surfaces its error messages so failed deliveries are noticed.
+
+
 Configuring Altcha CAPTCHA
 ==========================
 

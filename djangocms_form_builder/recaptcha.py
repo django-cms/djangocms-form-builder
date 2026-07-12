@@ -49,24 +49,22 @@ else:
 
 
 def get_recaptcha_field(instance):
-    config = instance.captcha_config
+    config = instance.captcha_config or {}
     widget_params = {
         "attrs": {
-            key: value
-            for key, value in config.get("captcha_config", {}).items()
-            if key.startswith("data-")
+            key: value for key, value in config.items() if key.startswith("data-")
         },
         "api_params": {
-            key: value
-            for key, value in config.get("captcha_config", {}).items()
-            if not key.startswith("data-")
+            key: value for key, value in config.items() if not key.startswith("data-")
         },
     }
     widget_params["attrs"]["no_field_sep"] = True
-    if config.get("captcha_widget", "") == "v3":
+    if instance.captcha_widget == "v3":
         widget_params["attrs"]["required_score"] = coerce_decimal(
-            config.get("captcha_requirement", 0.5)
-        )  # installing recaptcha 3 ?
+            "0.5"
+            if instance.captcha_requirement is None
+            else instance.captcha_requirement
+        )
     if not widget_params["api_params"]:
         del widget_params["api_params"]
 
