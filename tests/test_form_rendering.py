@@ -464,6 +464,25 @@ class TemplateTagsTestCase(CMSTestCase):
 
         self.assertEqual(rendered.strip(), "")
 
+    def test_render_captcha_widget_with_recaptcha_widget(self):
+        template = Template(
+            "{% load form_builder_tags %}{% render_captcha_widget form %}"
+        )
+
+        class ReCaptchaWidget(forms.TextInput):
+            pass
+
+        class TestForm(forms.Form):
+            captcha_field = forms.CharField(
+                label="", widget=ReCaptchaWidget(attrs={"no_field_sep": True})
+            )
+
+        rendered = template.render(Context({"form": TestForm()}))
+
+        self.assertIn('name="captcha_field"', rendered)
+        self.assertIn('class="form-control"', rendered)
+        self.assertNotIn("no_field_sep", rendered)
+
 
 class AltchaIntegrationTestCase(TestFixture, CMSTestCase):
     """Tests for Altcha CAPTCHA integration (run only when django_altcha is installed)."""
