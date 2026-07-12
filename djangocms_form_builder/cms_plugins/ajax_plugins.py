@@ -1,4 +1,3 @@
-import inspect
 import json
 from urllib.parse import urlencode
 
@@ -348,17 +347,12 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
             "get_form_field" """
             if hasattr(instance, "get_form_field"):
                 get_form_field = instance.get_form_field
-                parameters = inspect.signature(get_form_field).parameters.values()
-                accepts_request = any(
-                    parameter.name == "request"
-                    or parameter.kind == inspect.Parameter.VAR_KEYWORD
-                    for parameter in parameters
-                )
-                name, field = (
-                    get_form_field(request=request)
-                    if accepts_request
-                    else get_form_field()
-                )
+                try:
+                    name, field = get_form_field(request=request)
+                except TypeError:
+                    # Backwards compatibility for third-party fields using the
+                    # old no-argument API; remove this fallback in version 1.0.
+                    name, field = get_form_field()
                 fields[name] = field
             if (
                 instance.child_plugin_instances is None
