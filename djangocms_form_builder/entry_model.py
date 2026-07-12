@@ -1,5 +1,4 @@
 import decimal
-import logging
 
 from django import forms
 from django.conf import settings
@@ -9,9 +8,7 @@ from django.db.models.signals import pre_delete
 from django.utils.translation import gettext_lazy as _
 from entangled.forms import EntangledModelForm
 
-from .settings import FILE_FIELD_STORAGE
-
-logger = logging.getLogger(__name__)
+from .form_entry_data import delete_stored_files
 
 
 class CSValues(forms.CharField):
@@ -165,28 +162,9 @@ class FormEntry(models.Model):
         return f"{self.form_name} ({self.pk})"
 
 
-def delete_stored_file(meta):
-    name = meta.get("name")
-    if name:
-        try:
-            FILE_FIELD_STORAGE.delete(name)
-        except Exception:
-            logger.exception(
-                "Failed to delete uploaded file %s",
-                meta.get("filename", name),
-            )
-    else:
-        logger.warning(
-            "Cannot delete uploaded file %s: no storage name in entry_data",
-            meta.get("filename", meta.get("url", "?")),
-        )
-
-
 def delete_files_form(sender, **kwargs):
     form_instance = kwargs["instance"]
-    for value in form_instance.entry_data.values():
-        for meta in FormEntry.get_file_entry_items(value):
-            delete_stored_file(meta)
+    delete_stored_files(form_instance.entry_data)
 
 
 pre_delete.connect(
