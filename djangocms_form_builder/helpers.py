@@ -1,10 +1,6 @@
 import copy
 import decimal
 
-from django.apps import apps
-from django.db.models import ObjectDoesNotExist
-from django.template.exceptions import TemplateDoesNotExist
-from django.template.loader import select_template
 from django.utils.functional import lazy
 from django.utils.safestring import mark_safe
 
@@ -16,18 +12,6 @@ global_options = settings.FORM_OPTIONS
 def get_option(form, option, default=None):
     form_options = getattr(getattr(form, "Meta", None), "options", {})
     return form_options.get(option, global_options.get(option, default))
-
-
-def get_related_object(scope, field_name):
-    """
-    Returns the related field, referenced by the content of a ModelChoiceField.
-    """
-    try:
-        Model = apps.get_model(scope[field_name]["model"])
-        relobj = Model.objects.get(pk=scope[field_name]["pk"])
-    except (ObjectDoesNotExist, LookupError):
-        relobj = None
-    return relobj
 
 
 def insert_fields(
@@ -84,25 +68,6 @@ def first_choice(choices):
             if first is not None:
                 return first
     return None
-
-
-def get_template_path(prefix, template, name):
-    return (
-        f"djangocms_form_builder/{settings.framework}/{prefix}/{template}/{name}.html"
-    )
-
-
-def get_plugin_template(instance, prefix, name, templates):
-    template = getattr(instance, "template", first_choice(templates))
-    template_path = get_template_path(prefix, template, name)
-
-    try:
-        select_template([template_path])
-    except TemplateDoesNotExist:
-        # TODO render a warning inside the template
-        template_path = get_template_path(prefix, "default", name)
-
-    return template_path
 
 
 # use mark_safe_lazy to delay the translation when using mark_safe

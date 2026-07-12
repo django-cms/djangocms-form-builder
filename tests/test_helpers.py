@@ -1,12 +1,8 @@
 from decimal import Decimal
-from types import SimpleNamespace
-from unittest.mock import patch
 
-from django.db.models import ObjectDoesNotExist
 from django.test import SimpleTestCase
 
 from djangocms_form_builder import helpers
-from djangocms_form_builder import settings as app_settings
 
 
 class HelpersTests(SimpleTestCase):
@@ -39,41 +35,6 @@ class HelpersTests(SimpleTestCase):
             helpers.get_option(DummyForm, "missing", default="dflt"), "dflt"
         )
 
-    def test_get_related_object_success_and_fail(self):
-        # Fake model and manager
-        class Manager:
-            def __init__(self, store):
-                self._store = store
-
-            def get(self, pk):
-                if pk in self._store:
-                    return self._store[pk]
-                raise ObjectDoesNotExist()
-
-        class FakeModel:
-            objects = Manager({1: SimpleNamespace(pk=1), 2: SimpleNamespace(pk=2)})
-
-        with patch(
-            "djangocms_form_builder.helpers.apps.get_model", return_value=FakeModel
-        ):
-            scope = {"target": {"model": "app.Label", "pk": 1}}
-            obj = helpers.get_related_object(scope, "target")
-            self.assertIsNotNone(obj)
-            self.assertEqual(obj.pk, 1)
-
-            scope_fail = {"target": {"model": "app.Label", "pk": 9}}
-            obj2 = helpers.get_related_object(scope_fail, "target")
-            self.assertIsNone(obj2)
-
-        # Also ensure LookupError path returns None
-        with patch(
-            "djangocms_form_builder.helpers.apps.get_model", side_effect=LookupError
-        ):
-            obj3 = helpers.get_related_object(
-                {"target": {"model": "x", "pk": 1}}, "target"
-            )
-            self.assertIsNone(obj3)
-
     def test_insert_fields_appends_new_block_when_block_none(self):
         fieldsets = [("Main", {"fields": ["a", "b"]})]
         fs = helpers.insert_fields(
@@ -99,29 +60,6 @@ class HelpersTests(SimpleTestCase):
         choices = (("group", (("a", "A"), ("b", "B"))), ("c", "C"))
         self.assertEqual(helpers.first_choice(choices), "a")
         self.assertEqual(helpers.first_choice((("x", "X"),)), "x")
-
-    def test_get_template_path(self):
-        path = helpers.get_template_path("render", "default", "form")
-        self.assertEqual(
-            path,
-            f"djangocms_form_builder/{app_settings.framework}/render/default/form.html",
-        )
-
-    def test_get_plugin_template_existing_and_fallback(self):
-        class Inst:
-            # no explicit template, will use first_choice from choices below
-            pass
-
-        choices = (("default", "Default"), ("fancy", "Fancy"))
-
-        # Existing
-        path = helpers.get_plugin_template(Inst(), "render", "form", choices)
-        self.assertTrue(path.endswith("/render/default/form.html"))
-
-        # Non-existing should fallback to default
-        inst2 = SimpleNamespace(template="does-not-exist")
-        path2 = helpers.get_plugin_template(inst2, "render", "form", choices)
-        self.assertTrue(path2.endswith("/render/default/form.html"))
 
     def test_mark_safe_lazy(self):
         s = helpers.mark_safe_lazy("<b>hi</b>")

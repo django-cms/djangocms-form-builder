@@ -1,4 +1,5 @@
 import hashlib
+import logging
 
 from django import forms
 from django.apps import apps
@@ -8,8 +9,17 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
-from djangocms_text.fields import HTMLFormField
 from entangled.forms import EntangledModelFormMixin
+
+try:
+    from djangocms_text.fields import HTMLFormField
+except ModuleNotFoundError:
+
+    class HTMLFormField(forms.CharField):
+        """Plain-text fallback if djangocms-text is not installed."""
+
+        widget = forms.Textarea
+
 
 from . import models
 from .entry_model import FormEntry
@@ -20,6 +30,8 @@ from .form_entry_data import (
 )
 from .helpers import get_option, insert_fields
 from .settings import MAIL_TEMPLATE_SETS
+
+logger = logging.getLogger(__name__)
 
 _action_registry = {}
 
@@ -265,21 +277,29 @@ class SendMailAction(FormAction):
         except TemplateDoesNotExist:
             subject = self.subject % dict(form_name=context["form_name"])
 
-        if not recipients:
-            return mail_admins(
-                subject,
-                message,
-                fail_silently=True,
-                html_message=html_message,
-            )
-        else:
-            return send_mail(
-                subject,
-                message,
-                self.from_mail,
-                recipients.split(),
-                fail_silently=True,
-                html_message=html_message,
+        # A failed email must not break the form submission for the user,
+        # but it must not go unnoticed either - hence log instead of raise.
+        try:
+            if not recipients:
+                return mail_admins(
+                    subject,
+                    message,
+                    fail_silently=False,
+                    html_message=html_message,
+                )
+            else:
+                return send_mail(
+                    subject,
+                    message,
+                    self.from_mail,
+                    recipients.split(),
+                    fail_silently=False,
+                    html_message=html_message,
+                )
+        except Exception:
+            logger.exception(
+                "Failed to send email for submission of form %s",
+                context["form_name"],
             )
 
 

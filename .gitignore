@@ -35,3 +35,5 @@ local.sqlite
 /private/sass/bootstrap/
 /htmlcov/
 .history/
+htmlcov/
+docs/_build/
