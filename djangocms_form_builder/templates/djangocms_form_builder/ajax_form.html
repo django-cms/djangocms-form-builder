@@ -10,11 +10,7 @@
             {% render_form form %}
         {% endfor %}
         {% if instance.child_plugin_instances and not has_captcha_plugin %}
-            {% if form.fields.captcha_field and instance.captcha_widget == "altcha" %}
-                {{ form.captcha_field }}
-            {% else %}
-                {% render_recaptcha_widget form  %}
-            {% endif %}
+            {% render_captcha_widget form %}
         {% endif %}
     </div>
 {% endspaceless %}

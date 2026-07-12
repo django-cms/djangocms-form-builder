@@ -1,1 +1,1 @@
-{% load form_builder_tags %}{% if form.fields.captcha_field %}{% if captcha_widget == "altcha" %}{{ form.captcha_field }}{% else %}{% render_recaptcha_widget form %}{% endif %}{% endif %}
+{% load form_builder_tags %}{% render_captcha_widget form %}

@@ -450,10 +450,9 @@ class TemplateTagsTestCase(CMSTestCase):
 
         self.assertIn("Personal Info", rendered)
 
-    def test_render_recaptcha_widget_when_not_installed(self):
-        """Test {% render_recaptcha_widget %} when recaptcha not available"""
+    def test_render_captcha_widget_without_captcha_field(self):
         template = Template(
-            "{% load form_builder_tags %}{% render_recaptcha_widget form %}"
+            "{% load form_builder_tags %}{% render_captcha_widget form %}"
         )
 
         class TestForm(forms.Form):
@@ -463,7 +462,6 @@ class TemplateTagsTestCase(CMSTestCase):
         context = Context({"form": form})
         rendered = template.render(context)
 
-        # Should return empty string when recaptcha not installed
         self.assertEqual(rendered.strip(), "")
 
 
