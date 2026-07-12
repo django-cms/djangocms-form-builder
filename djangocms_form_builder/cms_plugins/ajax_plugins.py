@@ -233,8 +233,10 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
             return False
 
         def has_captcha_plugin(plugins):
+            from .form_plugins import CaptchaPlugin
+
             for child in plugins:
-                if child.plugin_type == "CaptchaPlugin":
+                if child.plugin_type == CaptchaPlugin.__name__:
                     return True
                 child_plugins = getattr(child, "child_plugin_instances", None) or []
                 if has_captcha_plugin(child_plugins):
