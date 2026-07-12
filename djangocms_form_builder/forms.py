@@ -613,3 +613,9 @@ class SubmitButtonForm(
         choices=constants.SUBMIT_BUTTON_CHOICES,
         initial=constants.SUBMIT_BUTTON_CHOICES[0][0],
     )
+
+
+class CaptchaForm(forms.ModelForm):
+    class Meta:
+        model = models.Captcha
+        fields = ()
