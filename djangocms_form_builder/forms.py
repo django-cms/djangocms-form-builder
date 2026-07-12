@@ -19,14 +19,6 @@ from .file_validation import validation_preset_choice_tuples
 from .helpers import get_option, mark_safe_lazy
 
 
-class Noop:
-    pass
-
-
-def mixin_factory(x):
-    return Noop
-
-
 class SimpleFrontendForm(forms.Form):
     takes_request = True
 
@@ -74,7 +66,7 @@ class SelectMultipleActionsWidget(forms.CheckboxSelectMultiple):
         return super().format_value(value)
 
 
-class FormsForm(mixin_factory("Form"), EntangledModelForm):
+class FormsForm(EntangledModelForm):
     """
     Components > "Forms" Plugin
     https://getbootstrap.com/docs/5.1/forms/overview/
@@ -244,7 +236,7 @@ class FormsForm(mixin_factory("Form"), EntangledModelForm):
                             ),
                         }
                     )
-        elif not self.cleaned_data["form_selection"]:
+        elif not self.cleaned_data.get("form_selection"):
             raise ValidationError(
                 {
                     "form_actions": _(
@@ -268,10 +260,6 @@ class FormsForm(mixin_factory("Form"), EntangledModelForm):
             )
         return self.cleaned_data
 
-    def is_valid(self):
-        valid = super().is_valid()
-        return valid
-
 
 FORBIDDEN_FORM_NAMES = [
     "Meta",
@@ -279,7 +267,7 @@ FORBIDDEN_FORM_NAMES = [
     "form_name",
     "form_user",
     "entry_data",
-    "html_header",
+    "html_headers",
 ] + dir(SimpleFrontendForm(request=None))
 
 
@@ -344,7 +332,7 @@ class FormFieldMixin(EntangledModelFormMixin):
     )
 
 
-class CharFieldForm(mixin_factory("CharField"), FormFieldMixin, EntangledModelForm):
+class CharFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {
@@ -366,21 +354,19 @@ class CharFieldForm(mixin_factory("CharField"), FormFieldMixin, EntangledModelFo
     )
 
 
-class EmailFieldForm(mixin_factory("EmailField"), FormFieldMixin, EntangledModelForm):
+class EmailFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {"config": []}
 
 
-class UrlFieldForm(mixin_factory("URLField"), FormFieldMixin, EntangledModelForm):
+class UrlFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {"config": []}
 
 
-class DecimalFieldForm(
-    mixin_factory("DecimalField"), FormFieldMixin, EntangledModelForm
-):
+class DecimalFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {
@@ -407,9 +393,7 @@ class DecimalFieldForm(
     )
 
 
-class IntegerFieldForm(
-    mixin_factory("IntegerField"), FormFieldMixin, EntangledModelForm
-):
+class IntegerFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {
@@ -429,9 +413,7 @@ class IntegerFieldForm(
     )
 
 
-class TextareaFieldForm(
-    mixin_factory("TextareaField"), FormFieldMixin, EntangledModelForm
-):
+class TextareaFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {
@@ -461,7 +443,7 @@ class TextareaFieldForm(
     )
 
 
-class DateFieldForm(mixin_factory("DateField"), FormFieldMixin, EntangledModelForm):
+class DateFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {"config": []}
@@ -471,9 +453,7 @@ class DateFieldForm(mixin_factory("DateField"), FormFieldMixin, EntangledModelFo
         self.fields["field_placeholder"].help_text = _("Not visible on most browsers.")
 
 
-class DateTimeFieldForm(
-    mixin_factory("DateTimeField"), FormFieldMixin, EntangledModelForm
-):
+class DateTimeFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {"config": []}
@@ -483,7 +463,7 @@ class DateTimeFieldForm(
         self.fields["field_placeholder"].help_text = _("Not visible on most browsers.")
 
 
-class TimeFieldForm(mixin_factory("TimeField"), FormFieldMixin, EntangledModelForm):
+class TimeFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {"config": []}
@@ -493,7 +473,7 @@ class TimeFieldForm(mixin_factory("TimeField"), FormFieldMixin, EntangledModelFo
         self.fields["field_placeholder"].help_text = _("Not visible on most browsers.")
 
 
-class SelectFieldForm(mixin_factory("SelectField"), FormFieldMixin, EntangledModelForm):
+class SelectFieldForm(FormFieldMixin, EntangledModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if "instance" in kwargs and kwargs["instance"] is not None:
@@ -643,9 +623,7 @@ class MultipleFileFieldForm(
         self.fields["field_placeholder"].widget = forms.HiddenInput()
 
 
-class BooleanFieldForm(
-    mixin_factory("BooleanField"), FormFieldMixin, EntangledModelForm
-):
+class BooleanFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {
@@ -672,9 +650,7 @@ class BooleanFieldForm(
         )
 
 
-class SubmitButtonForm(
-    mixin_factory("SubmitButton"), FormFieldMixin, EntangledModelForm
-):
+class SubmitButtonForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {

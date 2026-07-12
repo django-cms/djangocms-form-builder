@@ -98,6 +98,41 @@ class ActionTestCase(TestFixture, CMSTestCase):
         self.assertEqual(args[0], "Test form form submission")
         self.assertIn("Form submission", args[1])
 
+    def test_send_mail_action_logs_failures(self):
+        plugin_instance = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type="FormPlugin",
+            language=self.language,
+            form_name="test_form",
+        )
+        plugin_instance.action_parameters = {
+            "sendemail_recipients": "a@b.c",
+            "sendemail_template": "default",
+        }
+        plugin_instance.form_actions = f'["{self.send_mail_action}"]'
+        plugin_instance.save()
+
+        child_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type="CharFieldPlugin",
+            language=self.language,
+            target=plugin_instance,
+            config={"field_name": "field1"},
+        )
+        child_plugin.save()
+        plugin_instance.child_plugin_instances = [child_plugin]
+        child_plugin.child_plugin_instances = []
+
+        plugin = plugin_instance.get_plugin_class_instance()
+        plugin.instance = plugin_instance
+
+        with patch("django.core.mail.send_mail", side_effect=Exception("SMTP down")):
+            form = plugin.get_form_class()({}, request=self.get_request("/"))
+            form.cleaned_data = {"field1": "value1"}
+            # The submission must not raise, but the failure must be logged
+            with self.assertLogs("djangocms_form_builder.actions", level="ERROR"):
+                form.save()
+
     def test_send_mail_action_authenticated_user(self):
         user = get_user_model().objects.create_user(
             username="johndoe",
@@ -148,7 +183,7 @@ class ActionTestCase(TestFixture, CMSTestCase):
         self.assertIn("John Doe (johndoe)", args[1])
         self.assertNotIn("anonymous", args[1])
 
-    def test_save_to_db_action_creates_entry_with_headers(self):
+    def test_save_to_db_action_creates_entry(self):
         plugin_instance = add_plugin(
             placeholder=self.placeholder,
             plugin_type="FormPlugin",
@@ -187,8 +222,8 @@ class ActionTestCase(TestFixture, CMSTestCase):
         self.assertEqual(entry.form_name, "save_form")
         self.assertEqual(entry.form_user, None)
         self.assertEqual(entry.entry_data.get("field1"), "value1")
-        self.assertEqual(entry.html_headers.get("user_agent"), "pytest-agent")
-        self.assertEqual(entry.html_headers.get("referer"), "/from")
+        # Request headers (User-Agent, Referer) are deliberately not stored
+        self.assertEqual(entry.html_headers, {})
 
     def test_save_to_db_action_unique_updates_single_entry(self):
         plugin_instance = add_plugin(

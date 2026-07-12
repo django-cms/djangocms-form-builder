@@ -1,5 +1,7 @@
 import re
+from decimal import Decimal
 from unittest import skipIf
+from unittest.mock import patch
 
 from cms import __version__ as cms_version
 from cms.api import add_plugin
@@ -336,6 +338,37 @@ class TemplateTagsTestCase(CMSTestCase):
         self.assertIn("invalid-feedback", rendered)
         self.assertIn("is_invalid", rendered)
 
+    def test_render_widget_escapes_help_text(self):
+        template = Template(
+            "{% load form_builder_tags %}{% render_widget form 'name' %}"
+        )
+
+        class TestForm(forms.Form):
+            name = forms.CharField(help_text='<script>alert("xss")</script>')
+
+        rendered = template.render(Context({"form": TestForm()}))
+
+        self.assertIn("&lt;script&gt;", rendered)
+        self.assertNotIn("<script>", rendered)
+
+    def test_render_widget_escapes_validation_errors(self):
+        template = Template(
+            "{% load form_builder_tags %}{% render_widget form 'name' %}"
+        )
+
+        class TestForm(forms.Form):
+            name = forms.CharField()
+
+            def clean_name(self):
+                raise forms.ValidationError('<script>alert("xss")</script>')
+
+        form = TestForm(data={"name": "unsafe"})
+        self.assertFalse(form.is_valid())
+        rendered = template.render(Context({"form": form}))
+
+        self.assertIn("&lt;script&gt;", rendered)
+        self.assertNotIn("<script>", rendered)
+
     def test_add_placeholder_filter(self):
         """Test {% add_placeholder %} filter"""
         template = Template("{% load form_builder_tags %}{{ form|add_placeholder }}")
@@ -405,6 +438,36 @@ class AltchaIntegrationTestCase(TestFixture, CMSTestCase):
         )()
         field = recaptcha.get_recaptcha_field(instance)
         self.assertIsInstance(field, AltchaField)
+
+    def test_recaptcha_v3_defaults_missing_requirement(self):
+        class DummyWidget:
+            def __init__(self, **kwargs):
+                self.options = kwargs
+
+        class DummyField:
+            def __init__(self, **kwargs):
+                self.widget = kwargs["widget"]
+
+        instance = type(
+            "MockInstance",
+            (),
+            {
+                "captcha_widget": "v3",
+                "captcha_config": None,
+                "captcha_requirement": None,
+            },
+        )()
+
+        with (
+            patch.dict(recaptcha.CAPTCHA_WIDGETS, {"v3": DummyWidget}),
+            patch.dict(recaptcha.CAPTCHA_FIELDS, {"v3": DummyField}),
+        ):
+            field = recaptcha.get_recaptcha_field(instance)
+
+        self.assertEqual(
+            field.widget.options["attrs"]["required_score"], Decimal("0.5")
+        )
+        self.assertNotIn("api_params", field.widget.options)
 
 
 class FormSubmissionRenderingTestCase(TestFixture, CMSTestCase):

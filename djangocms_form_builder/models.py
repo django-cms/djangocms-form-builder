@@ -5,12 +5,10 @@ from django import forms
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import validate_slug
 from django.db import models
-from django.forms.widgets import Input
 from django.utils.html import conditional_escape, mark_safe
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
-from . import recaptcha, settings
 from .entry_model import FormEntry  # NoQA
 from .fields import AttributesField
 from .helpers import coerce_decimal, coerce_int, mark_safe_lazy
@@ -59,6 +57,7 @@ class Form(CMSPlugin):
     form_spacing = models.CharField(
         verbose_name=_("Margin between fields"),
         max_length=16,
+        blank=True,
     )
 
     form_actions = models.CharField(
@@ -76,12 +75,13 @@ class Form(CMSPlugin):
 
     attributes = AttributesField()
 
+    # Keep the schema independent of which captcha packages happen to be
+    # installed - choices and defaults are enforced at the form level.
     captcha_widget = models.CharField(
         verbose_name=_("captcha widget"),
         max_length=16,
         blank=True,
-        default=recaptcha.CAPTCHA_CHOICES[0][0] if recaptcha.installed else "",
-        choices=settings.EMPTY_CHOICE + recaptcha.CAPTCHA_CHOICES,
+        default="",
         help_text=mark_safe_lazy(
             _(
                 'Read more in the <a href="{link}" target="_blank">documentation</a>.'
@@ -90,7 +90,7 @@ class Form(CMSPlugin):
     )
     captcha_requirement = models.DecimalField(
         verbose_name=_("Minimum score requirement"),
-        null=not recaptcha.installed,
+        null=True,
         decimal_places=2,
         max_digits=3,
         default=0.5,
@@ -166,11 +166,13 @@ class FormField(CMSPlugin):
         classes.update(self._additional_classes)
         if classes:
             attributes["class"] = " ".join(classes)
-        parts = (
-            f'{item}="{conditional_escape(value)}"' if value else f"{item}"
+        parts = " ".join(
+            f'{conditional_escape(item)}="{conditional_escape(value)}"'
+            if value
+            else conditional_escape(item)
             for item, value in attributes.items()
         )
-        return mark_safe(" " + " ".join(parts)) if parts else ""
+        return mark_safe(" " + parts) if parts else ""
 
     def save(self, *args, **kwargs):
         self.ui_item = self.__class__.__name__
@@ -354,7 +356,7 @@ class DateField(FormField):
 class DateTimeField(FormField):
     class Meta:
         proxy = True
-        verbose_name = _("Date field")
+        verbose_name = _("Date and time field")
 
     class DateTimeField(forms.DateTimeField):
         def prepare_value(self, value):
@@ -381,7 +383,7 @@ class DateTimeField(FormField):
 class TimeField(FormField):
     class Meta:
         proxy = True
-        verbose_name = _("Date field")
+        verbose_name = _("Time field")
 
     class TimeInput(forms.TimeInput):
         input_type = "time"
@@ -455,6 +457,8 @@ class Choice(FormField):
 
 
 class SwitchInput(forms.CheckboxInput):
+    # The class name is significant: the frontend attr_dict maps widget class
+    # names to CSS classes, rendering this as a switch instead of a checkbox.
     pass
 
 
