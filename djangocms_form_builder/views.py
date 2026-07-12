@@ -2,11 +2,10 @@ import hashlib
 
 from cms import __version__ as cms_version
 from cms.models import CMSPlugin
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.http import Http404, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
-from django.utils.translation import gettext as _
 from django.views import View
 
 _formview_pool = {}
@@ -27,9 +26,10 @@ def register_form_view(cls, slug=None):
     if not slug:
         slug = get_random_string(length=12)
     key = hashlib.sha384(slug.encode("utf-8")).hexdigest()
-    if key in _formview_pool:
-        assert _formview_pool[key][0] == cls, _(
-            "Only unique slugs accepted for form views"
+    if key in _formview_pool and _formview_pool[key][0] is not cls:
+        raise ImproperlyConfigured(
+            f"Only unique slugs accepted for form views: {slug!r} is already "
+            f"registered for {_formview_pool[key][0]!r}"
         )
     _formview_pool[key] = (cls, slug, key)
     return key

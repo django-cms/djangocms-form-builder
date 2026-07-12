@@ -1,4 +1,5 @@
 import hashlib
+import logging
 
 from django import forms
 from django.apps import apps
@@ -8,13 +9,24 @@ from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
-from djangocms_text.fields import HTMLFormField
 from entangled.forms import EntangledModelFormMixin
+
+try:
+    from djangocms_text.fields import HTMLFormField
+except ModuleNotFoundError:
+
+    class HTMLFormField(forms.CharField):
+        """Plain-text fallback if djangocms-text is not installed."""
+
+        widget = forms.Textarea
+
 
 from . import models
 from .entry_model import FormEntry
 from .helpers import get_option, insert_fields
 from .settings import MAIL_TEMPLATE_SETS
+
+logger = logging.getLogger(__name__)
 
 _action_registry = {}
 
@@ -123,15 +135,7 @@ class SaveToDBAction(FormAction):
                 "form_name": get_option(form, "form_name"),
                 "form_user": None if request.user.is_anonymous else request.user,
             }
-        defaults.update(
-            {
-                "entry_data": form.cleaned_data,
-                "html_headers": dict(
-                    user_agent=request.headers["User-Agent"],
-                    referer=request.headers["Referer"],
-                ),
-            }
-        )
+        defaults["entry_data"] = form.cleaned_data
         if keys:  # update_or_create only works if at least one key is given
             try:
                 FormEntry.objects.update_or_create(**keys, defaults=defaults)
@@ -139,7 +143,7 @@ class SaveToDBAction(FormAction):
                 FormEntry.objects.filter(**keys).delete()
                 FormEntry.objects.create(**keys, **defaults)
         else:
-            FormEntry.objects.create(**defaults), True
+            FormEntry.objects.create(**defaults)
 
 
 SAVE_TO_DB_ACTION = next(iter(_action_registry)) if _action_registry else None
@@ -220,21 +224,29 @@ class SendMailAction(FormAction):
         except TemplateDoesNotExist:
             subject = self.subject % dict(form_name=context["form_name"])
 
-        if not recipients:
-            return mail_admins(
-                subject,
-                message,
-                fail_silently=True,
-                html_message=html_message,
-            )
-        else:
-            return send_mail(
-                subject,
-                message,
-                self.from_mail,
-                recipients.split(),
-                fail_silently=True,
-                html_message=html_message,
+        # A failed email must not break the form submission for the user,
+        # but it must not go unnoticed either - hence log instead of raise.
+        try:
+            if not recipients:
+                return mail_admins(
+                    subject,
+                    message,
+                    fail_silently=False,
+                    html_message=html_message,
+                )
+            else:
+                return send_mail(
+                    subject,
+                    message,
+                    self.from_mail,
+                    recipients.split(),
+                    fail_silently=False,
+                    html_message=html_message,
+                )
+        except Exception:
+            logger.exception(
+                "Failed to send email for submission of form %s",
+                context["form_name"],
             )
 
 

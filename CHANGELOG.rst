@@ -2,6 +2,32 @@
 Changelog
 =========
 
+Unreleased
+==========
+
+* feat: Add ``prune_form_entries`` management command to enforce a retention
+  policy for stored form entries
+* feat: The send email action logs failed deliveries to the
+  ``djangocms_form_builder.actions`` logger instead of silently dropping them
+* fix: Make ``djangocms-text`` a soft dependency - the success message action
+  falls back to a plain textarea if it is not installed
+* fix: ``SaveToDBAction`` no longer stores the ``User-Agent`` and ``Referer``
+  request headers (which also caused a server error when the headers were
+  absent); the ``html_headers`` field is no longer populated
+* fix: Captcha configuration parameters (``data-*`` attributes and api
+  parameters) were never passed to the captcha widget
+* fix: Make the database schema independent of installed captcha packages to
+  avoid spurious migrations in user projects
+* fix: ``register_form_view`` raises ``ImproperlyConfigured`` instead of using
+  ``assert`` (which is stripped in optimized mode) for duplicate slugs
+* fix: Correct verbose names of ``DateTimeField`` and ``TimeField`` models
+* fix: Escape help texts, validation error messages and attribute names when
+  rendering widgets
+* fix: Reserved form field name list contained ``html_header`` instead of
+  ``html_headers``
+* chore: Remove dead code inherited from djangocms-frontend (device choice
+  fields, icon widgets, template helpers, form mixin stubs, and more)
+
 0.5.1 (2026-06-01)
 ==================
 

@@ -61,7 +61,7 @@ class AjaxFormMixin(FormMixin):
         # Execute save method
         save = getattr(form, "save", None)
         if callable(save):
-            result = form.save()
+            save()
         # Identify redirect
         redirect = get_option(form, "redirect", None)
         if isinstance(redirect, str):
