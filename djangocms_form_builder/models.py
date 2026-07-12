@@ -5,6 +5,7 @@ from django import forms
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import validate_slug
 from django.db import models
+from django.forms.widgets import Input
 from django.utils.html import conditional_escape, mark_safe
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _

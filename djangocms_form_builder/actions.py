@@ -162,15 +162,7 @@ class SaveToDBAction(FormAction):
                         cleaned_data[key] = previous_data[key]
 
         serialized_data = serialize_cleaned_data_for_entry(cleaned_data)
-        defaults.update(
-            {
-                "entry_data": serialized_data,
-                "html_headers": dict(
-                    user_agent=request.headers["User-Agent"],
-                    referer=request.headers["Referer"],
-                ),
-            }
-        )
+        defaults["entry_data"] = serialized_data
         if keys:  # update_or_create only works if at least one key is given
             try:
                 FormEntry.objects.update_or_create(**keys, defaults=defaults)
