@@ -61,7 +61,7 @@ def get_recaptcha_field(instance):
     widget_params["attrs"]["no_field_sep"] = True
     if instance.captcha_widget == "v3":
         widget_params["attrs"]["required_score"] = coerce_decimal(
-            instance.captcha_requirement
+            0.5 if instance.captcha_requirement is None else instance.captcha_requirement
         )
     if not widget_params["api_params"]:
         del widget_params["api_params"]
