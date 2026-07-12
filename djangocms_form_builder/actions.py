@@ -187,7 +187,7 @@ class SaveToDBAction(FormAction):
                 raise
         else:
             try:
-                FormEntry.objects.create(**defaults), True
+                FormEntry.objects.create(**defaults)
             except Exception:
                 delete_stored_files(serialized_data)
                 raise
