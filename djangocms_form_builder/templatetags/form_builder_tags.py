@@ -151,10 +151,19 @@ def render_widget(form, form_field, **kwargs):
 
 
 @register.simple_tag(takes_context=False)
-def render_recaptcha_widget(form):
-    if recaptcha.installed:
-        return render_widget(form, recaptcha.field_name)
-    return ""
+def render_captcha_widget(form):
+    if form is None or recaptcha.field_name not in form.fields:
+        return ""
+    field = form[recaptcha.field_name]
+    if field.field.widget.__class__.__module__.startswith("django_altcha"):
+        return field.as_widget()
+    return render_widget(form, recaptcha.field_name)
+
+
+# Kept for compatibility with custom templates using the old tag name.
+render_recaptcha_widget = register.simple_tag(
+    takes_context=False, name="render_recaptcha_widget"
+)(render_captcha_widget)
 
 
 @register.filter_function

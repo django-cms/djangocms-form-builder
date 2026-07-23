@@ -2,6 +2,7 @@ from . import legacy  # noqa F401
 from .ajax_plugins import FormPlugin
 from .form_plugins import (
     BooleanFieldPlugin,
+    CaptchaPlugin,
     CharFieldPlugin,
     ChoicePlugin,
     DateFieldPlugin,
@@ -21,6 +22,7 @@ from .form_plugins import (
 __all__ = [
     "FormPlugin",
     "BooleanFieldPlugin",
+    "CaptchaPlugin",
     "CharFieldPlugin",
     "ChoicePlugin",
     "DateFieldPlugin",

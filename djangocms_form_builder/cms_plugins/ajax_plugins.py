@@ -232,12 +232,26 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
                     return True
             return False
 
+        def has_captcha_plugin(plugins):
+            from .form_plugins import CaptchaPlugin
+
+            for child in plugins:
+                if child.plugin_type == CaptchaPlugin.__name__:
+                    return True
+                child_plugins = getattr(child, "child_plugin_instances", None) or []
+                if has_captcha_plugin(child_plugins):
+                    return True
+            return False
+
         context.update(
             {
                 "instance": instance,
                 "form": form,
                 "uid": f"{instance.id}{getattr(form, 'slug', '')}-{context['form_counter']}",
                 "has_submit_button": has_submit_button(instance.child_plugin_instances),
+                "has_captcha_plugin": has_captcha_plugin(
+                    instance.child_plugin_instances
+                ),
                 "csrf_cookie_httponly": django_settings.CSRF_COOKIE_HTTPONLY,
             }
         )

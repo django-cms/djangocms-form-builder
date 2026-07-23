@@ -524,3 +524,9 @@ class SubmitButton(FormField):
     class Meta:
         proxy = True
         verbose_name = _("Submit button")
+
+
+class Captcha(FormField):
+    class Meta:
+        proxy = True
+        verbose_name = _("Captcha")
