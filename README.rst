@@ -52,7 +52,7 @@ For a manual install:
 
 - run ``pip install djangocms-form-builder``, **or**
 
--  run ``pip install git+https://github.com/fsbraun/djangocms-form-builder@master#egg=djangocms-form-builder``
+-  run ``pip install git+https://github.com/django-cms/djangocms-form-builder@main#egg=djangocms-form-builder``
 
 -  add ``djangocms_form_builder`` to your ``INSTALLED_APPS``. (If you are using both djangocms-frontend and djangocms-form-builder, add it **after** djangocms-frontend
 
@@ -80,6 +80,7 @@ Currently the following form fields are supported:
 * DateField, DateTimeField, TimeField
 * SelectField
 * BooleanField
+* FileField
 
 A Form plugin must not be used within another Form plugin.
 
@@ -168,6 +169,24 @@ Upon form submission a ``save()`` method of the form (if it has one). After exec
 
 Actions are not available for Django forms. Any actions to be performed upon submission should reside in its ``save()`` method.
 
+Tests
+=====
+
+Install test dependencies:
+
+.. code-block:: bash
+
+    python3 -m venv .venv
+    . .venv/bin/activate
+    python3 -m pip install -e ".[altcha,tests]"
+    python3 -m pip install djangocms_versioning
+
+To launch the tests, run:
+
+.. code-block:: bash
+
+    . .venv/bin/activate
+    python3 run_tests.py
 
 Recommendations for public forms
 ================================
@@ -252,6 +271,22 @@ In the form plugin settings in the CMS, choose **Altcha** as the captcha widget.
 The setting **ALTCHA_FIELD_OPTIONS** lets you override the default options passed to django-altcha's ``AltchaField``. It is a dictionary of options supported by the field (see `AltchaField.default_options <https://github.com/aboutcode-org/django-altcha/blob/main/django_altcha/__init__.py#L134>`_). Example: enable floating UI and French language::
 
     ALTCHA_FIELD_OPTIONS = {"challengeurl": reverse_lazy("altcha_challenge"), "floating": True, "language": "fr"}
+
+Sending Files
+=============
+
+.. warning::
+
+   With ``default_storage``, uploaded files are **publicly accessible** to anyone
+   who knows or guesses their URL (a UUID in the filename only makes guessing
+   harder). Configure ``DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE`` to a private
+   storage backend when forms may collect sensitive attachments.
+
+File Upload and Multiple File Upload fields use
+``django.core.files.storage.default_storage`` by default, but you can specify an
+alternative storage using ``DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE``.
+
+See **File Upload** in the doc for more info.
 
 .. |pypi| image:: https://badge.fury.io/py/djangocms-form-builder.svg
    :target: http://badge.fury.io/py/djangocms-form-builder

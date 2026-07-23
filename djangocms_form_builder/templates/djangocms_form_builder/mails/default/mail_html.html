@@ -9,10 +9,18 @@
     </tr>
     </thead>
     <tbody>
-    {% for field, value in cleaned_data.items %}
+    {% for field in form_entry.get_mail_data %}
     <tr>
-        <td>{{ field }}</td>
-        <td>{{ value }}</td>
+        <td>{{ field.label }}</td>
+        <td>
+            {% if field.files %}
+                {% for file in field.files %}
+                    <a href="{{ file.url }}">{{ file.filename }}</a>{% if not forloop.last %}<br>{% endif %}
+                {% endfor %}
+            {% else %}
+                {{ field.value }}
+            {% endif %}
+        </td>
     </tr>
     {% endfor %}
     <tr>

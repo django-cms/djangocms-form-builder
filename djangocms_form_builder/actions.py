@@ -23,6 +23,11 @@ except ModuleNotFoundError:
 
 from . import models
 from .entry_model import FormEntry
+from .form_entry_data import (
+    delete_stored_files,
+    iter_stored_file_metadata,
+    serialize_cleaned_data_for_entry,
+)
 from .helpers import get_option, insert_fields
 from .settings import MAIL_TEMPLATE_SETS
 
@@ -135,15 +140,55 @@ class SaveToDBAction(FormAction):
                 "form_name": get_option(form, "form_name"),
                 "form_user": None if request.user.is_anonymous else request.user,
             }
-        defaults["entry_data"] = form.cleaned_data
+        previous_data = None
+        previous_names = set()
+        cleaned_data = dict(form.cleaned_data)
+        if keys:
+            existing_entries = FormEntry.objects.filter(**keys).only("entry_data")
+            previous = existing_entries.first()
+            has_multiple = (
+                previous and existing_entries.exclude(pk=previous.pk).exists()
+            )
+            if previous and not has_multiple:
+                previous_data = previous.entry_data
+                previous_names = {
+                    meta.get("name")
+                    for meta in iter_stored_file_metadata(previous_data)
+                }
+                # An empty optional file input means "no replacement". Preserve
+                # the existing upload; an explicit False still removes it.
+                for key in previous.get_file_entry_data_keys():
+                    if cleaned_data.get(key) in (None, []):
+                        cleaned_data[key] = previous_data[key]
+
+        serialized_data = serialize_cleaned_data_for_entry(cleaned_data)
+        defaults["entry_data"] = serialized_data
         if keys:  # update_or_create only works if at least one key is given
             try:
                 FormEntry.objects.update_or_create(**keys, defaults=defaults)
             except FormEntry.MultipleObjectsReturned:  # Delete outdated objects
                 FormEntry.objects.filter(**keys).delete()
-                FormEntry.objects.create(**keys, **defaults)
+                try:
+                    FormEntry.objects.create(**keys, **defaults)
+                except Exception:
+                    delete_stored_files(serialized_data)
+                    raise
+                previous_data = None  # queryset deletion already removed its files
+            except Exception:
+                delete_stored_files(serialized_data, excluding=previous_names)
+                raise
         else:
-            FormEntry.objects.create(**defaults)
+            try:
+                FormEntry.objects.create(**defaults)
+            except Exception:
+                delete_stored_files(serialized_data)
+                raise
+
+        if previous_data:
+            retained_names = {
+                meta.get("name") for meta in iter_stored_file_metadata(serialized_data)
+            }
+            delete_stored_files(previous_data, excluding=retained_names)
 
 
 SAVE_TO_DB_ACTION = next(iter(_action_registry)) if _action_registry else None
@@ -197,7 +242,7 @@ class SendMailAction(FormAction):
         recipients = self.get_parameter(form, "sendemail_recipients") or ""
         template_set = self.get_parameter(form, "sendemail_template") or "default"
         context = dict(
-            cleaned_data=form.cleaned_data,
+            form_entry=FormEntry.objects.last(),
             form_name=getattr(form.Meta, "verbose_name", ""),
             user=request.user,
             user_agent=request.headers["User-Agent"]

@@ -143,3 +143,63 @@ class FormEntryAdminTests(TestCase):
         self.assertIn("comment", data_fields)
         self.assertIn("notify", data_fields)
         self.assertIn("score", data_fields)
+
+    def test_change_view_file_fields_are_readonly_not_entangled_inputs(self):
+        entry = FormEntry.objects.create(
+            form_name="upload",
+            form_user=self.user1,
+            entry_data={
+                "title": "Hi",
+                "doc": {
+                    "_form_builder_file": True,
+                    "url": "/media/form_uploads/a.pdf",
+                    "filename": "a.pdf",
+                },
+                "les_fichiers": [
+                    {
+                        "_form_builder_file": True,
+                        "url": "/media/form_uploads/x.png",
+                        "filename": "x.png",
+                    },
+                ],
+            },
+        )
+        url = reverse("admin:djangocms_form_builder_formentry_change", args=[entry.pk])
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'name="title"')
+        self.assertNotContains(resp, 'name="doc"')
+        self.assertNotContains(resp, 'name="les_fichiers"')
+        self.assertContains(resp, "/media/form_uploads/a.pdf")
+        self.assertContains(resp, "/media/form_uploads/x.png")
+
+    def test_change_post_preserves_file_entry_data(self):
+        entry = FormEntry.objects.create(
+            form_name="upload",
+            form_user=self.user1,
+            entry_data={
+                "title": "Hi",
+                "doc": {
+                    "_form_builder_file": True,
+                    "url": "/media/form_uploads/a.pdf",
+                    "filename": "a.pdf",
+                },
+            },
+        )
+        url = reverse("admin:djangocms_form_builder_formentry_change", args=[entry.pk])
+        post_data = {
+            "title": "Updated",
+            "_save": "Save",
+        }
+        resp = self.client.post(url, post_data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        entry.refresh_from_db()
+        self.assertEqual(entry.entry_data.get("title"), "Updated")
+        self.assertEqual(
+            entry.entry_data.get("doc"),
+            {
+                "_form_builder_file": True,
+                "url": "/media/form_uploads/a.pdf",
+                "filename": "a.pdf",
+            },
+        )

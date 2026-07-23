@@ -1,6 +1,7 @@
 import importlib
 
 from django.conf import settings as django_settings
+from django.core.files.storage import default_storage
 from django.utils.translation import gettext_lazy as _
 
 EMPTY_CHOICE = (("", "-----"),)
@@ -38,6 +39,11 @@ else:
 ALTCHA_FIELD_OPTIONS = getattr(
     django_settings, "ALTCHA_FIELD_OPTIONS", {}
 )  # See https://github.com/aboutcode-org/django-altcha/blob/9d0895f5f77fec058272821502cbb71d0cabab50/django_altcha/__init__.py#L134 for config options
+
+
+FILE_FIELD_STORAGE = getattr(
+    django_settings, "DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE", default_storage
+)
 
 
 def render_factory(cls, theme_module, render_module):

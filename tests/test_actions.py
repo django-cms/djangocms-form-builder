@@ -6,8 +6,9 @@ from django.apps import apps
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.core.files.uploadedfile import SimpleUploadedFile
 
-from djangocms_form_builder.actions import get_registered_actions
+from djangocms_form_builder.actions import SaveToDBAction, get_registered_actions
 from djangocms_form_builder.cms_plugins.ajax_plugins import FormPlugin
 from djangocms_form_builder.entry_model import FormEntry
 
@@ -35,6 +36,75 @@ class ActionTestCase(TestFixture, CMSTestCase):
             ),
             None,
         )
+
+    def _unique_upload_form(self, cleaned_data):
+        class UniqueUploadForm:
+            class Meta:
+                options = {
+                    "unique": True,
+                    "login_required": True,
+                    "form_name": "unique-upload",
+                }
+
+        form = UniqueUploadForm()
+        form.cleaned_data = cleaned_data
+        return form
+
+    def _authenticated_upload_request(self):
+        request = self.get_request("/")
+        request.user = self.superuser
+        request.META["HTTP_USER_AGENT"] = "test-agent"
+        request.META["HTTP_REFERER"] = "/form/"
+        return request
+
+    @patch("djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE")
+    def test_unique_submission_preserves_upload_without_replacement(self, storage):
+        metadata = {
+            "_form_builder_file": True,
+            "filename": "old.pdf",
+            "name": "form_uploads/old.pdf",
+            "url": "/media/form_uploads/old.pdf",
+        }
+        entry = FormEntry.objects.create(
+            form_name="unique-upload",
+            form_user=self.superuser,
+            entry_data={"attachment": metadata},
+        )
+
+        SaveToDBAction().execute(
+            self._unique_upload_form({"attachment": None}),
+            self._authenticated_upload_request(),
+        )
+
+        entry.refresh_from_db()
+        self.assertEqual(entry.entry_data["attachment"], metadata)
+        storage.delete.assert_not_called()
+
+    @patch("djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE")
+    def test_unique_submission_deletes_replaced_upload(self, storage):
+        old_metadata = {
+            "_form_builder_file": True,
+            "filename": "old.pdf",
+            "name": "form_uploads/old.pdf",
+            "url": "/media/form_uploads/old.pdf",
+        }
+        entry = FormEntry.objects.create(
+            form_name="unique-upload",
+            form_user=self.superuser,
+            entry_data={"attachment": old_metadata},
+        )
+        storage.save.return_value = "form_uploads/new.pdf"
+        storage.url.return_value = "/media/form_uploads/new.pdf"
+        uploaded = SimpleUploadedFile("new.pdf", b"new")
+
+        SaveToDBAction().execute(
+            self._unique_upload_form({"attachment": uploaded}),
+            self._authenticated_upload_request(),
+        )
+
+        entry.refresh_from_db()
+        self.assertEqual(entry.entry_data["attachment"]["name"], "form_uploads/new.pdf")
+        storage.delete.assert_called_once_with("form_uploads/old.pdf")
 
     def test_send_mail_action(self):
         plugin_instance = add_plugin(
