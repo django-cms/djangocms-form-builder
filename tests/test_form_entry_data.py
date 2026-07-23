@@ -43,9 +43,23 @@ class SerializeCleanedDataTests(TestCase):
             self.assertIn("name", data["files"][0])
             self.assertNotIn("path", data["files"][0])
 
+    @patch("djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE")
+    def test_rolls_back_files_when_a_later_storage_write_fails(self, mock_storage):
+        mock_storage.save.side_effect = ["form_uploads/a.txt", OSError("disk full")]
+        mock_storage.url.return_value = "/media/form_uploads/a.txt"
+        files = [
+            SimpleUploadedFile("a.txt", b"a"),
+            SimpleUploadedFile("b.txt", b"b"),
+        ]
+
+        with self.assertRaises(OSError):
+            serialize_cleaned_data_for_entry({"files": files})
+
+        mock_storage.delete.assert_called_once_with("form_uploads/a.txt")
+
 
 class DeleteEntryFilesTests(TestCase):
-    @patch("djangocms_form_builder.entry_model.FILE_FIELD_STORAGE")
+    @patch("djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE")
     def test_delete_entry_calls_storage_delete_for_single_file(self, mock_storage):
         entry = FormEntry.objects.create(
             form_name="upload",
@@ -61,7 +75,7 @@ class DeleteEntryFilesTests(TestCase):
         entry.delete()
         mock_storage.delete.assert_called_once_with("form_uploads/abc_a.pdf")
 
-    @patch("djangocms_form_builder.entry_model.FILE_FIELD_STORAGE")
+    @patch("djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE")
     def test_delete_entry_calls_storage_delete_for_each_multi_file(self, mock_storage):
         entry = FormEntry.objects.create(
             form_name="upload",

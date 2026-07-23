@@ -550,7 +550,7 @@ FILE_UPLOAD_STORAGE_HELP = _(
 )
 
 
-class FileFieldForm(mixin_factory("FileField"), FormFieldMixin, EntangledModelForm):
+class FileFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {
@@ -579,9 +579,7 @@ class FileFieldForm(mixin_factory("FileField"), FormFieldMixin, EntangledModelFo
         self.fields["field_placeholder"].widget = forms.HiddenInput()
 
 
-class MultipleFileFieldForm(
-    mixin_factory("MultipleFileField"), FormFieldMixin, EntangledModelForm
-):
+class MultipleFileFieldForm(FormFieldMixin, EntangledModelForm):
     class Meta:
         model = models.FormField
         entangled_fields = {

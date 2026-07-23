@@ -3,7 +3,7 @@ import hashlib
 from cms import __version__ as cms_version
 from cms.models import CMSPlugin
 from django.core.exceptions import ImproperlyConfigured, ValidationError
-from django.http import Http404, JsonResponse, QueryDict
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from django.views import View
