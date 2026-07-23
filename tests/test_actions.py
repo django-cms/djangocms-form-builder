@@ -106,6 +106,62 @@ class ActionTestCase(TestFixture, CMSTestCase):
         self.assertEqual(entry.entry_data["attachment"]["name"], "form_uploads/new.pdf")
         storage.delete.assert_called_once_with("form_uploads/old.pdf")
 
+    @patch("djangocms_form_builder.actions.delete_stored_files")
+    @patch("djangocms_form_builder.actions.serialize_cleaned_data_for_entry")
+    def test_create_failure_cleans_up_new_uploads(self, serialize, delete_files):
+        serialized = {"attachment": {"name": "form_uploads/new.pdf"}}
+        serialize.return_value = serialized
+        form = self._unique_upload_form({"attachment": object()})
+        form.Meta.options["unique"] = False
+
+        with patch.object(FormEntry.objects, "create", side_effect=OSError("db down")):
+            with self.assertRaisesMessage(OSError, "db down"):
+                SaveToDBAction().execute(
+                    form,
+                    self._authenticated_upload_request(),
+                )
+
+        delete_files.assert_called_once_with(serialized)
+
+    @patch("djangocms_form_builder.actions.delete_stored_files")
+    @patch("djangocms_form_builder.actions.serialize_cleaned_data_for_entry")
+    def test_update_failure_preserves_previous_upload_during_cleanup(
+        self, serialize, delete_files
+    ):
+        old_metadata = {
+            "_form_builder_file": True,
+            "filename": "old.pdf",
+            "name": "form_uploads/old.pdf",
+            "url": "/media/form_uploads/old.pdf",
+        }
+        FormEntry.objects.create(
+            form_name="unique-upload",
+            form_user=self.superuser,
+            entry_data={"attachment": old_metadata},
+        )
+        serialized = {
+            "attachment": {
+                "_form_builder_file": True,
+                "filename": "new.pdf",
+                "name": "form_uploads/new.pdf",
+                "url": "/media/form_uploads/new.pdf",
+            }
+        }
+        serialize.return_value = serialized
+
+        with patch.object(
+            FormEntry.objects, "update_or_create", side_effect=OSError("db down")
+        ):
+            with self.assertRaisesMessage(OSError, "db down"):
+                SaveToDBAction().execute(
+                    self._unique_upload_form({"attachment": object()}),
+                    self._authenticated_upload_request(),
+                )
+
+        delete_files.assert_called_once_with(
+            serialized, excluding={"form_uploads/old.pdf"}
+        )
+
     def test_send_mail_action(self):
         plugin_instance = add_plugin(
             placeholder=self.placeholder,
