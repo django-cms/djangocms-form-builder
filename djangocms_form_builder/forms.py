@@ -15,6 +15,7 @@ from . import (
 )
 from .entry_model import FormEntry
 from .fields import AttributesFormField, ButtonGroup, ChoicesFormField
+from .file_validation import validation_preset_choice_tuples
 from .helpers import get_option, mark_safe_lazy
 
 
@@ -539,6 +540,85 @@ class ChoiceForm(EntangledModelForm):
         required=True,
         help_text=_("Representation of choice displayed to the user."),
     )
+
+
+FILE_UPLOAD_STORAGE_HELP = _(
+    "Uploaded files are stored via Django file storage. With default_storage, "
+    "anyone who knows or guesses the URL can access them. Set "
+    "DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE to a private storage backend "
+    "for sensitive attachments."
+)
+
+
+class FileFieldForm(FormFieldMixin, EntangledModelForm):
+    class Meta:
+        model = models.FormField
+        entangled_fields = {
+            "config": [
+                "field_file_validation_presets",
+            ]
+        }
+
+    field_file_validation_presets = forms.MultipleChoiceField(
+        label=_("Validation presets"),
+        required=False,
+        choices=[],
+        help_text=_(
+            "Choose a rule to control which file types or sizes users can upload. "
+            "Leave empty to allow all files permitted by default."
+        )
+        + " "
+        + FILE_UPLOAD_STORAGE_HELP,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields[
+            "field_file_validation_presets"
+        ].choices = validation_preset_choice_tuples()
+        self.fields["field_placeholder"].widget = forms.HiddenInput()
+
+
+class MultipleFileFieldForm(FormFieldMixin, EntangledModelForm):
+    class Meta:
+        model = models.FormField
+        entangled_fields = {
+            "config": [
+                "max_files",
+                "field_file_validation_presets",
+            ]
+        }
+
+    max_files = forms.IntegerField(
+        label=_("Max files"),
+        min_value=1,
+        initial=2,
+        required=True,
+        help_text=_(
+            "Allowing to upload too many files may crash your website (denial of service attack)."
+        ),
+    )
+
+    field_file_validation_presets = forms.MultipleChoiceField(
+        label=_("Validation presets"),
+        required=False,
+        initial=[],
+        choices=[],
+        help_text=_(
+            "Choose a rule to control which file types or sizes users can upload. "
+            "Leave empty to allow all files permitted by default (applied to each "
+            "uploaded file in order)."
+        )
+        + " "
+        + FILE_UPLOAD_STORAGE_HELP,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields[
+            "field_file_validation_presets"
+        ].choices = validation_preset_choice_tuples()
+        self.fields["field_placeholder"].widget = forms.HiddenInput()
 
 
 class BooleanFieldForm(FormFieldMixin, EntangledModelForm):

@@ -352,11 +352,21 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
         return None
 
     def create_form_class_from_plugins(self):
+        # The form class is rebuilt per request, so fields may capture the request
+        # (e.g. file fields whose validators need the user/request context).
+        request = getattr(self, "request", None)
+
         def traverse(instance):
             """Recursively traverse children to identify form fields (by them having a method called
             "get_form_field" """
             if hasattr(instance, "get_form_field"):
-                name, field = instance.get_form_field()
+                get_form_field = instance.get_form_field
+                try:
+                    name, field = get_form_field(request=request)
+                except TypeError:
+                    # Backwards compatibility for third-party fields using the
+                    # old no-argument API; remove this fallback in version 1.0.
+                    name, field = get_form_field()
                 fields[name] = field
             if (
                 instance.child_plugin_instances is None

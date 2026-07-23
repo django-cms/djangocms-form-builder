@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from cms import __version__ as cms_version
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
+from django import forms
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.test import RequestFactory, override_settings
@@ -653,6 +654,32 @@ class FormPluginTestCase(TestFixture, CMSTestCase):
         # Verify field properties
         self.assertTrue(form_instance.fields["username"].required)
         self.assertFalse(form_instance.fields["email"].required)
+
+    def test_create_form_class_supports_legacy_get_form_field_signature(self):
+        """Third-party fields using the pre-request API remain supported."""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="legacy-field-form",
+        )
+
+        class LegacyField:
+            child_plugin_instances = []
+
+            def get_form_field(self):
+                return "legacy", forms.CharField()
+
+        plugin_instance = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin_instance.instance = form_plugin
+        plugin_instance.request = self.get_request("/")
+        form_plugin.child_plugin_instances = [LegacyField()]
+
+        form_class = plugin_instance.create_form_class_from_plugins()
+
+        self.assertIn("legacy", form_class.base_fields)
 
     def test_create_form_class_with_floating_labels(self):
         """Test form class creation with floating labels option"""

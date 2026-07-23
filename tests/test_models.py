@@ -13,16 +13,22 @@ from djangocms_form_builder.models import (
     DateTimeField,
     DecimalField,
     EmailField,
+    FileField,
     Form,
     FormEntry,
     FormField,
     IntegerField,
+    MultipleFileField,
     Select,
     SubmitButton,
     SwitchInput,
     TextareaField,
     TimeField,
     UrlField,
+)
+from djangocms_form_builder.upload_form_fields import (
+    MultipleUploadedFilesField,
+    ValidatedFileField,
 )
 
 from .fixtures import TestFixture
@@ -653,6 +659,51 @@ class BooleanFieldModelTests(TestFixture, CMSTestCase):
 
         self.assertIsInstance(form_field.widget, SwitchInput)
         self.assertEqual(form_field.help_text, "Turn this on to receive updates.")
+
+    def test_filefield_get_form_field(self):
+        field = FileField.objects.create(
+            placeholder=self.placeholder,
+            language=self.language,
+            config={
+                "field_name": "attachment",
+                "field_label": "Attachment",
+                "field_required": False,
+                "field_file_validation_presets": [],
+            },
+        )
+        name, form_field = field.get_form_field()
+        self.assertEqual(name, "attachment")
+        self.assertIsInstance(form_field, ValidatedFileField)
+
+    def test_multiplefilefield_get_form_field(self):
+        field = MultipleFileField.objects.create(
+            placeholder=self.placeholder,
+            language=self.language,
+            config={
+                "field_name": "attachments",
+                "field_label": "Attachments",
+                "field_required": False,
+                "field_file_validation_presets": [],
+                "max_files": 2,
+            },
+        )
+        name, form_field = field.get_form_field()
+        self.assertEqual(name, "attachments")
+        self.assertIsInstance(form_field, MultipleUploadedFilesField)
+
+    def test_filefield_threads_request_onto_field(self):
+        """get_form_field passes the request to the field so its validators get context."""
+        field = FileField.objects.create(
+            placeholder=self.placeholder,
+            language=self.language,
+            config={
+                "field_name": "attachment",
+                "field_file_validation_presets": [],
+            },
+        )
+        sentinel = object()
+        _, form_field = field.get_form_field(request=sentinel)
+        self.assertIs(form_field._request, sentinel)
 
 
 class SubmitButtonModelTests(TestFixture, CMSTestCase):

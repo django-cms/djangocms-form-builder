@@ -4,8 +4,11 @@ from django import forms
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
+from django.db.models.signals import pre_delete
 from django.utils.translation import gettext_lazy as _
 from entangled.forms import EntangledModelForm
+
+from .form_entry_data import delete_stored_files
 
 
 class CSValues(forms.CharField):
@@ -21,6 +24,11 @@ class CSValues(forms.CharField):
         value = value.split(",")
         value = list(map(lambda x: x.strip(), value))
         return value
+
+
+def _is_file_entry_value(value):
+    """Whether ``value`` in ``entry_data`` is a stored file or list of files."""
+    return bool(FormEntry.get_file_entry_items(value))
 
 
 class FormEntry(models.Model):
@@ -51,11 +59,36 @@ class FormEntry(models.Model):
     entry_created_at = models.DateTimeField(auto_now_add=True)
     entry_updated_at = models.DateTimeField(auto_now=True)
 
+    @staticmethod
+    def get_file_entry_items(value):
+        """
+        Normalize an ``entry_data`` value representing one or many stored files.
+
+        Returns a list of file metadata dicts, or an empty list when the value
+        is not a file payload.
+        """
+        if isinstance(value, dict) and value.get("_form_builder_file"):
+            return [value]
+        if (
+            isinstance(value, list)
+            and value
+            and isinstance(value[0], dict)
+            and value[0].get("_form_builder_file")
+        ):
+            return value
+        return []
+
+    def get_file_entry_data_keys(self):
+        """Keys in ``entry_data`` that hold uploaded file(s); shown in admin as readonly links."""
+        return [k for k, v in self.entry_data.items() if _is_file_entry_value(v)]
+
     def get_admin_form(self):
         entangled_fields = []
         fields = {}
         for key, value in self.entry_data.items():
-            if isinstance(value, str):
+            if _is_file_entry_value(value):
+                continue
+            elif isinstance(value, str):
                 entangled_fields.append(key)
                 fields[key] = forms.CharField(
                     label=key,
@@ -102,6 +135,36 @@ class FormEntry(models.Model):
         )
         return type("DynamicFormEntryForm", (EntangledModelForm,), fields)
 
+    def get_mail_data(self):
+        """
+        Format json to display its content in an email.
+        """
+        data = []
+
+        for label, value in self.entry_data.items():
+            if _is_file_entry_value(value):
+                data.append(
+                    {
+                        "label": label,
+                        "files": [
+                            {
+                                "filename": f["filename"],
+                                "url": f["url"],
+                            }
+                            for f in value
+                        ],
+                    }
+                )
+            else:
+                data.append(
+                    {
+                        "label": label,
+                        "value": value,
+                    }
+                )
+
+        return data
+
     def get_admin_fieldsets(self):
         return (
             (
@@ -116,7 +179,8 @@ class FormEntry(models.Model):
                     "fields": tuple(
                         key
                         for key, value in self.entry_data.items()
-                        if isinstance(
+                        if not _is_file_entry_value(value)
+                        and isinstance(
                             value, (str, tuple, list, bool, decimal.Decimal, int)
                         )
                     )
@@ -126,3 +190,13 @@ class FormEntry(models.Model):
 
     def __str__(self):
         return f"{self.form_name} ({self.pk})"
+
+
+def delete_files_form(sender, **kwargs):
+    form_instance = kwargs["instance"]
+    delete_stored_files(form_instance.entry_data)
+
+
+pre_delete.connect(
+    delete_files_form, sender=FormEntry, dispatch_uid="formentry.delete_files_form"
+)
