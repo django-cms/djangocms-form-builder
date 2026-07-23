@@ -3,7 +3,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("djangocms_form_builder", "0005_static_captcha_schema"),
+        ("djangocms_form_builder", "0006_filefield_multiplefilefield"),
     ]
 
     operations = [
