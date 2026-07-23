@@ -6,8 +6,8 @@ from cms import __version__ as cms_version
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 from django import forms
-from django.core.exceptions import ImproperlyConfigured
-from django.http import HttpResponseNotAllowed, JsonResponse
+from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.http import Http404, HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
@@ -470,6 +470,71 @@ class RegisterFormViewTestCase(CMSTestCase):
 
         with self.assertRaises(ImproperlyConfigured):
             register_form_view(FormView2, slug="conflicting-slug")
+
+    def test_registered_view_delegates_ajax_post_and_get(self):
+        class FormView:
+            def ajax_post(self, request, *args, **kwargs):
+                return HttpResponse("ajax-post")
+
+            def ajax_get(self, request, *args, **kwargs):
+                return HttpResponse("ajax-get")
+
+        key = register_form_view(FormView, slug="ajax-delegation")
+        request = RequestFactory().get("/")
+
+        self.assertEqual(
+            AjaxView().ajax_post(request, form_id=key).content, b"ajax-post"
+        )
+        self.assertEqual(AjaxView().ajax_get(request, form_id=key).content, b"ajax-get")
+
+    def test_registered_view_uses_standard_method_fallbacks(self):
+        class FormView:
+            def post(self, request, *args, **kwargs):
+                return HttpResponse("post")
+
+            def get(self, request, *args, **kwargs):
+                return HttpResponse("get")
+
+        key = register_form_view(FormView, slug="method-fallback")
+        request = RequestFactory().get("/")
+
+        self.assertEqual(AjaxView().ajax_post(request, form_id=key).content, b"post")
+        self.assertEqual(AjaxView().ajax_get(request, form_id=key).content, b"get")
+
+    def test_unknown_or_handlerless_registered_view_returns_404(self):
+        key = register_form_view(object, slug="handlerless")
+        request = RequestFactory().get("/")
+
+        for method in (AjaxView().ajax_post, AjaxView().ajax_get):
+            with self.subTest(method=method.__name__, case="unknown"):
+                with self.assertRaises(Http404):
+                    method(request, form_id="unknown")
+            with self.subTest(method=method.__name__, case="handlerless"):
+                with self.assertRaises(Http404):
+                    method(request, form_id=key)
+
+    def test_plugin_validation_errors_are_json_responses(self):
+        class Plugin:
+            def ajax_post(self, request, instance, params):
+                raise ValidationError("bad post")
+
+            def ajax_get(self, request, instance, params):
+                raise ValidationError("bad get")
+
+        request = RequestFactory().get("/")
+        request.user = mock.Mock(is_staff=False)
+        view = AjaxView()
+
+        with mock.patch.object(
+            view, "plugin_instance", return_value=(Plugin(), object())
+        ):
+            post = view.ajax_post(request, instance_id=1)
+            get = view.ajax_get(request, instance_id=1)
+
+        self.assertEqual(
+            json.loads(post.content), {"result": "error", "msg": "bad post"}
+        )
+        self.assertEqual(json.loads(get.content), {"result": "error", "msg": "bad get"})
 
 
 class AjaxGetRequestTestCase(TestFixture, CMSTestCase):

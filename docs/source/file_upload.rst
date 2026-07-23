@@ -174,6 +174,26 @@ written to ``default_storage`` under ``form_uploads/...``, and each file field b
 a dict with ``_form_builder_file``, ``filename``, ``name`` (storage-relative path),
 and ``url``.
 
+Upload lifecycle
+================
+
+Stored uploads are managed together with the :class:`FormEntry` that references
+them:
+
+* reopening a unique form without choosing a new optional upload retains the
+  existing file;
+* replacing an upload removes the previous file after the updated entry has
+  been saved;
+* deleting a form entry, including deletion by ``prune_form_entries``, removes
+  its stored files through
+  ``DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE``;
+* if saving the entry or one file in a multiple upload fails, files already
+  written for that attempted submission are removed.
+
+Storage deletion failures are logged. Operators should monitor the
+``djangocms_form_builder.form_entry_data`` logger because a backend failure can
+leave an unreferenced file that needs manual cleanup.
+
 Plugin admin
 ============
 
