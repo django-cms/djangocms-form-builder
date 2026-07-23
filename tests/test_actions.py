@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
@@ -161,6 +161,50 @@ class ActionTestCase(TestFixture, CMSTestCase):
         delete_files.assert_called_once_with(
             serialized, excluding={"form_uploads/old.pdf"}
         )
+
+    @patch("djangocms_form_builder.actions.delete_stored_files")
+    @patch("djangocms_form_builder.actions.serialize_cleaned_data_for_entry")
+    def test_duplicate_recovery_failure_cleans_up_new_uploads(
+        self, serialize, delete_files
+    ):
+        FormEntry.objects.create(
+            form_name="unique-upload",
+            form_user=self.superuser,
+            entry_data={"value": "first"},
+        )
+        FormEntry.objects.create(
+            form_name="unique-upload",
+            form_user=self.superuser,
+            entry_data={"value": "second"},
+        )
+        existing_entries = FormEntry.objects.filter(
+            form_name="unique-upload", form_user=self.superuser
+        )
+        cleanup_queryset = Mock()
+        serialized = {"attachment": {"name": "form_uploads/new.pdf"}}
+        serialize.return_value = serialized
+
+        with (
+            patch.object(
+                FormEntry.objects,
+                "update_or_create",
+                side_effect=FormEntry.MultipleObjectsReturned,
+            ),
+            patch.object(FormEntry.objects, "create", side_effect=OSError("db down")),
+            patch.object(
+                FormEntry.objects,
+                "filter",
+                side_effect=[existing_entries, cleanup_queryset],
+            ),
+        ):
+            with self.assertRaisesMessage(OSError, "db down"):
+                SaveToDBAction().execute(
+                    self._unique_upload_form({"attachment": object()}),
+                    self._authenticated_upload_request(),
+                )
+
+        cleanup_queryset.delete.assert_called_once()
+        delete_files.assert_called_once_with(serialized)
 
     def test_send_mail_action(self):
         plugin_instance = add_plugin(
