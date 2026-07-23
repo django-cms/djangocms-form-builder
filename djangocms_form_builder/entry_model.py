@@ -135,6 +135,36 @@ class FormEntry(models.Model):
         )
         return type("DynamicFormEntryForm", (EntangledModelForm,), fields)
 
+    def get_mail_data(self):
+        """
+        Format json to display its content in an email.
+        """
+        data = []
+
+        for label, value in self.entry_data.items():
+            if _is_file_entry_value(value):
+                data.append(
+                    {
+                        "label": label,
+                        "files": [
+                            {
+                                "filename": f["filename"],
+                                "url": f["url"],
+                            }
+                            for f in value
+                        ],
+                    }
+                )
+            else:
+                data.append(
+                    {
+                        "label": label,
+                        "value": value,
+                    }
+                )
+
+        return data
+
     def get_admin_fieldsets(self):
         return (
             (

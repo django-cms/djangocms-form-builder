@@ -242,7 +242,7 @@ class SendMailAction(FormAction):
         recipients = self.get_parameter(form, "sendemail_recipients") or ""
         template_set = self.get_parameter(form, "sendemail_template") or "default"
         context = dict(
-            cleaned_data=form.cleaned_data,
+            form_entry=FormEntry.objects.last(),
             form_name=getattr(form.Meta, "verbose_name", ""),
             user=request.user,
             user_agent=request.headers["User-Agent"]
