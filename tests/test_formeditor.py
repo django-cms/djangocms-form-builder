@@ -25,7 +25,7 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
                 inspect.isclass(cls)
                 and issubclass(cls, FormElementPlugin)
                 and not issubclass(cls, cms_plugins.ChoicePlugin)
-                and cls is not cms_plugins.SubmitPlugin
+                and cls not in (cms_plugins.SubmitPlugin, cms_plugins.CaptchaPlugin)
             ):
                 field = add_plugin(
                     placeholder=self.placeholder,
@@ -52,7 +52,7 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
                 inspect.isclass(cls)
                 and issubclass(cls, FormElementPlugin)
                 and not issubclass(cls, cms_plugins.ChoicePlugin)
-                and cls is not cms_plugins.SubmitPlugin
+                and cls not in (cms_plugins.SubmitPlugin, cms_plugins.CaptchaPlugin)
             ):
                 self.assertContains(response, f'name="field_{item}"')
 

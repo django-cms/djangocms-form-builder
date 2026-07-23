@@ -260,3 +260,13 @@ class SubmitPlugin(mixin_factory("SubmitButton"), FormElementPlugin):
     form = forms.SubmitButtonForm
 
     render_template = f"djangocms_form_builder/{settings.framework}/widgets/submit.html"
+
+
+@plugin_pool.register_plugin
+class CaptchaPlugin(FormElementPlugin):
+    name = _("Captcha")
+    module = _("Forms")
+    model = models.Captcha
+    form = forms.CaptchaForm
+    fieldsets = ()
+    render_template = "djangocms_form_builder/widgets/captcha.html"

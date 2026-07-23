@@ -275,6 +275,52 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         self.assertIn('challengeurl="/altcha/challenge/"', content)
         self.assertIn("altcha.min.js", content)
 
+    def test_captcha_plugin_controls_render_order(self):
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="placed-captcha-form",
+            captcha_widget="altcha",
+        )
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={"field_name": "full_name", "field_label": "Full Name"},
+        )
+        char_field.initialize_from_form()
+        add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CaptchaPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+        )
+        submit = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.SubmitPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={"submit_cta": "Send form"},
+        )
+        submit.initialize_from_form()
+
+        self.publish(self.page, self.language)
+
+        with self.login_user_context(self.superuser):
+            response = self.client.get(self.request_url)
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        field_position = content.index('name="full_name"')
+        captcha_position = content.index('name="captcha_field"')
+        submit_position = content.index('value="Send form"')
+        self.assertLess(field_position, captcha_position)
+        self.assertLess(captcha_position, submit_position)
+        self.assertEqual(content.count('challengeurl="/altcha/challenge/"'), 1)
+
 
 class TemplateTagsTestCase(CMSTestCase):
     """Tests for template tags in djangocms_form_builder"""
@@ -404,10 +450,9 @@ class TemplateTagsTestCase(CMSTestCase):
 
         self.assertIn("Personal Info", rendered)
 
-    def test_render_recaptcha_widget_when_not_installed(self):
-        """Test {% render_recaptcha_widget %} when recaptcha not available"""
+    def test_render_captcha_widget_without_captcha_field(self):
         template = Template(
-            "{% load form_builder_tags %}{% render_recaptcha_widget form %}"
+            "{% load form_builder_tags %}{% render_captcha_widget form %}"
         )
 
         class TestForm(forms.Form):
@@ -417,8 +462,26 @@ class TemplateTagsTestCase(CMSTestCase):
         context = Context({"form": form})
         rendered = template.render(context)
 
-        # Should return empty string when recaptcha not installed
         self.assertEqual(rendered.strip(), "")
+
+    def test_render_captcha_widget_with_recaptcha_widget(self):
+        template = Template(
+            "{% load form_builder_tags %}{% render_captcha_widget form %}"
+        )
+
+        class ReCaptchaWidget(forms.TextInput):
+            pass
+
+        class TestForm(forms.Form):
+            captcha_field = forms.CharField(
+                label="", widget=ReCaptchaWidget(attrs={"no_field_sep": True})
+            )
+
+        rendered = template.render(Context({"form": TestForm()}))
+
+        self.assertIn('name="captcha_field"', rendered)
+        self.assertIn('class="form-control"', rendered)
+        self.assertNotIn("no_field_sep", rendered)
 
 
 class AltchaIntegrationTestCase(TestFixture, CMSTestCase):
