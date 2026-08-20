@@ -39,8 +39,22 @@ if apps.is_installed("hcaptcha"):
     CAPTCHA_CHOICES += (("hcaptcha", _("hCaptcha")),)
 
 
+ALTCHA_FIELD = None
+
 if apps.is_installed("django_altcha"):
+    from django_altcha import AltchaField  # NOQA
+
+    ALTCHA_FIELD = AltchaField
     CAPTCHA_CHOICES += (("altcha", _("Altcha")),)
+
+#: All form field classes that this app may use as a captcha. Actions use it to
+#: tell a genuine captcha from a plain field an editor happened to name
+#: ``captcha_field``.
+CAPTCHA_FIELD_CLASSES = tuple(
+    dict.fromkeys(
+        list(CAPTCHA_FIELDS.values()) + ([ALTCHA_FIELD] if ALTCHA_FIELD else [])
+    )
+)
 
 if len(CAPTCHA_CHOICES) > 0:
     installed = True
@@ -69,9 +83,7 @@ def get_recaptcha_field(instance):
         del widget_params["api_params"]
 
     if instance.captcha_widget == "altcha":
-        from django_altcha import AltchaField
-
-        return AltchaField(**ALTCHA_FIELD_OPTIONS)
+        return ALTCHA_FIELD(**ALTCHA_FIELD_OPTIONS)
 
     return CAPTCHA_FIELDS[instance.captcha_widget](
         widget=CAPTCHA_WIDGETS[instance.captcha_widget](**widget_params), label=""

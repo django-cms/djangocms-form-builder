@@ -2,12 +2,13 @@
 # https://docs.readthedocs.io/en/stable/config-file/v2.html
 version: 2
 
-# Required since Read the Docs retired the implicit build image: the Python
-# version now belongs into build.tools, not into python.version.
 build:
   os: ubuntu-24.04
   tools:
-    python: "3.11"
+    python: "3.12"
+  apt_packages:
+    # required by pyenchant, which sphinxcontrib-spelling builds on
+    - libenchant-2-2
 
 sphinx:
   configuration: docs/source/conf.py

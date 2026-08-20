@@ -114,6 +114,12 @@ ROOT_URLCONF = "tests.urls"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CMS_CONFIRM_VERSION4 = True
+DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS = (
+    ("default", "Default confirmation"),
+    ("second", "Second confirmation"),
+)
+DEFAULT_FROM_EMAIL = "noreply@example.com"
+
 ALTCHA_HMAC_KEY = "altcha-insecure-hmac-0123456789abcdef"
 ALTCHA_FIELD_OPTIONS = {
     "challengeurl": reverse_lazy("altcha_challenge"),

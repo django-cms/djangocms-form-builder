@@ -48,10 +48,15 @@ class SimpleFrontendForm(forms.Form):
         form_actions = get_option(self, "form_actions", [])
         for action in form_actions:
             Action = actions.get_action_class(action)
-            if Action is not None:
-                results[action] = Action().execute(self, self._request)
-            else:
+            if Action is None:
                 results[action] = _("Action not available any more")
+                continue
+            action_instance = Action()
+            if not action_instance.check_rate_limits(self, self._request):
+                # Only this action is skipped, the remaining ones still run.
+                results[action] = _("Rate limit reached")
+                continue
+            results[action] = action_instance.execute(self, self._request)
         if not form_actions:
             results[None] = _("No action registered")
         return results

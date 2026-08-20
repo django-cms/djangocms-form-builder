@@ -2,6 +2,18 @@
 Changelog
 =========
 
+unpublished
+==================
+
+* feat: Add support for Django 6.1
+* feat: Add a "Send confirmation email to submitter" action which mails a
+  server-owned template to the address submitted with a form. It is only
+  offered if the project configures
+  ``DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS`` - no templates are shipped
+* feat: Form actions can be rate limited per client and per action-specific
+  value (e.g. a mail recipient) through ``DJANGOCMS_FORM_BUILDER_RATE_LIMITS``
+
+
 0.6.0 (2026-07-23)
 ==================
 

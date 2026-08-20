@@ -1,104 +1,41 @@
-..
-   djangocms-blog documentation master file, created by
-   sphinx-quickstart on Sun Jun  5 23:27:04 2016.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+djangocms-form-builder documentation
+####################################
 
-###################################################
- Welcome to djangocms-form-builder's documentation!
-###################################################
+**djangocms-form-builder** adds a form editor to the structure board of
+`django CMS <https://www.django-cms.org>`_. Editors build forms from plugins -
+one plugin per form field - and decide per form what happens to a submission:
+store it, mail it, show a message, redirect, or run an action your project
+provides.
 
-***********************
- djangocms-form-builder
-***********************
+Forms are submitted by ``fetch()`` to a JSON endpoint the app installs itself,
+so a page may carry as many forms as you like without a page reload.
 
-**djangocms-form-builder**'s objective is to
-provide a set of popular frontend components independent of the
-currently used frontend framework such as Bootstrap, or its specific
-version.
+The documentation is organised along the four kinds of documentation described
+by the `Diátaxis framework <https://diataxis.fr>`_:
 
-.. image:: ../../preview.png
+:doc:`Tutorial <tutorial/index>`
+   A guided first form: install the app, build a contact form in the structure
+   board and read the submission in the admin.
 
-**************
- Key features
-**************
+:doc:`How-to guides <how-to/index>`
+   Recipes for a concrete goal - registering an existing Django form, writing
+   an action, protecting a public form with a captcha, accepting uploads.
 
--  Support of `Bootstrap 5 <https://getbootstrap.com>`_.
+:doc:`Reference <reference/index>`
+   The settings, plugins, models, template tags, management commands and Python
+   APIs, described as they are implemented.
 
--  **Separation of plugins from css framework**, i.e., no need to
-   rebuild you site's plugin tree if css framework is changed in the
-   future, e.g., from Bootstrap 5 to a future version.
-
--  **New link plugin** allowing to link to internal pages provided by
-   other applications, such as `djangocms-blog
-   <https://github.com/nephila/djangocms-blog>`_.
-
--  **Nice and well-arranged admin frontend** of `djangocms-bootstrap4
-   <https://github.com/django-cms/djangocms-bootstrap4>`_
-
--  Management command to **migrate from djangocms-bootstrap4**. This
-   command automatically migrates all djangocms-bootstrap4 plugins to
-   djangocms-frontend.
-
--  **Extensible** within the project and with separate project (e.g., a
-   theme app)
-
--  **Accordion** plugin and simple **forms** plugin w/ Bootstrap-styled
-   forms on your cms page.
-
-*************
- Description
-*************
-
-The plugins are framework agnostic and the framework can be changed by
-adapting your project's settings. Also, it is designed to avoid having
-to rebuild your CMS plugin tree when upgrading e.g. from one version of
-your frontend framework to the next.
-
-django CMS Frontend uses `django-entangled
-<https://github.com/jrief/django-entangled>`_ by Jacob Rief to avoid
-bloating your project's database with css framework-dependent tables.
-Instead all design parameters are stored in a common JSON field and
-future releases of improved frontend features will not require to
-rebuild your full plugin tree.
-
-The link plugin has been rewritten to not allow internal links to other
-CMS pages, but also to other django models such as, e.g., posts of
-`djangocms-blog <https://github.com/nephila/djangocms-blog>`_.
-
-**djangocms-frontend** provides a set of plugins to structure your
-layout. This includes three basic elements
-
-The grid
-   The grid is the basis for responsive page design. It splits the page
-   into containers, rows and columns. Depending on the device, columns
-   are shown next to each other (larger screens) or one below the other
-   (smaller screens).
-
-Components
-   Components structure information on your site by giving them an easy
-   to grasp and easy to use look. Alerts or cards are examples of
-   components.
-
-Forms (work in progress)
-   Finally, djangocms-frontend lets you display forms in a nice way.
-   Also, it handles form submit actions, validation etc. Forms can be
-   easily structured using fieldsets known from django's admin app. But
-   djangocms-frontend also works with third-party apps like
-   `django-crispy-forms
-   <https://github.com/django-crispy-forms/django-crispy-forms>`_ for
-   even more complex layouts.
-
-Contents
-========
+:doc:`Explanation <explanation/index>`
+   Background on how the pieces fit together and why forms open to the public
+   are treated the way they are.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
-   forms
-   file_upload
-   howto_guides
-   reference
+   tutorial/index
+   how-to/index
+   reference/index
+   explanation/index
 
 .. toctree::
    :hidden:
