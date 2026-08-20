@@ -18,6 +18,19 @@ from djangocms_form_builder.settings import _validate_rate_limits
 NOW = timezone.now()
 
 
+class FakeClock:
+    """Stands in for ``time.monotonic`` so that tests need not wait an hour."""
+
+    def __init__(self):
+        self.now = 0.0
+
+    def advance(self, seconds):
+        self.now += seconds
+
+    def __call__(self):
+        return self.now
+
+
 class CountingAction(FormAction):
     verbose_name = "Counting action"
     rate_limits = {"source": (2, 3600)}
@@ -83,6 +96,25 @@ class GetRateLimitsTests(SimpleTestCase):
             self.assertEqual(rate_limit.get_rate_limits(CountingAction), {})
 
 
+class ClientAddressTests(SimpleTestCase):
+    def test_read_from_remote_addr_by_default(self):
+        request = RequestFactory().post("/", REMOTE_ADDR="1.2.3.4")
+        self.assertEqual(rate_limit.client_address(request), "1.2.3.4")
+
+    def test_read_from_the_configured_meta_key(self):
+        # What DJANGOCMS_FORM_BUILDER_RATE_LIMIT_IP_META_KEY ends up as - a
+        # project behind a trusted proxy points it at the forwarded header.
+        with patch.object(rate_limit, "RATE_LIMIT_IP_META_KEY", "HTTP_X_FORWARDED_FOR"):
+            request = RequestFactory().post("/", HTTP_X_FORWARDED_FOR="5.6.7.8")
+            self.assertEqual(rate_limit.client_address(request), "5.6.7.8")
+            # If the proxy does not set the header, nothing can be counted -
+            # check_rate_limits turns that into a skipped action.
+            self.assertEqual(rate_limit.client_address(RequestFactory().post("/")), "")
+
+    def test_no_request_no_address(self):
+        self.assertEqual(rate_limit.client_address(None), "")
+
+
 class ConsumeQuotaTests(TestCase):
     def test_counts_up_to_the_limit(self):
         for _i in range(3):
@@ -110,6 +142,40 @@ class ConsumeQuotaTests(TestCase):
         rate_limit.consume_quota("source", "1.2.3.4", 1, 60, NOW)
         rate_limit.prune_expired(NOW + timedelta(seconds=62))
         self.assertFalse(SubmissionQuota.objects.exists())
+
+
+class PruneIntervalTests(TestCase):
+    """Pruning must not put a DELETE on the hot path of every submission."""
+
+    def setUp(self):
+        super().setUp()
+        self.clock = FakeClock()
+        for patcher in (
+            patch.object(rate_limit, "_last_prune", None),
+            patch.object(rate_limit, "monotonic", self.clock),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_first_call_prunes_and_the_next_ones_do_not(self):
+        self.assertTrue(rate_limit.prune_expired_if_due(NOW))
+        self.assertFalse(rate_limit.prune_expired_if_due(NOW))
+
+        self.clock.advance(rate_limit.PRUNE_INTERVAL - 1)
+        self.assertFalse(rate_limit.prune_expired_if_due(NOW))
+
+    def test_pruning_resumes_after_the_interval(self):
+        rate_limit.prune_expired_if_due(NOW)
+        rate_limit.consume_quota("source", "1.2.3.4", 1, 60, NOW)
+        self.clock.advance(rate_limit.PRUNE_INTERVAL + 1)
+
+        self.assertTrue(rate_limit.prune_expired_if_due(NOW + timedelta(seconds=62)))
+        self.assertFalse(SubmissionQuota.objects.exists())
+
+    def test_a_naive_now_does_not_upset_the_interval(self):
+        """``now`` follows ``USE_TZ``, the interval must not care either way."""
+        rate_limit.prune_expired_if_due(NOW)
+        self.assertFalse(rate_limit.prune_expired_if_due(NOW.replace(tzinfo=None)))
 
 
 @override_settings(USE_TZ=False)

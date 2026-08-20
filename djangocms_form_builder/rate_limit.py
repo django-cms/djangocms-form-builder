@@ -16,14 +16,16 @@ Rate limits are opt-in. Sites configure them per action class in::
 action. Each entry maps a quota kind to ``(limit, window in seconds)``; ``None``
 switches an action's built-in limit off.
 
-Counters are keyed by a keyed hash of the value, so no IP address or email
-address is stored in the database.
+Counters are stored under a keyed hash of the value, so no IP address or email
+address is stored in the database. Counters of windows that have passed are
+removed once per hour and process.
 """
 
 import hashlib
 import hmac
 import logging
 from datetime import timedelta
+from time import monotonic
 
 from django.conf import settings as django_settings
 from django.db import IntegrityError, models, transaction
@@ -75,9 +77,36 @@ def quota_key(kind, value, window, now):
     ).hexdigest()
 
 
+#: How often expired counters are removed, in seconds.
+PRUNE_INTERVAL = 60 * 60
+
+#: Reading of the monotonic clock when this process last pruned. Process-local:
+#: every worker prunes at its own pace and removes what the others left behind.
+#: It is deliberately not a datetime - those are aware or naive depending on
+#: ``USE_TZ``, and the two cannot be compared.
+_last_prune = None
+
+
 def prune_expired(now):
     """Remove counters whose window has passed."""
+    global _last_prune
+
+    _last_prune = monotonic()
     SubmissionQuota.objects.filter(expires_at__lt=now).delete()
+
+
+def prune_expired_if_due(now):
+    """Prune, but at most once per :data:`PRUNE_INTERVAL` and process.
+
+    Pruning on every submission would put a ``DELETE`` on the hot path of every
+    rate limited action. Leaving expired counters behind for a while costs
+    nothing: a counter's key contains the window it belongs to, so an expired
+    row is never read again - it only occupies space.
+    """
+    if _last_prune is not None and monotonic() - _last_prune < PRUNE_INTERVAL:
+        return False
+    prune_expired(now)
+    return True
 
 
 def consume_quota(kind, value, limit, window, now):
@@ -127,7 +156,7 @@ def check_rate_limits(action, form, request):
     values = action.get_rate_limit_values(form, request)
     now = timezone.now()
     try:
-        prune_expired(now)
+        prune_expired_if_due(now)
         for kind, (limit, window) in limits.items():
             if kind not in values:
                 # The action does not know this kind of value - e.g. a

@@ -112,7 +112,10 @@ settings bound that pool:
    skipped and logged instead of piling up. Defaults to ``10``.
 
 Mails are sent through Django's mail backend and use ``DEFAULT_FROM_EMAIL`` as
-sender. They carry ``Auto-Submitted: auto-generated`` and
+sender. The pool is created on the first mail and lives as long as the process;
+``djangocms_form_builder.confirmation_mail.shutdown_executor()`` tears it down
+where that matters, e.g. at the end of a management command, after waiting for
+the mails still pending. They carry ``Auto-Submitted: auto-generated`` and
 ``X-Auto-Response-Suppress: All`` headers so that they do not trigger automatic
 replies.
 

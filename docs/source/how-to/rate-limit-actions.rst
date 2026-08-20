@@ -54,8 +54,9 @@ The check fails closed. If the counters cannot be read or written - a database
 incident, say - the action is skipped rather than executed, because an outage
 must not silently disable the limits.
 
-Counters live in the database and are keyed by a keyed hash of the value, so
-neither IP addresses nor email addresses are stored. Counters of windows that
-have passed are removed as new submissions come in.
+Counters live in the database under a keyed hash of the value, so neither IP
+addresses nor email addresses are stored. Counters of windows that have passed
+are removed once an hour and process, as submissions come in - there is nothing
+to schedule.
 
 To rate limit an action of your own, see :doc:`write-an-action`.

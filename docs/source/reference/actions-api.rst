@@ -142,5 +142,6 @@ Rate limits
    be read or written.
 
 Counters are stored in :class:`SubmissionQuota`, keyed by an HMAC of the counted
-value under the project's ``SECRET_KEY``. Expired counters are deleted as new
-submissions come in.
+value under the project's ``SECRET_KEY``. Expired counters are deleted by
+``prune_expired_if_due()``, which runs at most once per ``PRUNE_INTERVAL``
+(one hour) and process so that pruning stays off the hot path of a submission.

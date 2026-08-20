@@ -35,7 +35,10 @@ _executor_lock = Lock()
 
 
 def _positive_setting(name, default):
-    value = int(getattr(django_settings, name, default))
+    try:
+        value = int(getattr(django_settings, name, default))
+    except (TypeError, ValueError):
+        raise ImproperlyConfigured(f"{name} must be a positive integer") from None
     if value < 1:
         raise ImproperlyConfigured(f"{name} must be a positive integer")
     return value
@@ -89,6 +92,22 @@ def get_executor():
                     ),
                 )
     return _executor
+
+
+def shutdown_executor(wait=True):
+    """Tear the worker pool down, e.g. at the end of a management command.
+
+    Pending mails are sent first unless ``wait`` is ``False``. The pool is not
+    gone for good: the next dispatch creates a new one.
+    """
+    global _executor
+
+    with _executor_lock:
+        executor, _executor = _executor, None
+    if executor is None:
+        return False
+    executor.shutdown(wait=wait)
+    return True
 
 
 def dispatch(message):

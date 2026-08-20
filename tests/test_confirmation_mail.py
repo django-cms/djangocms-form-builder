@@ -292,6 +292,27 @@ class ConfirmationMailExecutorTests(SimpleTestCase):
         with self.assertRaises(ImproperlyConfigured):
             confirmation_mail.get_executor()
 
+    def test_invalid_pending_limit_is_rejected(self):
+        for max_pending in (0, -1, "not-an-int"):
+            with (
+                self.subTest(max_pending=max_pending),
+                override_settings(DJANGOCMS_CONFIRMATION_MAIL_MAX_PENDING=max_pending),
+                self.assertRaises(ImproperlyConfigured),
+            ):
+                confirmation_mail.get_executor()
+
+    def test_shutdown_executor_lets_the_next_dispatch_start_over(self):
+        first = confirmation_mail.get_executor()
+        self.assertIs(confirmation_mail.get_executor(), first)
+
+        self.assertTrue(confirmation_mail.shutdown_executor())
+        # Nothing left to shut down the second time around ...
+        self.assertFalse(confirmation_mail.shutdown_executor())
+
+        second = confirmation_mail.get_executor()
+        self.addCleanup(confirmation_mail.shutdown_executor)
+        self.assertIsNot(second, first)
+
 
 class ConfirmationMailConfigurationTests(SimpleTestCase):
     """Without configured template sets the action must not show up at all."""
@@ -345,3 +366,23 @@ class ConfirmationMailConfigurationTests(SimpleTestCase):
         self.assertEqual(
             [key for key, verbose_name in field.choices], ["default", "second"]
         )
+
+
+class ConfirmationMailTemplateSetSettingTests(SimpleTestCase):
+    """A misconfigured setting has to say what is wrong with it."""
+
+    validate = staticmethod(settings_module._validate_confirmation_mail_template_sets)
+
+    def test_valid_configuration_passes_through(self):
+        template_sets = (("default", "Default"), ["event", "Event registration"])
+        self.assertIs(self.validate(template_sets), template_sets)
+
+    def test_rejects_entries_that_are_not_pairs(self):
+        for entry in ("default", ("default",), ("default", "Default", "extra"), 42):
+            with self.subTest(entry=entry), self.assertRaises(ImproperlyConfigured):
+                self.validate((entry,))
+
+    def test_rejects_keys_that_are_not_slugs(self):
+        for key in ("../etc", "", "with space", 3, None):
+            with self.subTest(key=key), self.assertRaises(ImproperlyConfigured):
+                self.validate(((key, "Verbose name"),))

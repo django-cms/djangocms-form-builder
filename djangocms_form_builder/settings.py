@@ -13,19 +13,38 @@ MAIL_TEMPLATE_SETS = getattr(
     django_settings, "DJANGOCMS_MAIL_TEMPLATE_SETS", (("default", _("Default")),)
 )
 
+
+def _validate_confirmation_mail_template_sets(template_sets):
+    """Check the ``((key, verbose name), ...)`` structure early."""
+    for entry in template_sets:
+        if isinstance(entry, str) or not isinstance(entry, (tuple, list)):
+            raise ImproperlyConfigured(
+                "DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS must consist of "
+                f"(key, verbose name) pairs, got {entry!r}"
+            )
+        if len(entry) != 2:
+            raise ImproperlyConfigured(
+                "Entries of DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS must have "
+                f"exactly two elements, got {entry!r}"
+            )
+        key = entry[0]
+        if not isinstance(key, str) or not re.fullmatch(r"[-\w]+", key):
+            raise ImproperlyConfigured(
+                "Keys of DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS must be "
+                "non-empty slugs"
+            )
+    return template_sets
+
+
 #: Template sets for the confirmation mail sent to the person submitting a form.
 #: djangocms-form-builder does not ship any such templates: as long as this
 #: setting is empty the corresponding form action is not registered at all.
-CONFIRMATION_MAIL_TEMPLATE_SETS = tuple(
-    getattr(django_settings, "DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS", None) or ()
-)
-if any(
-    not isinstance(key, str) or not re.fullmatch(r"[-\w]+", key)
-    for key, verbose_name in CONFIRMATION_MAIL_TEMPLATE_SETS
-):
-    raise ImproperlyConfigured(
-        "Keys of DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS must be non-empty slugs"
+CONFIRMATION_MAIL_TEMPLATE_SETS = _validate_confirmation_mail_template_sets(
+    tuple(
+        getattr(django_settings, "DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS", None)
+        or ()
     )
+)
 CONFIRMATION_MAIL_TEMPLATE_KEYS = frozenset(
     key for key, verbose_name in CONFIRMATION_MAIL_TEMPLATE_SETS
 )
