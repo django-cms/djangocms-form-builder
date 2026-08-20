@@ -186,7 +186,7 @@ point ``DJANGOCMS_FORM_BUILDER_RATE_LIMIT_IP_META_KEY`` at the ``request.META``
 key your proxy sets, e.g. ``"HTTP_X_FORWARDED_FOR"``. Other kinds are provided
 by the actions themselves; kinds an action does not provide are ignored.
 
-Counters live in the database, keyed by a keyed hash of the value: neither IP
+Counters live in the database, keyed by a hash of the value: neither IP
 addresses nor email addresses are stored. Counters of windows that have passed
 are removed as new submissions come in.
 
