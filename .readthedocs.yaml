@@ -1,4 +1,13 @@
+# Read the Docs configuration file, see
+# https://docs.readthedocs.io/en/stable/config-file/v2.html
 version: 2
+
+# Required since Read the Docs retired the implicit build image: the Python
+# version now belongs into build.tools, not into python.version.
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.11"
 
 sphinx:
   configuration: docs/source/conf.py
@@ -9,7 +18,5 @@ formats:
   - pdf
 
 python:
-  version: 3.8
-
   install:
-      - requirements: docs/requirements.txt
+    - requirements: docs/requirements.txt
