@@ -1,6 +1,5 @@
 #
-# djangocms-blog documentation build configuration file, created by
-# sphinx-quickstart on Sun Jun  5 23:27:04 2016.
+# djangocms-form-builder documentation build configuration file.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -62,7 +61,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "djangocms-frontend"
+project = "djangocms-form-builder"
 author = "Fabian Braun"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -79,7 +78,7 @@ release = djangocms_form_builder.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -218,7 +217,7 @@ html_theme_options = {
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "djangocms-frontenddoc"
+htmlhelp_basename = "djangocms-form-builderdoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -239,8 +238,8 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "djangocms-frontend.tex",
-        "djangocms-frontend Documentation",
+        "djangocms-form-builder.tex",
+        "djangocms-form-builder Documentation",
         author,
         "manual",
     ),
@@ -272,7 +271,13 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, "djangocms-frontend", "djangocms-frontend Documentation", [author], 1)
+    (
+        master_doc,
+        "djangocms-form-builder",
+        "djangocms-form-builder Documentation",
+        [author],
+        1,
+    )
 ]
 
 # If true, show URL addresses after external links.
@@ -287,11 +292,11 @@ man_pages = [
 texinfo_documents = [
     (
         master_doc,
-        "djangocms-frontend",
-        "djangocms-frontend Documentation",
+        "djangocms-form-builder",
+        "djangocms-form-builder Documentation",
         author,
-        "djangocms-frontend",
-        "One line description of project.",
+        "djangocms-form-builder",
+        "Adds a form editor to the structure board of django CMS.",
         "Miscellaneous",
     ),
 ]
@@ -310,4 +315,10 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "django": (
+        "https://docs.djangoproject.com/en/stable/",
+        "https://docs.djangoproject.com/en/stable/_objects/",
+    ),
+}
