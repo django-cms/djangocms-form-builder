@@ -3,7 +3,9 @@ import logging
 
 from django import forms
 from django.apps import apps
+from django.conf import settings as django_settings
 from django.core.exceptions import ImproperlyConfigured
+from django.core.mail import EmailMultiAlternatives
 from django.core.validators import EmailValidator
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -21,7 +23,7 @@ except ModuleNotFoundError:
         widget = forms.Textarea
 
 
-from . import models
+from . import confirmation_mail, models
 from .entry_model import FormEntry
 from .form_entry_data import (
     delete_stored_files,
@@ -29,7 +31,13 @@ from .form_entry_data import (
     serialize_cleaned_data_for_entry,
 )
 from .helpers import get_option, insert_fields
-from .settings import MAIL_TEMPLATE_SETS
+from .rate_limit import check_rate_limits, client_address
+from .settings import (
+    CONFIRMATION_MAIL_FIELD_NAME,
+    CONFIRMATION_MAIL_TEMPLATE_KEYS,
+    CONFIRMATION_MAIL_TEMPLATE_SETS,
+    MAIL_TEMPLATE_SETS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -113,8 +121,25 @@ class FormAction(EntangledModelFormMixin):
 
     verbose_name = None
 
+    #: Built-in rate limits of this action as ``{kind: (limit, window)}``.
+    #: Projects override them per action class name in the
+    #: ``DJANGOCMS_FORM_BUILDER_RATE_LIMITS`` setting.
+    rate_limits = {}
+
     def execute(self, form, request):
         raise NotImplementedError()
+
+    def get_rate_limit_values(self, form, request):
+        """The values this submission is counted against, by quota kind.
+
+        Actions add their own kinds here, e.g. the address a mail would be sent
+        to. Kinds that an action does not provide are not rate limited.
+        """
+        return {"source": client_address(request)}
+
+    def check_rate_limits(self, form, request):
+        """Consume this submission's quotas. ``False`` means: do not execute."""
+        return check_rate_limits(self, form, request)
 
     @staticmethod
     def get_parameter(form, param):
@@ -357,3 +382,123 @@ if apps.is_installed("djangocms_link"):
             form.Meta.options["redirect"] = get_link(
                 self.get_parameter(form, "redirect_link")
             )
+
+
+if CONFIRMATION_MAIL_TEMPLATE_SETS:
+    # Without configured template sets there is nothing to send: the action
+    # stays unregistered and does not show up in the form plugin.
+
+    @register
+    class SendConfirmationMailAction(FormAction):
+        """Send a server-owned mail template to the address that was submitted."""
+
+        class Meta:
+            entangled_fields = {
+                "action_parameters": [
+                    "confirmationmail_template",
+                ]
+            }
+
+        verbose_name = _("Send confirmation email to submitter")
+        rate_limits = {
+            "source": (10, 60 * 60),
+            "recipient": (3, 24 * 60 * 60),
+        }
+
+        confirmationmail_template = forms.ChoiceField(
+            label=_("Confirmation mail template set"),
+            required=True,
+            initial=CONFIRMATION_MAIL_TEMPLATE_SETS[0][0],
+            choices=CONFIRMATION_MAIL_TEMPLATE_SETS,
+            widget=forms.Select
+            if len(CONFIRMATION_MAIL_TEMPLATE_SETS) > 1
+            else forms.HiddenInput,
+        )
+
+        def get_rate_limit_values(self, form, request):
+            values = super().get_rate_limit_values(form, request)
+            recipient = confirmation_mail.get_recipient(form)
+            if recipient:
+                values["recipient"] = recipient.casefold()
+            return values
+
+        def execute(self, form, request):
+            form_name = get_option(form, "form_name", "")
+            recipient = confirmation_mail.get_recipient(form)
+            if not recipient:
+                logger.warning(
+                    "Confirmation mail skipped: form %s has no valid email field %r",
+                    form_name,
+                    CONFIRMATION_MAIL_FIELD_NAME,
+                )
+                return 0
+            if not confirmation_mail.is_protected(form):
+                logger.warning(
+                    "Confirmation mail skipped: form %s requires neither login "
+                    "nor a captcha",
+                    form_name,
+                )
+                return 0
+
+            template_set = self.get_parameter(form, "confirmationmail_template")
+            if template_set not in CONFIRMATION_MAIL_TEMPLATE_KEYS:
+                logger.error(
+                    "Confirmation mail skipped: unknown template set %r", template_set
+                )
+                return 0
+
+            context = confirmation_mail.get_context(form)
+            try:
+                subject = render_to_string(
+                    confirmation_mail.template_name(template_set, "subject.txt"),
+                    context,
+                )
+            except TemplateDoesNotExist:
+                logger.exception(
+                    "Confirmation mail skipped: template set %s has no subject",
+                    template_set,
+                )
+                return 0
+            # The templates are server-owned and auto-escaping remains enabled.
+            # Do not apply the `safe` filter to submitted values in them.
+            try:
+                message = render_to_string(
+                    confirmation_mail.template_name(template_set, "mail.txt"), context
+                )
+            except TemplateDoesNotExist:
+                message = ""
+            try:
+                html_message = render_to_string(
+                    confirmation_mail.template_name(template_set, "mail_html.html"),
+                    context,
+                )
+            except TemplateDoesNotExist:
+                html_message = ""
+            if not message and not html_message:
+                logger.error(
+                    "Confirmation mail skipped: template set %s has no mail body",
+                    template_set,
+                )
+                return 0
+
+            subject = " ".join(subject.splitlines()).strip()
+            if not message:
+                message = strip_tags(html_message)
+
+            mail = EmailMultiAlternatives(
+                subject=subject,
+                body=message,
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                to=[recipient],
+                headers={
+                    "Auto-Submitted": "auto-generated",
+                    "X-Auto-Response-Suppress": "All",
+                },
+            )
+            if html_message:
+                mail.attach_alternative(html_message, "text/html")
+
+            if not confirmation_mail.dispatch(mail):
+                logger.warning("Confirmation mail skipped: delivery queue is full")
+                return 0
+            return 1

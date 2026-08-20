@@ -1,6 +1,8 @@
 ajax
 autosizing
+backend
 blockquote
+captcha
 checkboxes
 ckeditor
 cms
@@ -35,8 +37,11 @@ rtl
 styledlink
 subclasses
 subclassing
+submitter
+Textarea
 themable
 un
 url
+validator
 viewport
 xl

@@ -96,6 +96,7 @@ Contents
    :maxdepth: 3
 
    forms
+   actions
    file_upload
    howto_guides
    reference

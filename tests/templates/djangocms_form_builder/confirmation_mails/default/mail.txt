@@ -1,0 +1,3 @@
+Thank you for your submission.
+{% for row in form_field_rows %}{{ row.label }}: {{ row.value }}
+{% endfor %}

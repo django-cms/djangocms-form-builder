@@ -23,7 +23,7 @@ There are two different ways to manage forms with **djangocms-form-builder**:
 
    If you prefer to have a central form repository, we suggest
    **djangocms-alias** to manage your forms centrally. Djangocms-alias becomes
-   your form editors and forms can be placed on pages by refering to them with
+   your form editors and forms can be placed on pages by referring to them with
    their alias.
 
 2. **Registering an application-specific form with djangocms-form-builder.** If you
@@ -45,7 +45,7 @@ All forms live in the Form plugin. A form plugin can be positioned everywhere
 except inside another form plugin.
 
 If you want to use the structure board to build your form you will have to add
-the form components as child plugins to a form plugin. If you have registiered
+the form components as child plugins to a form plugin. If you have registered
 an application-specific form with djangocms-form-builder you will be able to select
 one of the registered forms for be shown by the form plugin. (If you do both,
 the selected form takes precedence over the child plugins.)
@@ -80,6 +80,16 @@ or Select/Choice) offer options on the specific input widget.
 
 djangocms-form-builder will use framework specific widgets or fall back to standard
 widgets browsers offer (e.g., date picker).
+
+************
+Form actions
+************
+
+Upon submission of a valid form, **djangocms-form-builder** runs the actions
+selected in the form plugin: saving the submission, mailing it, showing a
+success message, redirecting, or mailing a confirmation to the person who
+submitted the form. Projects can register actions of their own and rate limit
+them. See :doc:`actions`.
 
 ***************************
 Using forms from other apps

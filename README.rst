@@ -89,7 +89,7 @@ Actions
 
 Upon submission of a valid form actions can be performed.
 
-Four actions come with djangocms-form-builder comes with four actions built-in
+These actions come with djangocms-form-builder built-in:
 
 * **Save form submission** - Saves each form submission to the database. See the
   results in the admin interface.
@@ -98,8 +98,23 @@ Four actions come with djangocms-form-builder comes with four actions built-in
   successful form submission.
 * **Redirect after submission** - Specify a link to a page where the user is
   redirected after successful form submission.
+* **Send confirmation email to submitter** - Sends a confirmation mail to the
+  address submitted with the form. Since no confirmation mail templates are
+  shipped, this action only appears once your project configures
+  ``DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS``, see **Form actions** in the
+  docs.
 
-Actions can be configured in the form plugin.
+Actions can be configured in the form plugin. Any action can be rate limited
+per client address (and, where an action provides one, per recipient address)
+using ``DJANGOCMS_FORM_BUILDER_RATE_LIMITS``::
+
+    DJANGOCMS_FORM_BUILDER_RATE_LIMITS = {
+        "default": {"source": (60, 60 * 60)},  # 60 per hour and client
+        "SendConfirmationMailAction": {"recipient": (3, 24 * 60 * 60)},
+    }
+
+Once a limit is used up, that action is skipped for the rest of the time
+window while the form's other actions still run.
 
 A project can register as many actions as it likes::
 
@@ -211,6 +226,14 @@ Recommendations for public forms
    submission if sending the email fails. Failures are logged to the
    ``djangocms_form_builder.actions`` logger - make sure your ``LOGGING``
    setup surfaces its error messages so failed deliveries are noticed.
+
+-  **Rate limit mails to visitors.** Any mail sent to an address a visitor
+   entered can be abused to send mail on your behalf. The "Send confirmation
+   email to submitter" action therefore only works on forms protected by a
+   captcha or a login, and limits how many mails a single client or recipient
+   can trigger. Adjust the limits of your own actions with
+   ``DJANGOCMS_FORM_BUILDER_RATE_LIMITS`` and watch the
+   ``djangocms_form_builder.rate_limit`` logger.
 
 
 Configuring Altcha CAPTCHA

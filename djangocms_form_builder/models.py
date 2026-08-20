@@ -13,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from .entry_model import FormEntry  # NoQA
 from .fields import AttributesField
 from .helpers import coerce_decimal, coerce_int, mark_safe_lazy
+from .rate_limit import SubmissionQuota  # NoQA
 from .upload_form_fields import MultipleUploadedFilesField, ValidatedFileField
 
 MAX_LENGTH = 256
