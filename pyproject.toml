@@ -65,7 +65,7 @@ altcha = [
 
 [project.urls]
 Homepage = "https://github.com/django-cms/djangocms-form-builder"
-
+Documentation = "https://djangocms-form-builder.readthedocs.io/"
 
 [tool.hatch.version]
 path = "djangocms_form_builder/__init__.py"
