@@ -23,11 +23,12 @@ address is stored in the database.
 import hashlib
 import hmac
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from django.conf import settings as django_settings
 from django.db import IntegrityError, models, transaction
 from django.db.models import F
+from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.translation import gettext_lazy as _
 
@@ -82,10 +83,9 @@ def prune_expired(now):
 def consume_quota(kind, value, limit, window, now):
     """Count one use of ``value``; False if its limit is used up already."""
     key = quota_key(kind, value, window, now)
-    next_window = (int(now.timestamp()) // window + 1) * window
-    expires_at = datetime.fromtimestamp(next_window, tz=timezone.utc) + timedelta(
-        seconds=1
-    )
+    # Derive the end of the window from ``now`` itself, so that the stored
+    # value is aware or naive exactly like the project's ``USE_TZ`` demands.
+    expires_at = now + timedelta(seconds=window - int(now.timestamp()) % window + 1)
 
     updated = SubmissionQuota.objects.filter(pk=key, count__lt=limit).update(
         count=F("count") + 1
@@ -125,7 +125,7 @@ def check_rate_limits(action, form, request):
         return True
 
     values = action.get_rate_limit_values(form, request)
-    now = datetime.now(tz=timezone.utc)
+    now = timezone.now()
     try:
         prune_expired(now)
         for kind, (limit, window) in limits.items():

@@ -1,10 +1,11 @@
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from unittest.mock import patch
 
 from cms.test_utils.testcases import CMSTestCase
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ImproperlyConfigured
-from django.test import SimpleTestCase, TestCase
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
+from django.utils import timezone
 
 from djangocms_form_builder import actions as actions_module
 from djangocms_form_builder import rate_limit
@@ -13,7 +14,8 @@ from djangocms_form_builder.forms import SimpleFrontendForm
 from djangocms_form_builder.rate_limit import SubmissionQuota
 from djangocms_form_builder.settings import _validate_rate_limits
 
-NOW = datetime(2026, 8, 20, 12, 0, tzinfo=timezone.utc)
+# Aware or naive, exactly as the project's USE_TZ demands.
+NOW = timezone.now()
 
 
 class CountingAction(FormAction):
@@ -108,6 +110,35 @@ class ConsumeQuotaTests(TestCase):
         rate_limit.consume_quota("source", "1.2.3.4", 1, 60, NOW)
         rate_limit.prune_expired(NOW + timedelta(seconds=62))
         self.assertFalse(SubmissionQuota.objects.exists())
+
+
+@override_settings(USE_TZ=False)
+class NaiveDatetimeQuotaTests(TestCase):
+    """Projects may run without timezone support - Django 4.2 does so by default.
+
+    SQLite refuses to store timezone-aware datetimes then, so the counters have
+    to follow whatever ``USE_TZ`` demands.
+    """
+
+    def test_counters_work_without_timezone_support(self):
+        now = timezone.now()
+        self.assertIsNone(now.tzinfo)
+
+        self.assertTrue(rate_limit.consume_quota("source", "1.2.3.4", 1, 60, now))
+        self.assertFalse(rate_limit.consume_quota("source", "1.2.3.4", 1, 60, now))
+
+        self.assertIsNone(SubmissionQuota.objects.get().expires_at.tzinfo)
+        rate_limit.prune_expired(now + timedelta(seconds=62))
+        self.assertFalse(SubmissionQuota.objects.exists())
+
+    def test_action_is_rate_limited_without_timezone_support(self):
+        request = RequestFactory().post("/")
+        action = CountingAction()
+
+        self.assertTrue(action.check_rate_limits(None, request))
+        self.assertTrue(action.check_rate_limits(None, request))
+        with self.assertLogs("djangocms_form_builder.rate_limit", "WARNING"):
+            self.assertFalse(action.check_rate_limits(None, request))
 
 
 class CheckRateLimitsTests(CMSTestCase):
