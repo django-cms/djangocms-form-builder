@@ -2,8 +2,8 @@
 Changelog
 =========
 
-Unreleased
-==========
+unpublished
+==================
 
 * feat: Add support for Django 6.1
 * feat: Add a "Send confirmation email to submitter" action which mails a
@@ -17,10 +17,14 @@ Unreleased
 0.6.0 (2026-07-23)
 ==================
 
+* feat: add FileUpload and MultipleFileUpload fields in forms by
+  @corentinbettiol in https://github.com/django-cms/djangocms-form-builder/pull/44
+* feat: Add Captcha form element plugin by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/59
 * feat: Add ``prune_form_entries`` management command to enforce a retention
   policy for stored form entries
 * feat: The send email action logs failed deliveries to the
   ``djangocms_form_builder.actions`` logger instead of silently dropping them
+* feat: Security hardening for public forms by @fsbraun in https://github.com/django-cms/djangocms-form-builder/pull/57
 * fix: Make ``djangocms-text`` a soft dependency - the success message action
   falls back to a plain textarea if it is not installed
 * fix: ``SaveToDBAction`` no longer stores the ``User-Agent`` and ``Referer``
@@ -37,8 +41,15 @@ Unreleased
   rendering widgets
 * fix: Reserved form field name list contained ``html_header`` instead of
   ``html_headers``
+* fix: Enforce min/max length on CharField and TextareaField (#53) by @fsbraun
+  in https://github.com/django-cms/djangocms-form-builder/pull/56
 * chore: Remove dead code inherited from djangocms-frontend (device choice
   fields, icon widgets, template helpers, form mixin stubs, and more)
+
+**New Contributors**
+
+* @corentinbettiol made their first contribution in https://github.com/django-cms/djangocms-form-builder/pull/44
+
 
 0.5.1 (2026-06-01)
 ==================

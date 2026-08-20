@@ -58,6 +58,40 @@ class SerializeCleanedDataTests(TestCase):
         mock_storage.delete.assert_called_once_with("form_uploads/a.txt")
 
 
+class FormEntryMailDataTests(TestCase):
+    def test_mail_data_separates_file_links_from_regular_values(self):
+        entry = FormEntry(
+            entry_data={
+                "name": "Ada",
+                "attachments": [
+                    {
+                        "_form_builder_file": True,
+                        "filename": "public.pdf",
+                        "name": "form_uploads/internal-token.pdf",
+                        "url": "/media/form_uploads/public.pdf",
+                        "content_type": "application/pdf",
+                    }
+                ],
+            }
+        )
+
+        self.assertEqual(
+            entry.get_mail_data(),
+            [
+                {"label": "name", "value": "Ada"},
+                {
+                    "label": "attachments",
+                    "files": [
+                        {
+                            "filename": "public.pdf",
+                            "url": "/media/form_uploads/public.pdf",
+                        }
+                    ],
+                },
+            ],
+        )
+
+
 class DeleteEntryFilesTests(TestCase):
     @patch("djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE")
     def test_delete_entry_calls_storage_delete_for_single_file(self, mock_storage):

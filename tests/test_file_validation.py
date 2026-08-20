@@ -311,6 +311,42 @@ class BuiltinValidatorFunctionTests(SimpleTestCase):
         with self.assertRaises(FileValidationError):
             enforce_mime_from_filename(bad, ["application/pdf"], field_name="a")
 
+    def test_max_size_boundary_and_human_readable_limits(self):
+        exact = SimpleUploadedFile("exact.bin", b"1234")
+        enforce_max_size(exact, 4)
+
+        cases = (
+            (512, "512 bytes"),
+            (1536, "1.5 KB"),
+            (2 * 1024 * 1024, "2 MB"),
+        )
+        for limit, expected in cases:
+            with self.subTest(limit=limit):
+                too_large = SimpleUploadedFile("large.bin", b"x")
+                too_large.size = limit + 1
+                with self.assertRaisesMessage(FileValidationError, expected):
+                    enforce_max_size(too_large, limit)
+
+    def test_extension_normalization_and_empty_allowlist(self):
+        enforce_extension(SimpleUploadedFile("REPORT.PDF", b"x"), [" pdf "])
+
+        with self.assertRaisesMessage(
+            FileValidationError, 'File "report.pdf" has a disallowed extension.'
+        ):
+            enforce_extension(SimpleUploadedFile("report.pdf", b"x"), [])
+
+    def test_mime_empty_patterns_skip_check_and_unknown_type_is_rejected(self):
+        unknown = SimpleUploadedFile("payload.unknown-form-builder-type", b"x")
+        enforce_mime_from_filename(unknown, [])
+
+        with self.assertRaisesMessage(
+            FileValidationError, 'Could not determine file type for "payload'
+        ):
+            enforce_mime_from_filename(unknown, ["application/pdf"])
+
+    def test_mime_prefix_matches_category(self):
+        enforce_mime_from_filename(SimpleUploadedFile("image.png", b"x"), ["image/"])
+
 
 class AcceptAttributeTests(SimpleTestCase):
     @override_settings(

@@ -74,13 +74,17 @@ Form fields
 
 Currently the following form fields are supported:
 
-* CharField, EmailField, URLField
-* DecimalField, IntegerField
-* Textarea
-* DateField, DateTimeField, TimeField
-* SelectField
-* BooleanField
-* FileField
+* Text, Textarea, Email and URL
+* Decimal and Integer
+* Date, Date and Time, and Time
+* Select/Choice and Boolean
+* File upload and Multiple file upload
+* Captcha
+
+Captcha providers are optional dependencies. Configure the provider and widget
+on the Form plugin; add a Captcha child plugin where the widget should appear in
+the structure-built form. Widget ``data-*`` attributes and CAPTCHA API
+parameters can be supplied in the Form plugin's CAPTCHA configuration.
 
 A Form plugin must not be used within another Form plugin.
 
@@ -309,7 +313,12 @@ File Upload and Multiple File Upload fields use
 ``django.core.files.storage.default_storage`` by default, but you can specify an
 alternative storage using ``DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE``.
 
-See **File Upload** in the doc for more info.
+Stored uploads belong to their saved form entry. Replacing an upload in a
+reopened unique form removes the old file; deleting or pruning the form entry
+removes its files through the configured storage backend.
+
+See **File Upload** in the documentation for validation presets, storage
+configuration, and lifecycle details.
 
 .. |pypi| image:: https://badge.fury.io/py/djangocms-form-builder.svg
    :target: http://badge.fury.io/py/djangocms-form-builder

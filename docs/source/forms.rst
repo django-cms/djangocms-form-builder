@@ -74,12 +74,56 @@ represent form fields. These are:
 * Select/Choice
 * URL
 * Email
+* File upload
+* Multiple file upload
+* Captcha
 
 Each field requires an input of then specific form. Some fields (e.g., Boolean
 or Select/Choice) offer options on the specific input widget.
 
 djangocms-form-builder will use framework specific widgets or fall back to standard
 widgets browsers offer (e.g., date picker).
+
+Text length limits
+------------------
+
+Text and Textarea plugins accept optional **Minimum text length** and **Maximum
+text length** settings. These limits are enforced during server-side form
+validation, not merely through browser attributes.
+
+File uploads
+------------
+
+The File upload and Multiple file upload plugins accept files in AJAX
+submissions. Multiple file uploads have an editor-configurable maximum file
+count. Storage, validation presets, public-access considerations, and file
+lifecycle are described in :doc:`file_upload`.
+
+Captcha placement and configuration
+-----------------------------------
+
+CAPTCHA support requires a supported optional provider such as
+``django-altcha`` or ``django-recaptcha``. Select and configure the CAPTCHA
+widget on the Form plugin. For a structure-built form, add a Captcha child
+plugin at the position where the widget should be rendered. If no Captcha child
+plugin is present, the widget is rendered in the form's default CAPTCHA
+position.
+
+The Form plugin's CAPTCHA configuration separates entries by name:
+
+* names beginning with ``data-`` are passed to the CAPTCHA widget as HTML
+  attributes;
+* all other names are passed as CAPTCHA API parameters.
+
+For Altcha installation and settings, see the corresponding section in the
+project README.
+
+Success message editor
+----------------------
+
+The Success message action uses ``djangocms-text`` for rich-text editing when
+that optional package is installed. Without it, the action remains usable and
+falls back to a plain textarea.
 
 ************
 Form actions
@@ -134,4 +178,3 @@ There are three ways **djangocms-form-builder** can render registered forms:
    rendered using **django-crispy-forms**. Note, however, that the submit button
    is rendered by the plugin. Hence do not include it into the form (which is
    possible with **django-crispy-forms**).
-
