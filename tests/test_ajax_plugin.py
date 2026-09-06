@@ -1,6 +1,6 @@
 import json
 import tempfile
-from unittest import mock, skipIf
+from unittest import mock, skipIf, skipUnless
 from urllib.parse import urlencode
 
 from cms import __version__ as cms_version
@@ -11,10 +11,12 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import Http404, HttpResponse, HttpResponseNotAllowed, JsonResponse
+from django.template import Context
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
 from djangocms_form_builder import cms_plugins
+from djangocms_form_builder import settings as builder_settings
 from djangocms_form_builder.actions import SAVE_TO_DB_ACTION
 from djangocms_form_builder.file_validation import FileValidationError
 from djangocms_form_builder.models import FormEntry
@@ -788,6 +790,10 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         self.assertIn(json_data["result"], ["success", "error"])
         self.assertIn("field_errors", json_data)
 
+    @skipUnless(
+        builder_settings.frontend == "django_formset",
+        "requires the django_formset frontend",
+    )
     def test_django_formset_json_submission(self):
         form_plugin = self._create_simple_form_plugin("formset-json-post")
         self.publish(self.page, self.language)
@@ -807,6 +813,10 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"success_url": self.request_url})
 
+    @skipUnless(
+        builder_settings.frontend == "django_formset",
+        "requires the django_formset frontend",
+    )
     def test_django_formset_validation_errors(self):
         form_plugin = self._create_simple_form_plugin("formset-json-invalid")
         self.publish(self.page, self.language)
@@ -822,6 +832,98 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 422)
         self.assertIn("simple_field", response.json())
+
+
+@skipUnless(
+    builder_settings.frontend == "django_formset",
+    "requires the django_formset frontend",
+)
+class DjangoFormsetAjaxPluginTestCase(TestFixture, CMSTestCase):
+    def _create_form(self, plugin_type="CharFieldPlugin", **field_config):
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="django-formset-ajax",
+            captcha_widget="",
+            **field_config.pop("form_options", {}),
+        )
+        field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=plugin_type,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": "message",
+                "field_label": "Message",
+                "field_required": True,
+                **field_config,
+            },
+        )
+        field.initialize_from_form()
+        return form_plugin, field
+
+    def _render_plugin_context(self, form_plugin, field):
+        plugin = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin.instance = form_plugin
+        form_plugin.child_plugin_instances = [field]
+        field.child_plugin_instances = []
+        return plugin.render(
+            Context({"request": self.get_request("/")}),
+            form_plugin,
+            self.placeholder,
+        )
+
+    def test_render_context_enables_django_formset_submission(self):
+        form_plugin, field = self._create_form()
+
+        context = self._render_plugin_context(form_plugin, field)
+
+        self.assertTrue(context["use_django_formset"])
+        self.assertEqual(context["form"].form_id, f"form{context['uid']}")
+        self.assertTrue(context["csrf_token"])
+        self.assertFalse(cms_plugins.FormPlugin.cache)
+
+    def test_render_context_uses_multipart_fallback_for_file_fields(self):
+        form_plugin, field = self._create_form(
+            plugin_type="FileFieldPlugin",
+            field_file_validation_presets=[],
+        )
+
+        context = self._render_plugin_context(form_plugin, field)
+
+        self.assertFalse(context["use_django_formset"])
+        self.assertFalse(hasattr(context["form"], "form_id"))
+        self.assertNotIn("csrf_token", context)
+
+    def test_json_submission_executes_actions_and_persists_data(self):
+        form_plugin, _field = self._create_form(
+            form_options={
+                "form_actions": json.dumps([SAVE_TO_DB_ACTION]),
+                "action_parameters": {SAVE_TO_DB_ACTION: {}},
+            }
+        )
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data=json.dumps({"formset_data": {"message": "Stored value"}}),
+                content_type="application/json",
+                headers={
+                    "accept": "application/json",
+                    "referer": self.request_url,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"success_url": self.request_url})
+        entry = FormEntry.objects.get(form_name="django-formset-ajax")
+        self.assertEqual(entry.entry_data["message"], "Stored value")
 
 
 @skipIf(cms_version < "4", "Form plugin tests require django CMS 4 or higher")
