@@ -16,3 +16,4 @@ pre-commit
 svglib!=1.6.0
 django-entangled
 django-altcha
+django-formset>=2.2

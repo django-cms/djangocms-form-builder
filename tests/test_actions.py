@@ -7,6 +7,7 @@ from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.http import QueryDict
 
 from djangocms_form_builder.actions import SaveToDBAction, get_registered_actions
 from djangocms_form_builder.cms_plugins.ajax_plugins import FormPlugin
@@ -560,6 +561,64 @@ class ActionTestCase(TestFixture, CMSTestCase):
             has_action_fieldsets,
             f"Expected at least one action fieldset. Actions: {action_names}, Fieldsets: {fieldset_names}",
         )
+
+    def test_unselected_action_required_fields_are_ignored(self):
+        admin = FormPlugin(model=FormPlugin.model, admin_site=AdminSite())
+        form_class = admin.get_form(self.get_request("/"))
+        form = form_class(data={"form_actions": [self.save_action]})
+
+        self.assertFalse(form.fields["submitmessage_message"].required)
+        self.assertEqual(
+            form.fields["submitmessage_message"].widget.attrs["data-action-required"],
+            "true",
+        )
+        form.is_valid()
+        self.assertNotIn("submitmessage_message", form.errors)
+
+    def test_selected_action_required_fields_are_enforced(self):
+        admin = FormPlugin(model=FormPlugin.model, admin_site=AdminSite())
+        form_class = admin.get_form(self.get_request("/"))
+        form = form_class(data={"form_actions": [self.success_action]})
+
+        self.assertTrue(form.fields["submitmessage_message"].required)
+        self.assertEqual(
+            form.fields["submitmessage_message"].widget.attrs["data-action-required"],
+            "true",
+        )
+        form.is_valid()
+        self.assertIn("submitmessage_message", form.errors)
+
+    def test_initial_actions_control_required_fields(self):
+        admin = FormPlugin(model=FormPlugin.model, admin_site=AdminSite())
+        form_class = admin.get_form(self.get_request("/"))
+        instance = FormPlugin.model(
+            form_actions=f'["{self.success_action}"]',
+        )
+        form = form_class(instance=instance)
+
+        self.assertTrue(form.fields["submitmessage_message"].required)
+        self.assertFalse(form.fields["sendemail_template"].required)
+
+    def test_querydict_actions_control_required_fields(self):
+        admin = FormPlugin(model=FormPlugin.model, admin_site=AdminSite())
+        form_class = admin.get_form(self.get_request("/"))
+        data = QueryDict(mutable=True)
+        data.setlist("form_actions", [self.save_action, self.success_action])
+        form = form_class(data=data)
+
+        self.assertTrue(form.fields["submitmessage_message"].required)
+        self.assertFalse(form.fields["sendemail_template"].required)
+
+    def test_malformed_initial_actions_do_not_require_action_fields(self):
+        admin = FormPlugin(model=FormPlugin.model, admin_site=AdminSite())
+        form_class = admin.get_form(self.get_request("/"))
+
+        for value in ("not-json", "{}"):
+            with self.subTest(value=value):
+                instance = FormPlugin.model(form_actions=value)
+                form = form_class(instance=instance)
+                self.assertFalse(form.fields["submitmessage_message"].required)
+                self.assertFalse(form.fields["sendemail_template"].required)
 
     def test_actions_fieldsets_include_action_fields(self):
         """Test that action fieldsets include the action's declared fields"""

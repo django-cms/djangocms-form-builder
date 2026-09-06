@@ -1,0 +1,8 @@
+{% spaceless %}
+    {% if title %}<fieldset><legend>{{ title }}</legend>{% endif %}
+    {% if prop.description %}<p>{{ prop.description }}</p>{% endif %}
+    {% for form_field in prop.fields %}
+        {% include "djangocms_form_builder/django_formset/render/field.html" with form=form form_field=form_field %}
+    {% endfor %}
+    {% if title %}</fieldset>{% endif %}
+{% endspaceless %}
