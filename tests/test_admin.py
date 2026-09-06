@@ -1,4 +1,5 @@
 import decimal
+from unittest.mock import Mock
 
 from django.contrib.admin.sites import site
 from django.contrib.auth import get_user_model
@@ -203,3 +204,75 @@ class FormEntryAdminTests(TestCase):
                 "filename": "a.pdf",
             },
         )
+
+    def test_save_model_restores_file_data_omitted_by_the_dynamic_form(self):
+        metadata = {
+            "_form_builder_file": True,
+            "url": "/media/form_uploads/a.pdf",
+            "filename": "a.pdf",
+        }
+        entry = FormEntry.objects.create(
+            form_name="upload",
+            form_user=self.user1,
+            entry_data={"title": "Hi", "doc": metadata},
+        )
+        entry.entry_data = {"title": "Updated"}
+        admin_instance = site._registry[FormEntry]
+
+        admin_instance.save_model(
+            self.factory.post("/"), entry, form=Mock(), change=True
+        )
+
+        entry.refresh_from_db()
+        self.assertEqual(entry.entry_data, {"title": "Updated", "doc": metadata})
+
+    def test_file_display_handles_missing_and_multiple_values(self):
+        admin_instance = site._registry[FormEntry]
+        entry = FormEntry(
+            entry_data={
+                "attachments": [
+                    {
+                        "_form_builder_file": True,
+                        "url": "/media/form_uploads/a.pdf",
+                        "filename": "a.pdf",
+                    },
+                    {
+                        "_form_builder_file": True,
+                        "url": "/media/form_uploads/b.pdf",
+                        "filename": "b.pdf",
+                    },
+                ]
+            }
+        )
+
+        self.assertEqual(admin_instance.format_entry_file_field(entry, "missing"), "—")
+        rendered = str(admin_instance.format_entry_file_field(entry, "attachments"))
+        self.assertIn("<ul>", rendered)
+        self.assertIn("/media/form_uploads/a.pdf", rendered)
+        self.assertIn("/media/form_uploads/b.pdf", rendered)
+        self.assertEqual(rendered.count('rel="noopener noreferrer"'), 2)
+
+    def test_dynamic_file_attribute_rejects_invalid_encoding(self):
+        admin_instance = site._registry[FormEntry]
+
+        with self.assertRaises(AttributeError):
+            getattr(admin_instance, "entry_file__w")
+        with self.assertRaises(AttributeError):
+            getattr(admin_instance, "not_a_file_attribute")
+
+    def test_file_attribute_name_round_trips_non_ascii_keys(self):
+        admin_instance = site._registry[FormEntry]
+        key = "résumé attachments"
+        attribute = admin_instance.entry_file_attr_name(key)
+
+        self.assertEqual(admin_instance.entry_file_key_from_attr(attribute), key)
+
+    def test_fieldsets_without_an_entry_use_the_default_admin_layout(self):
+        admin_instance = site._registry[FormEntry]
+        request = self.factory.get("/")
+
+        fieldsets = admin_instance.get_fieldsets(request)
+
+        self.assertEqual(len(fieldsets), 1)
+        self.assertIn("entry_data", fieldsets[0][1]["fields"])
+        self.assertNotIn("Uploaded files", [name for name, _options in fieldsets])

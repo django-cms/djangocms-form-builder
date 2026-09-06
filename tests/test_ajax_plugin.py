@@ -1,4 +1,5 @@
 import json
+import tempfile
 from unittest import mock, skipIf
 from urllib.parse import urlencode
 
@@ -7,16 +8,24 @@ from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 from django import forms
 from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.files.storage import FileSystemStorage
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import Http404, HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
 from djangocms_form_builder import cms_plugins
+from djangocms_form_builder.actions import SAVE_TO_DB_ACTION
+from djangocms_form_builder.file_validation import FileValidationError
 from djangocms_form_builder.models import FormEntry
 from djangocms_form_builder.views import AjaxView, register_form_view
 from tests.helpers import make_valid_altcha_payload
 
 from .fixtures import TestFixture
+
+
+def reject_upload(_uploaded_file, *, user, request, field_name):
+    raise FileValidationError("Rejected by the endpoint test.")
 
 
 class AjaxViewTestCase(TestFixture, CMSTestCase):
@@ -307,8 +316,8 @@ class FormEntryCreationTestCase(TestFixture, CMSTestCase):
             language=self.language,
             form_selection="",
             form_name="entry-test",
-            form_actions='["save_to_database"]',  # Must be valid JSON
-            action_parameters={"save_to_database": {}},
+            form_actions=json.dumps([SAVE_TO_DB_ACTION]),
+            action_parameters={SAVE_TO_DB_ACTION: {}},
         )
 
         char_field = add_plugin(
@@ -355,23 +364,11 @@ class FormEntryCreationTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 200)
 
-        # Check if a FormEntry was created
-        new_count = FormEntry.objects.count()
-
-        # Note: FormEntry creation depends on action configuration
-        # If no entry is created, it means the action isn't properly configured
-        if new_count > initial_count:
-            self.assertEqual(new_count, initial_count + 1)
-
-            # Verify the entry data
-            entry = FormEntry.objects.latest("entry_created_at")
-            self.assertEqual(entry.form_name, "entry-test")
-            self.assertEqual(entry.entry_data.get("full_name"), "John Doe")
-            self.assertEqual(entry.entry_data.get("email"), "john@example.com")
-        else:
-            # If FormEntry wasn't created, at least verify the response was successful
-            json_data = response.json()
-            self.assertIn("result", json_data)
+        self.assertEqual(FormEntry.objects.count(), initial_count + 1)
+        entry = FormEntry.objects.latest("entry_created_at")
+        self.assertEqual(entry.form_name, "entry-test")
+        self.assertEqual(entry.entry_data.get("full_name"), "John Doe")
+        self.assertEqual(entry.entry_data.get("email"), "john@example.com")
 
     def test_form_entry_not_created_on_invalid_submission(self):
         """Test that FormEntry is NOT created when form validation fails"""
@@ -381,7 +378,7 @@ class FormEntryCreationTestCase(TestFixture, CMSTestCase):
             language=self.language,
             form_selection="",
             form_name="no-entry-test",
-            form_actions='["save_to_database"]',  # Must be valid JSON
+            form_actions=json.dumps([SAVE_TO_DB_ACTION]),
         )
 
         email_field = add_plugin(
@@ -415,6 +412,181 @@ class FormEntryCreationTestCase(TestFixture, CMSTestCase):
         # No new FormEntry should be created
         new_count = FormEntry.objects.count()
         self.assertEqual(new_count, initial_count)
+
+    def _create_upload_form(self, plugin_type, field_name, **config):
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name=f"{field_name}-entry-test",
+            form_actions=json.dumps([SAVE_TO_DB_ACTION]),
+            action_parameters={SAVE_TO_DB_ACTION: {}},
+            captcha_widget="",
+        )
+        field_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=plugin_type,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": field_name,
+                "field_label": field_name.title(),
+                "field_required": True,
+                **config,
+            },
+        )
+        field_plugin.initialize_from_form()
+        self.publish(self.page, self.language)
+        return form_plugin
+
+    def test_ajax_submission_stores_single_uploaded_file(self):
+        form_plugin = self._create_upload_form("FileFieldPlugin", "attachment")
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with tempfile.TemporaryDirectory() as upload_root:
+            storage = FileSystemStorage(location=upload_root, base_url="/uploads/")
+            with (
+                mock.patch(
+                    "djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE",
+                    storage,
+                ),
+                self.login_user_context(self.superuser),
+            ):
+                response = self.client.post(
+                    url,
+                    data={
+                        "attachment": SimpleUploadedFile(
+                            "notes.txt", b"uploaded through ajax", "text/plain"
+                        )
+                    },
+                    headers={"accept": "application/json"},
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["result"], "success")
+                entry = FormEntry.objects.get(form_name="attachment-entry-test")
+                metadata = entry.entry_data["attachment"]
+                self.assertTrue(metadata["_form_builder_file"])
+                self.assertEqual(metadata["filename"], "notes.txt")
+                self.assertEqual(metadata["url"], f"/uploads/{metadata['name']}")
+                with storage.open(metadata["name"]) as stored:
+                    self.assertEqual(stored.read(), b"uploaded through ajax")
+
+                stored_name = metadata["name"]
+                entry.delete()
+                self.assertFalse(storage.exists(stored_name))
+
+    def test_ajax_submission_stores_multiple_uploaded_files(self):
+        form_plugin = self._create_upload_form(
+            "MultipleFileFieldPlugin", "attachments", max_files=2
+        )
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with tempfile.TemporaryDirectory() as upload_root:
+            storage = FileSystemStorage(location=upload_root, base_url="/uploads/")
+            with (
+                mock.patch(
+                    "djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE",
+                    storage,
+                ),
+                self.login_user_context(self.superuser),
+            ):
+                response = self.client.post(
+                    url,
+                    data={
+                        "attachments": [
+                            SimpleUploadedFile("one.txt", b"one", "text/plain"),
+                            SimpleUploadedFile("two.txt", b"two", "text/plain"),
+                        ]
+                    },
+                    headers={"accept": "application/json"},
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["result"], "success")
+                entry = FormEntry.objects.get(form_name="attachments-entry-test")
+                metadata = entry.entry_data["attachments"]
+                self.assertEqual(
+                    [item["filename"] for item in metadata], ["one.txt", "two.txt"]
+                )
+                self.assertTrue(all(item["_form_builder_file"] for item in metadata))
+                stored_contents = []
+                for item in metadata:
+                    with storage.open(item["name"]) as stored:
+                        stored_contents.append(stored.read())
+                self.assertEqual(stored_contents, [b"one", b"two"])
+
+                stored_names = [item["name"] for item in metadata]
+                entry.delete()
+                self.assertFalse(any(storage.exists(name) for name in stored_names))
+
+    def test_ajax_rejects_too_many_files_without_creating_an_entry(self):
+        form_plugin = self._create_upload_form(
+            "MultipleFileFieldPlugin", "attachments", max_files=1
+        )
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        response = self.client.post(
+            url,
+            data={
+                "attachments": [
+                    SimpleUploadedFile("one.txt", b"one", "text/plain"),
+                    SimpleUploadedFile("two.txt", b"two", "text/plain"),
+                ]
+            },
+            headers={"accept": "application/json"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["result"], "invalid form")
+        self.assertTrue(
+            any(
+                key.startswith("attachments") for key in response.json()["field_errors"]
+            )
+        )
+        self.assertFalse(
+            FormEntry.objects.filter(form_name="attachments-entry-test").exists()
+        )
+
+    @override_settings(
+        DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
+            "reject": {
+                "label": "Reject",
+                "validate": f"{__name__}.reject_upload",
+            }
+        }
+    )
+    def test_ajax_upload_validation_failure_does_not_store_the_file(self):
+        form_plugin = self._create_upload_form(
+            "FileFieldPlugin",
+            "attachment",
+            field_file_validation_presets=["reject"],
+        )
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with mock.patch(
+            "djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE"
+        ) as storage:
+            response = self.client.post(
+                url,
+                data={
+                    "attachment": SimpleUploadedFile(
+                        "rejected.txt", b"reject me", "text/plain"
+                    )
+                },
+                headers={"accept": "application/json"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["result"], "invalid form")
+        self.assertTrue(
+            any(key.startswith("attachment") for key in response.json()["field_errors"])
+        )
+        storage.save.assert_not_called()
+        self.assertFalse(
+            FormEntry.objects.filter(form_name="attachment-entry-test").exists()
+        )
 
 
 class RegisterFormViewTestCase(CMSTestCase):
