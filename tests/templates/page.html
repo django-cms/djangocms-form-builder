@@ -1,1 +1,9 @@
-{% load cms_tags %}{% placeholder "content" %}
+{% load cms_tags sekizai_tags %}
+<!doctype html>
+<html>
+<head>{% render_block "css" %}</head>
+<body>
+{% placeholder "content" %}
+{% render_block "js" %}
+</body>
+</html>

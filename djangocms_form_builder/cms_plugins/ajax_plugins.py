@@ -3,6 +3,7 @@ from urllib.parse import urlencode
 
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
+from django import forms as django_forms
 from django.conf import settings as django_settings
 from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.middleware.csrf import get_token
@@ -20,6 +21,7 @@ from .. import forms, models, recaptcha
 from ..actions import ActionMixin
 from ..forms import SimpleFrontendForm
 from ..helpers import get_option, insert_fields, mark_safe_lazy
+from ..upload_form_fields import MultipleUploadedFilesField
 
 SAME_PAGE_REDIRECT = "result"
 
@@ -46,7 +48,28 @@ class AjaxFormMixin(FormMixin):
     parameter = {}
     template_name = None
 
+    def _get_formset_payload(self):
+        """Return django-formset's JSON body, or ``None`` for regular requests."""
+        if self.request.content_type != "application/json":
+            return None
+        if not hasattr(self.request, "_djangocms_formset_payload"):
+            try:
+                payload = json.loads(self.request.body or b"{}")
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                payload = None
+            if not isinstance(payload, dict) or not isinstance(
+                payload.get("formset_data"), dict
+            ):
+                payload = None
+            self.request._djangocms_formset_payload = payload
+        return self.request._djangocms_formset_payload
+
     def json_return(self, errors, result, redirect, content):
+        if self._get_formset_payload() is not None:
+            success_url = redirect
+            if not success_url or success_url == SAME_PAGE_REDIRECT:
+                success_url = self.request.headers.get("Referer")
+            return JsonResponse({"success_url": success_url})
         return JsonResponse(
             {
                 "result": result,
@@ -116,17 +139,11 @@ class AjaxFormMixin(FormMixin):
                 "",
             )
         redirect = redirect or redir
-        return JsonResponse(
-            {
-                "result": result,
-                "redirect": redirect,
-                "errors": errors,
-                "field_errors": {},
-                "content": content,
-            }
-        )
+        return self.json_return(errors, result, redirect, content)
 
     def form_invalid(self, form):
+        if self._get_formset_payload() is not None:
+            return JsonResponse(form.errors, status=422, safe=False)
         return JsonResponse(
             {
                 "result": "invalid form",
@@ -167,7 +184,9 @@ class AjaxFormMixin(FormMixin):
             "label_suffix": "",
         }
 
-        if self.request.method in ("POST", "PUT"):
+        if (formset_payload := self._get_formset_payload()) is not None:
+            kwargs["data"] = formset_payload["formset_data"]
+        elif self.request.method in ("POST", "PUT"):
             kwargs.update(
                 {
                     "data": self.request.POST,
@@ -255,6 +274,15 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
                 "csrf_cookie_httponly": django_settings.CSRF_COOKIE_HTTPONLY,
             }
         )
+        if settings.frontend == "django_formset" and form is not None:
+            context["use_django_formset"] = not any(
+                isinstance(field, (django_forms.FileField, MultipleUploadedFilesField))
+                for field in form.fields.values()
+            )
+            if context["use_django_formset"]:
+                # django-formset links detached controls to this form by ID.
+                form.form_id = f"form{context['uid']}"
+                context["csrf_token"] = get_token(self.request)
         return context
 
 
@@ -270,8 +298,12 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
     # Form HTML is cache-safe only when the CSRF token can be fetched at submit
     # time via the JSON GET endpoint. When CSRF_COOKIE_HTTPONLY is on, the token
     # must be embedded inline by {% csrf_token %}, so the rendered HTML carries
-    # per-request data and cannot be cached.
-    cache = not django_settings.CSRF_COOKIE_HTTPONLY
+    # per-request data and cannot be cached. django-formset also embeds its CSRF
+    # token in the web component and therefore follows the same rule.
+    cache = (
+        settings.frontend != "django_formset"
+        and not django_settings.CSRF_COOKIE_HTTPONLY
+    )
 
     fieldsets = [
         (

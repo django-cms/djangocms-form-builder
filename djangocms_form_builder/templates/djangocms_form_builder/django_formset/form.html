@@ -1,0 +1,37 @@
+{% load static cms_tags sekizai_tags i18n formsetify %}
+{% spaceless %}
+{% if form %}
+    {% if use_django_formset %}
+        {% formsetify form "bootstrap" %}
+        <django-formset endpoint="{% url 'form_builder:ajaxview' instance.id %}"
+                        csrf-token="{{ csrf_token }}">
+            <form id="{{ form.form_id }}" method="post"></form>
+            {% include "djangocms_form_builder/django_formset/ajax_form.html" %}
+            {% if not has_submit_button %}
+                <button type="button" df-click="submit -> proceed"
+                        class="btn btn-{{ instance.form_submit_context|default:'primary' }}">
+                    {{ instance.form_submit_message|default:_('Submit') }}
+                </button>
+            {% endif %}
+        </django-formset>
+        {% addtoblock "css" %}
+            <link rel="stylesheet" href="{% static 'formset/css/bootstrap5-extra.css' %}">
+        {% endaddtoblock %}
+        {% addtoblock "js" %}
+            <script type="module" src="{% static 'formset/js/django-formset.js' %}"></script>
+        {% endaddtoblock %}
+    {% else %}
+        <form id="form{{ uid }}"
+              class="djangocms-form-builder-ajax-form"
+              novalidate action="{% url 'form_builder:ajaxview' instance.id %}"
+              method="post">
+            {% if csrf_cookie_httponly %}{% csrf_token %}{% endif %}
+            {% include "djangocms_form_builder/ajax_form.html" %}
+            {% if not has_submit_button %}
+                <input type="submit" value="{{ instance.form_submit_message|default:_('Submit') }}"
+                       class="btn btn-{{ instance.form_submit_context|default:'primary' }}">
+            {% endif %}
+        </form>
+    {% endif %}
+{% endif %}
+{% endspaceless %}

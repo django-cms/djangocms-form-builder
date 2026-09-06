@@ -3,7 +3,7 @@ import inspect
 from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 
-from djangocms_form_builder import cms_plugins
+from djangocms_form_builder import cms_plugins, settings
 from djangocms_form_builder.cms_plugins.form_plugins import FormElementPlugin
 from tests.test_app.cms_plugins import ContainerPlugin
 
@@ -11,6 +11,14 @@ from .fixtures import TestFixture
 
 
 class FormEditorTestCase(TestFixture, CMSTestCase):
+    def assert_submit_action(self, content, label):
+        if settings.frontend == "django_formset":
+            self.assertEqual(content.count('df-click="submit -> proceed"'), 1)
+            self.assertIn(label, content)
+        else:
+            self.assertEqual(content.count('type="submit"'), 1)
+            self.assertIn(f'value="{label}"', content)
+
     def test_form_editor(self):
         form = add_plugin(
             placeholder=self.placeholder,
@@ -78,8 +86,7 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
             response = self.client.get(self.request_url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content.decode().count('type="submit"'), 1)
-        self.assertIn('value="Submit"', response.content.decode())
+        self.assert_submit_action(response.content.decode(), "Submit")
 
     def test_auto_submit_button_does_not_appear_when_button_exists(self):
         form = add_plugin(
@@ -113,9 +120,7 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertEqual(content.count('type="submit"'), 1)
-        self.assertIn('value="Submit Form"', content)
-        self.assertNotIn('value="Submit"', content)
+        self.assert_submit_action(content, "Submit Form")
 
     def test_submit_button_renders_context_class(self):
         form = add_plugin(
@@ -150,8 +155,7 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertEqual(content.count('type="submit"'), 1)
-        self.assertIn('value="Send"', content)
+        self.assert_submit_action(content, "Send")
         self.assertIn('class="btn btn-secondary"', content)
 
     def test_auto_submit_button_does_not_appear_with_nested_button(self):
@@ -198,9 +202,7 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertEqual(content.count('type="submit"'), 1)
-        self.assertIn('value="Submit Form"', content)
-        self.assertNotIn('value="Submit"', content)
+        self.assert_submit_action(content, "Submit Form")
 
     def test_auto_submit_button_appears_with_empty_nested_containers(self):
         form = add_plugin(
@@ -237,5 +239,4 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertEqual(content.count('type="submit"'), 1)
-        self.assertIn('value="Submit"', content)
+        self.assert_submit_action(content, "Submit")

@@ -616,6 +616,41 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         self.assertIn(json_data["result"], ["success", "error"])
         self.assertIn("field_errors", json_data)
 
+    def test_django_formset_json_submission(self):
+        form_plugin = self._create_simple_form_plugin("formset-json-post")
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data=json.dumps({"formset_data": {"simple_field": "posted value"}}),
+                content_type="application/json",
+                headers={
+                    "accept": "application/json",
+                    "referer": self.request_url,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"success_url": self.request_url})
+
+    def test_django_formset_validation_errors(self):
+        form_plugin = self._create_simple_form_plugin("formset-json-invalid")
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data=json.dumps({"formset_data": {}}),
+                content_type="application/json",
+                headers={"accept": "application/json"},
+            )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("simple_field", response.json())
+
 
 @skipIf(cms_version < "4", "Form plugin tests require django CMS 4 or higher")
 class FormPluginTestCase(TestFixture, CMSTestCase):

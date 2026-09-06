@@ -51,6 +51,18 @@ Altcha widgets are rendered as they are, other providers go through
 ``render_widget``. ``render_recaptcha_widget`` is an alias kept for custom
 templates using the older name.
 
+``render_formset_widget``
+=========================
+
+.. code-block:: html+django
+
+   {% render_formset_widget form "email" %}
+
+Renders one field through the renderer installed by django-formset. The
+``django_formset`` frontend uses this tag after preparing the form with
+django-formset's ``formsetify`` tag. It is intended for frontend templates;
+calling it on an unprepared form is unsupported.
+
 ``get_fieldset``
 ================
 

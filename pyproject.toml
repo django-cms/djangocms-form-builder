@@ -58,9 +58,13 @@ tests = [
     "django-filer",
     "djangocms-text",
     "djangocms-link",
+    "django-formset>=2.2",
 ]
 altcha = [
     "django-altcha>=1.0.0",
+]
+formset = [
+    "django-formset>=2.2",
 ]
 
 [project.urls]

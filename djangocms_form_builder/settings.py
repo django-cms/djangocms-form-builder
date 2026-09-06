@@ -94,7 +94,13 @@ RATE_LIMIT_IP_META_KEY = getattr(
     django_settings, "DJANGOCMS_FORM_BUILDER_RATE_LIMIT_IP_META_KEY", "REMOTE_ADDR"
 )
 
-framework = getattr(django_settings, "DJANGOCMS_FRONTEND_FRAMEWORK", "bootstrap5")
+frontend = getattr(
+    django_settings,
+    "DJANGOCMS_FORM_BUILDER_FRONTEND",
+    getattr(django_settings, "DJANGOCMS_FRONTEND_FRAMEWORK", "bootstrap5"),
+)
+# Kept as an internal alias for third-party integrations using the old name.
+framework = frontend
 theme = getattr(django_settings, "DJANGOCMS_FRONTEND_THEME", "djangocms_frontend")
 
 DEFAULT_SPACER_SIZE_CHOICES = (("mb-3", "Default"),)

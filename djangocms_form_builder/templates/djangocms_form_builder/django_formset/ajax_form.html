@@ -1,0 +1,24 @@
+{% load static sekizai_tags i18n form_builder_tags cms_tags %}
+{% spaceless %}
+<div id="data{{ uid }}" role="form" class="form-div">
+    {% include "formset/non_field_errors.html" %}
+    {% for plugin in instance.child_plugin_instances %}
+        {% render_plugin plugin %}
+    {% empty %}
+        {% render_form form %}
+    {% endfor %}
+    {% if instance.child_plugin_instances and not has_captcha_plugin %}
+        {% render_captcha_widget form %}
+    {% endif %}
+</div>
+{% endspaceless %}
+
+{% if form.fields.captcha_field %}
+    {% if instance.captcha_widget == "altcha" %}
+        {% addtoblock "css" %}
+            <link rel="stylesheet" href="{% static 'djangocms_form_builder/css/altcha.css' %}">
+        {% endaddtoblock %}
+    {% elif instance.captcha_widget == "v2-checkbox" or instance.captcha_widget == "v2-invisible" %}
+        {% addtoblock "js" %}<script src="https://www.google.com/recaptcha/api.js?onload=reCaptchaOnLoadCallback&render=explicit" async defer></script>{% endaddtoblock %}
+    {% endif %}
+{% endif %}

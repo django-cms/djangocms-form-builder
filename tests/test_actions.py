@@ -561,6 +561,43 @@ class ActionTestCase(TestFixture, CMSTestCase):
             f"Expected at least one action fieldset. Actions: {action_names}, Fieldsets: {fieldset_names}",
         )
 
+    def test_unselected_action_required_fields_are_ignored(self):
+        admin = FormPlugin(model=FormPlugin.model, admin_site=AdminSite())
+        form_class = admin.get_form(self.get_request("/"))
+        form = form_class(data={"form_actions": [self.save_action]})
+
+        self.assertFalse(form.fields["submitmessage_message"].required)
+        self.assertEqual(
+            form.fields["submitmessage_message"].widget.attrs["data-action-required"],
+            "true",
+        )
+        form.is_valid()
+        self.assertNotIn("submitmessage_message", form.errors)
+
+    def test_selected_action_required_fields_are_enforced(self):
+        admin = FormPlugin(model=FormPlugin.model, admin_site=AdminSite())
+        form_class = admin.get_form(self.get_request("/"))
+        form = form_class(data={"form_actions": [self.success_action]})
+
+        self.assertTrue(form.fields["submitmessage_message"].required)
+        self.assertEqual(
+            form.fields["submitmessage_message"].widget.attrs["data-action-required"],
+            "true",
+        )
+        form.is_valid()
+        self.assertIn("submitmessage_message", form.errors)
+
+    def test_initial_actions_control_required_fields(self):
+        admin = FormPlugin(model=FormPlugin.model, admin_site=AdminSite())
+        form_class = admin.get_form(self.get_request("/"))
+        instance = FormPlugin.model(
+            form_actions=f'["{self.success_action}"]',
+        )
+        form = form_class(instance=instance)
+
+        self.assertTrue(form.fields["submitmessage_message"].required)
+        self.assertFalse(form.fields["sendemail_template"].required)
+
     def test_actions_fieldsets_include_action_fields(self):
         """Test that action fieldsets include the action's declared fields"""
         admin_site = AdminSite()
