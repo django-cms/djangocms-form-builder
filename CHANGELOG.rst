@@ -12,6 +12,10 @@ unpublished
   ``DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS`` - no templates are shipped
 * feat: Form actions can be rate limited per client and per action-specific
   value (e.g. a mail recipient) through ``DJANGOCMS_FORM_BUILDER_RATE_LIMITS``
+* fix: Form element plugins no longer cache their parent classes. Their
+  ``get_parent_classes()`` walks the ancestor tree to find the surrounding
+  form, so the result depends on where the plugin sits in the hierarchy and
+  must be recomputed per instance
 
 
 0.6.0 (2026-07-23)
