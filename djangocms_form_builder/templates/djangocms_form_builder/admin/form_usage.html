@@ -1,0 +1,16 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    {% if objects_list %}
+        <p>{% translate "The form cannot be deleted while it is shown by any of these:" %}</p>
+        <ul>
+            {% for object in objects_list %}
+                <li>{{ object }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>{% translate "This form is not shown anywhere yet." %}</p>
+    {% endif %}
+{% endblock %}

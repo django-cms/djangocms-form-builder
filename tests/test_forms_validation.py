@@ -6,6 +6,16 @@ from djangocms_form_builder.forms import FormsForm
 
 
 class FormsFormValidationTests(SimpleTestCase):
+    """The settings a plugin predating the form object configures itself."""
+
+    @staticmethod
+    def _legacy_form():
+        form = FormsForm()
+        # Pretend the plugin carries its form fields as children, as the
+        # plugins these settings belong to do.
+        form.is_legacy = lambda: True
+        return form
+
     def _clean(self, **overrides):
         cleaned_data = {
             "form_selection": "",
@@ -15,7 +25,7 @@ class FormsFormValidationTests(SimpleTestCase):
             "form_login_required": False,
         }
         cleaned_data.update(overrides)
-        form = FormsForm()
+        form = self._legacy_form()
         form.cleaned_data = cleaned_data
         return form.clean()
 
@@ -30,7 +40,7 @@ class FormsFormValidationTests(SimpleTestCase):
         self.assertEqual(set(ctx.exception.error_dict), {"form_actions", "form_unique"})
 
     def test_missing_actions_are_rejected(self):
-        form = FormsForm()
+        form = self._legacy_form()
         form.cleaned_data = {
             "form_selection": "",
             "form_name": "feedback",
@@ -51,3 +61,10 @@ class FormsFormValidationTests(SimpleTestCase):
     def test_consistent_unique_form_is_accepted(self):
         cleaned_data = self._clean(form_unique=True, form_login_required=True)
         self.assertTrue(cleaned_data["form_unique"])
+
+    def test_a_plugin_without_a_form_is_rejected(self):
+        form = FormsForm()
+        form.cleaned_data = {"form": None, "form_selection": ""}
+        with self.assertRaises(ValidationError) as ctx:
+            form.clean()
+        self.assertIn("form", ctx.exception.error_dict)

@@ -705,7 +705,7 @@ class FormPluginTestCase(TestFixture, CMSTestCase):
         form_plugin.child_plugin_instances = [char_field, email_field]
 
         # Create form class
-        form_class = plugin_instance.create_form_class_from_plugins()
+        form_class = plugin_instance.get_form_class()
 
         # Verify form class was created
         self.assertIsNotNone(form_class)
@@ -742,7 +742,7 @@ class FormPluginTestCase(TestFixture, CMSTestCase):
         plugin_instance.request = self.get_request("/")
         form_plugin.child_plugin_instances = [LegacyField()]
 
-        form_class = plugin_instance.create_form_class_from_plugins()
+        form_class = plugin_instance.get_form_class()
 
         self.assertIn("legacy", form_class.base_fields)
 
@@ -771,7 +771,7 @@ class FormPluginTestCase(TestFixture, CMSTestCase):
         plugin_instance.instance = form_plugin
         form_plugin.child_plugin_instances = [char_field]
 
-        form_class = plugin_instance.create_form_class_from_plugins()
+        form_class = plugin_instance.get_form_class()
         self.assertTrue(form_class.Meta.options.get("floating_labels", False))
 
     def test_create_form_class_with_login_required(self):
@@ -799,7 +799,7 @@ class FormPluginTestCase(TestFixture, CMSTestCase):
         plugin_instance.instance = form_plugin
         form_plugin.child_plugin_instances = [char_field]
 
-        form_class = plugin_instance.create_form_class_from_plugins()
+        form_class = plugin_instance.get_form_class()
         self.assertTrue(form_class.Meta.options.get("login_required", False))
 
     def test_get_form_class_returns_none_without_children_or_selection(self):
@@ -893,7 +893,7 @@ class AjaxFormMixinTestCase(TestFixture, CMSTestCase):
         form_plugin.child_plugin_instances = [char_field]
 
         # Create form and set redirect in Meta
-        form_class = plugin_instance.create_form_class_from_plugins()
+        form_class = plugin_instance.get_form_class()
         form_class.Meta.options["redirect"] = "/success/"
 
         form = form_class(data={"data": "test"}, request=plugin_instance.request)
@@ -936,7 +936,7 @@ class AjaxFormMixinTestCase(TestFixture, CMSTestCase):
         plugin_instance.request = self.get_request("/")
         form_plugin.child_plugin_instances = [email_field]
 
-        form_class = plugin_instance.create_form_class_from_plugins()
+        form_class = plugin_instance.get_form_class()
         form = form_class(data={"email": "invalid"}, request=plugin_instance.request)
 
         self.assertFalse(form.is_valid())
@@ -1036,7 +1036,7 @@ class AjaxFormMixinTestCase(TestFixture, CMSTestCase):
         form_plugin.child_plugin_instances = [char_field]
 
         # Create form and set redirect in Meta
-        form_class = plugin_instance.create_form_class_from_plugins()
+        form_class = plugin_instance.get_form_class()
         form_class.Meta.options["redirect"] = "/success/"
 
         valid_payload = make_valid_altcha_payload()
@@ -1084,7 +1084,7 @@ class AjaxFormMixinTestCase(TestFixture, CMSTestCase):
         form_plugin.child_plugin_instances = [char_field]
 
         # Create form and set redirect in Meta
-        form_class = plugin_instance.create_form_class_from_plugins()
+        form_class = plugin_instance.get_form_class()
         form_class.Meta.options["redirect"] = "/success/"
 
         valid_payload = make_valid_altcha_payload()

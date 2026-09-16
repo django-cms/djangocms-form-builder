@@ -7,6 +7,7 @@ Recipes for a concrete goal. They assume you have a working installation - see
 .. toctree::
    :maxdepth: 1
 
+   convert-a-form-plugin
    add-a-captcha
    handle-file-uploads
    prune-form-entries

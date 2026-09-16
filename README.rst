@@ -8,13 +8,26 @@
 
 There are two different ways to manage forms with **djangocms-form-builder**:
 
-1. **Building a form with django CMS' powerful structure board.** This is fast an easy. It integrates smoothly with other design elements, especially the grid elements allowing to design simple responsive forms.
+1. **Building a form with django CMS' powerful structure board.** Forms are
+   objects of their own: you build one centrally in the form editor and place
+   it on as many pages as you like with the form plugin. Building a form
+   integrates smoothly with other design elements, especially the grid elements
+   allowing to design simple responsive forms.
 
-   Form actions can be configured by form. Built in actions include saving the    results in the database for later evaluation and mailing submitted forms to   the site admins. Other form actions can be registered.
+   Form actions can be configured per form. Built in actions include saving the
+   results in the database for later evaluation and mailing submitted forms to
+   the site admins. Other form actions can be registered.
 
-2. Works with **django CMS v4+** and **djangocms-alias** to manage your forms centrally. Djangocms-alias becomes your form editor and forms can be placed on pages by referring to them with their alias.
+   With `djangocms-versioning
+   <https://github.com/django-cms/djangocms-versioning>`_ installed, forms are
+   drafted and published independently of the pages showing them - visitors
+   always submit against the published version of a form.
 
-3. **Registering an application-specific form with djangocms-form-builder.** If you already have forms you may register them with djangocms-form-builder and allow editors to use them in the form plugin. If you only have simpler design requirements, **djangocms-form-builder** allows you to use fieldsets as with admin forms.
+2. **Registering an application-specific form with djangocms-form-builder.** If
+   you already have forms you may register them with djangocms-form-builder and
+   allow editors to use them in the form plugin. If you only have simpler design
+   requirements, **djangocms-form-builder** allows you to use fieldsets as with
+   admin forms.
 
 **************
  Key features
@@ -65,9 +78,20 @@ Usage
 Creating forms using django CMS' structure board
 ================================================
 
-First create a ``Form`` plugin to add a form. Each form created with help of the structure board needs a unique identifier (formatted as a slug).
+First create a form: open **Forms** in the toolbar's site menu and add one.
+Each form needs a name (shown to editors) and a unique identifier (formatted as
+a slug) which form submissions are filed under.
 
-Add form fields by adding child classes to the form plugin. Child classes can be form fields but also any other CMS Plugin. CMS Plugins may, e.g., be used to add custom formatting or additional help texts to a form.
+Build the form in the structure board of the form editor. Its plugins can be
+form fields but also any other CMS Plugin. CMS Plugins may, e.g., be used to add
+custom formatting or additional help texts to a form.
+
+Then add a ``Form`` plugin to a page and select the form it should show. The
+same form can be shown on any number of pages.
+
+Form plugins built with an earlier version, which carry their form fields as
+child plugins, keep working. Their plugin menu offers **Convert to form**, which
+moves their fields and settings into a form of their own.
 
 Form fields
 -----------
@@ -82,11 +106,11 @@ Currently the following form fields are supported:
 * Captcha
 
 Captcha providers are optional dependencies. Configure the provider and widget
-on the Form plugin; add a Captcha child plugin where the widget should appear in
-the structure-built form. Widget ``data-*`` attributes and CAPTCHA API
-parameters can be supplied in the Form plugin's CAPTCHA configuration.
+in the form's settings; add a Captcha plugin where the widget should appear in
+the form. Widget ``data-*`` attributes and CAPTCHA API parameters can be
+supplied in the form's CAPTCHA configuration.
 
-A Form plugin must not be used within another Form plugin.
+A Form plugin must not be used within another Form plugin, nor inside a form.
 
 Actions
 -------
@@ -108,7 +132,7 @@ These actions come with djangocms-form-builder built-in:
   ``DJANGOCMS_CONFIRMATION_MAIL_TEMPLATE_SETS``, see **Form actions** in the
   docs.
 
-Actions can be configured in the form plugin. Any action can be rate limited
+Actions can be configured in the form's settings. Any action can be rate limited
 per client address (and, where an action provides one, per recipient address)
 using ``DJANGOCMS_FORM_BUILDER_RATE_LIMITS``::
 

@@ -105,14 +105,83 @@ by form, user and date. Entries cannot be created by hand, and ``form_name`` and
 ``expires_at``
    End of the window. Rows past it are deleted as new submissions arrive.
 
+The form object
+===============
+
+``Form``
+   The form itself, independent of where it is shown. It holds only what has to
+   stay stable:
+
+   ``form_name``
+      Unique slug. Submissions are filed under it, so changing it separates new
+      submissions from the ones collected so far.
+
+   ``creation_method``
+      ``"editor"`` for a form built in the form editor, ``"conversion"`` for one
+      that came out of a form plugin.
+
+   Useful methods: ``get_content(show_draft_content=False)`` for the content
+   object (the published one unless a draft is asked for),
+   ``get_plugins(show_draft_content=False)`` for its plugins, ``is_in_use`` and
+   ``objects_using`` for where the form is shown.
+
+``FormContent``
+   What is edited about a form, and the unit djangocms-versioning versions.
+
+   ``form``
+      The ``Form`` this is a version of.
+
+   ``name``
+      Shown to editors picking a form; not shown to visitors.
+
+   ``placeholders``
+      A ``PlaceholderRelationField``. The field plugins live in the ``form``
+      slot of it.
+
+   There is deliberately **no** ``language`` field and no version per language.
+   The plugins in the placeholder carry a language like any other CMS plugin,
+   so a form is built per language inside the one object -
+   ``get_plugins(language=None)`` and ``get_form_class(request=None,
+   language=None)`` default to the active language. See
+   :doc:`../explanation/architecture`.
+
+   ``form_login_required``, ``form_unique``, ``form_floating_labels``, ``form_spacing``, ``form_actions``, ``action_parameters``, ``attributes``, ``captcha_widget``, ``captcha_requirement``, ``captcha_config``
+      The form's behaviour and layout, edited in **Form settings**.
+      ``form_actions`` holds the list of selected action hashes and
+      ``action_parameters`` is a JSON field holding the values of all action
+      fields.
+
+   ``get_form_class(request=None)``
+      The Django form class this form describes.
+
+   A form is deleted through the form list, and only while no plugin points at
+   it: the plugin's foreign key is ``PROTECT``.
+
 Plugin models
 =============
 
-``Form``
-   The form plugin's model. Its editor-facing fields are listed in
-   :doc:`plugins`; ``action_parameters`` is a JSON field holding the values of
-   all action fields, and ``form_actions`` holds the list of selected action
-   hashes.
+``FormPlugin``
+   The form plugin's model - the placement of a form on a page.
+
+   ``form``
+      The ``Form`` to show.
+
+   ``form_selection``
+      A form registered by your project instead, see
+      :doc:`../how-to/use-a-django-form`.
+
+   The remaining fields (``form_name``, ``form_login_required``,
+   ``form_unique``, ``form_floating_labels``, ``form_spacing``,
+   ``form_actions``, ``action_parameters``, ``attributes``, ``captcha_*``)
+   configure plugins that still carry their form fields as children. They are
+   only offered for such instances and are ignored once ``form`` is set. See
+   :doc:`../how-to/convert-a-form-plugin`.
+
+   .. note::
+
+      This model was called ``Form`` up to version 0.6. It was renamed to free
+      the name for the form object; existing plugin instances are migrated
+      automatically.
 
 ``FormField``
    One model for all field plugins, with the plugin type in ``ui_item`` and

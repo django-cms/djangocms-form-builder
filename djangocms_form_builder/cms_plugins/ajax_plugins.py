@@ -1,15 +1,28 @@
-import json
+from copy import deepcopy
 from urllib.parse import urlencode
 
-from cms.plugin_base import CMSPluginBase
+from cms.models import CMSPlugin
+from cms.plugin_base import CMSPluginBase, PluginMenuItem
 from cms.plugin_pool import plugin_pool
+from cms.toolbar.utils import get_object_edit_url, get_toolbar_from_request
+from cms.utils import get_language_from_request
+from cms.utils.permissions import (
+    get_model_permission_codename,
+    has_plugin_permission,
+)
+from cms.utils.urlutils import admin_reverse
 from django.conf import settings as django_settings
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.middleware.csrf import get_token
+from django.shortcuts import get_object_or_404
 from django.template.context_processors import csrf
 from django.template.loader import render_to_string
-from django.urls import NoReverseMatch, reverse
+from django.urls import NoReverseMatch, path, reverse
 from django.utils.encoding import force_str
+from django.utils.translation import get_language, gettext
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.edit import FormMixin
 from sekizai.context import SekizaiContext
@@ -18,10 +31,14 @@ from djangocms_form_builder import settings
 
 from .. import forms, models, recaptcha
 from ..actions import ActionMixin
-from ..forms import SimpleFrontendForm
+from ..constants import CONVERT_TO_FORM_URL_NAME
+from ..form_factory import (
+    SAME_PAGE_REDIRECT,  # noqa: F401  (kept importable for backwards compatibility)
+    build_form_class,
+    has_plugin_of_type,
+)
+from ..form_model import FormContent, create_version
 from ..helpers import get_option, insert_fields, mark_safe_lazy
-
-SAME_PAGE_REDIRECT = "result"
 
 
 class CMSAjaxBase(CMSPluginBase):
@@ -216,6 +233,10 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
     def set_context(self, context, instance, placeholder):
         return {}
 
+    def get_form_plugins(self, instance):
+        """The plugins making up the rendered form."""
+        return instance.child_plugin_instances or []
+
     def render(self, context, instance, placeholder):
         self.instance = instance
         self.request = context["request"]
@@ -223,35 +244,16 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
         context.update(self.set_context(context, instance, placeholder))
         context["form_counter"] = context.get("form_counter", 0) + 1
 
-        def has_submit_button(plugins):
-            for child in plugins:
-                if child.plugin_type == "SubmitPlugin":
-                    return True
-                child_plugins = getattr(child, "child_plugin_instances", None) or []
-                if has_submit_button(child_plugins):
-                    return True
-            return False
-
-        def has_captcha_plugin(plugins):
-            from .form_plugins import CaptchaPlugin
-
-            for child in plugins:
-                if child.plugin_type == CaptchaPlugin.__name__:
-                    return True
-                child_plugins = getattr(child, "child_plugin_instances", None) or []
-                if has_captcha_plugin(child_plugins):
-                    return True
-            return False
-
+        form_plugins = self.get_form_plugins(instance)
         context.update(
             {
                 "instance": instance,
                 "form": form,
+                "form_plugins": form_plugins,
                 "uid": f"{instance.id}{getattr(form, 'slug', '')}-{context['form_counter']}",
-                "has_submit_button": has_submit_button(instance.child_plugin_instances),
-                "has_captcha_plugin": has_captcha_plugin(
-                    instance.child_plugin_instances
-                ),
+                "has_submit_button": has_plugin_of_type(form_plugins, "SubmitPlugin"),
+                "has_captcha_plugin": has_plugin_of_type(form_plugins, "CaptchaPlugin"),
+                "form_language": self.get_request_language(),
                 "csrf_cookie_httponly": django_settings.CSRF_COOKIE_HTTPONLY,
             }
         )
@@ -261,11 +263,14 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
 @plugin_pool.register_plugin
 class FormPlugin(ActionMixin, CMSAjaxForm):
     name = _("Form")
-    model = models.Form
+    model = models.FormPlugin
 
     form = forms.FormsForm
     render_template = f"djangocms_form_builder/{settings.framework}/form.html"
     change_form_template = "djangocms_frontend/admin/base.html"
+    # New form plugins do not take children: their fields live in the form
+    # object they point at. Instances that still carry children keep rendering
+    # them, but no further child can be added - see get_child_classes().
     allow_children = True
     # Form HTML is cache-safe only when the CSRF token can be fetched at submit
     # time via the JSON GET endpoint. When CSRF_COOKIE_HTTPONLY is on, the token
@@ -274,6 +279,19 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
     cache = not django_settings.CSRF_COOKIE_HTTPONLY
 
     fieldsets = [
+        (
+            None,
+            {
+                "fields": [
+                    "form",
+                    "form_selection",
+                ],
+            },
+        ),
+    ]
+
+    #: Layout of the settings a pre-form-object plugin carries itself.
+    legacy_fieldsets = [
         (
             None,
             {
@@ -293,18 +311,52 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
 
     cache_parent_classes = False
 
+    @staticmethod
+    def is_legacy(instance):
+        """Whether this plugin still carries its form fields as children.
+
+        Such instances predate the form object and keep working unchanged.
+        "Convert to form" turns one into a form object.
+        """
+        if instance is None or not instance.pk:
+            return False
+        children = instance.child_plugin_instances
+        if children is not None:
+            return bool(children)
+        return instance.get_children().exists()
+
     @classmethod
     def get_parent_classes(cls, slot, page, instance=None):
-        """Only valid if not inside form"""
+        """Only valid if neither inside a form plugin nor inside a form."""
+        if isinstance(page, FormContent):
+            return [""]
         parent = instance
         while parent is not None:
             if parent.plugin_type == cls.__name__:
                 return [""]
             parent = parent.parent
+        if instance is not None and isinstance(
+            getattr(instance.placeholder, "source", None), FormContent
+        ):
+            return [""]
         return super().get_parent_classes(slot, page, instance)
 
+    @classmethod
+    def get_child_classes(cls, slot, page=None, instance=None, **kwargs):
+        """Form plugins are frozen: their existing children stay, none are added.
+
+        Fields are added to a form object in the form editor instead.
+        """
+        return []
+
     def get_fieldsets(self, request, obj=None):
-        fieldsets = super().get_fieldsets(request, obj)
+        if not self.is_legacy(obj):
+            fields = ["form"]
+            if forms._form_registry:
+                fields.append("form_selection")
+            return [(None, {"fields": fields})]
+
+        fieldsets = self.add_action_fieldsets(deepcopy(self.legacy_fieldsets))
         if (
             obj is None or not obj.form_selection
         ):  # No Actions if a Django form has been selected
@@ -339,88 +391,256 @@ class FormPlugin(ActionMixin, CMSAjaxForm):
             )
         return fieldsets
 
-    def get_form_class(self, slug=None):
-        """Retrieve or create form for this plugin"""
-        if self.instance.child_plugin_instances is None:  # not set if in ajax_post
-            self.instance.child_plugin_instances = [
-                child.get_plugin_instance()[0] for child in self.instance.get_children()
+    def show_draft_content(self):
+        """Editors see the form they are working on, visitors the published one."""
+        toolbar = get_toolbar_from_request(self.request) if self.request else None
+        return bool(
+            toolbar and (toolbar.edit_mode_active or toolbar.preview_mode_active)
+        )
+
+    def get_form_content(self):
+        """The form object's content this plugin renders, if any.
+
+        Resolved once per plugin instance: rendering, building the form class
+        and collecting the plugins all need it.
+        """
+        if not self.instance.form_id:
+            return None
+        cached = getattr(self, "_form_content_cache", None)
+        if cached is None or cached[0] != self.instance.pk:
+            cached = (
+                self.instance.pk,
+                self.instance.form.get_content(
+                    show_draft_content=self.show_draft_content()
+                ),
+            )
+            self._form_content_cache = cached
+        return cached[1]
+
+    def get_settings_source(self):
+        """Where this plugin's form takes its settings from.
+
+        For a form object that is its content; a plugin that still carries its
+        fields as children configures them on itself.
+        """
+        return self.get_form_content() or self.instance
+
+    def get_request_language(self):
+        """The language whose plugins make up the form here.
+
+        A form has no language of its own; its plugins carry one like any
+        other CMS plugin, so a form placed on a page shows the plugins of
+        that page's language.
+        """
+        if self.request is not None:
+            return get_language_from_request(self.request)
+        return get_language()
+
+    def get_form_plugins(self, instance):
+        form_content = self.get_form_content()
+        if form_content is not None:
+            return form_content.get_plugins(self.get_request_language())
+        if instance.form_id:
+            # A form object without (published) content has no fields.
+            return []
+        if instance.child_plugin_instances is None:  # not set if in ajax_post
+            instance.child_plugin_instances = [
+                child.get_plugin_instance()[0] for child in instance.get_children()
             ]
-        if self.instance.child_plugin_instances:
-            return self.create_form_class_from_plugins()
+        return instance.child_plugin_instances
+
+    def get_form_class(self, slug=None):
+        """Retrieve or create the form class this plugin renders."""
+        # The form class is rebuilt per request, so fields may capture the
+        # request (e.g. file fields whose validators need the user/request
+        # context).
+        request = getattr(self, "request", None)
+
+        form_content = self.get_form_content()
+        if form_content is not None:
+            return build_form_class(
+                form_content, self.get_form_plugins(self.instance), request=request
+            )
+        if self.instance.form_id:
+            # A form object without (published) content renders nothing.
+            return None
+
+        plugins = self.get_form_plugins(self.instance)
+        if plugins:
+            return build_form_class(self.instance, plugins, request=request)
         if self.instance.form_selection:
             return forms._form_registry.get(self.instance.form_selection, None)
         return None
 
-    def create_form_class_from_plugins(self):
-        # The form class is rebuilt per request, so fields may capture the request
-        # (e.g. file fields whose validators need the user/request context).
-        request = getattr(self, "request", None)
+    # --- Conversion of legacy plugins into form objects ------------------
 
-        def traverse(instance):
-            """Recursively traverse children to identify form fields (by them having a method called
-            "get_form_field" """
-            if hasattr(instance, "get_form_field"):
-                get_form_field = instance.get_form_field
-                try:
-                    name, field = get_form_field(request=request)
-                except TypeError:
-                    # Backwards compatibility for third-party fields using the
-                    # old no-argument API; remove this fallback in version 1.0.
-                    name, field = get_form_field()
-                fields[name] = field
-            if (
-                instance.child_plugin_instances is None
-            ):  # children already fetched from db?
-                instance.child_plugin_instances = [
-                    child.get_plugin_instance()[0] for child in instance.get_children()
-                ]
-            for child in instance.child_plugin_instances:
-                traverse(child)
+    convert_fieldsets = (
+        (
+            None,
+            {
+                "fields": ("name", "form_name"),
+            },
+        ),
+    )
 
-        fields = {}
-        traverse(self.instance)
+    @classmethod
+    def get_extra_plugin_menu_items(cls, request, plugin):
+        if plugin.plugin_type != cls.__name__:
+            return []
+        instance = plugin.get_bound_plugin()
+        items = []
+        if instance.form_id:
+            content = instance.form.get_content(show_draft_content=True)
+            if content is not None:
+                items.append(
+                    PluginMenuItem(
+                        _("Edit form"),
+                        get_object_edit_url(content),
+                        action="",
+                        attributes={"cms-icon": "pencil"},
+                    )
+                )
+        elif cls.is_legacy(instance) and cls.can_convert(request.user, instance):
+            items.append(
+                PluginMenuItem(
+                    _("Convert to form"),
+                    admin_reverse(CONVERT_TO_FORM_URL_NAME, args=[plugin.pk]),
+                    action="modal",
+                    attributes={"cms-icon": "forms"},
+                )
+            )
+        return items
 
-        # Add recaptcha field if necessary
-        if recaptcha.installed and self.instance.captcha_widget:
-            fields[recaptcha.field_name] = recaptcha.get_recaptcha_field(self.instance)
-
-        # Collect meta options for Meta class
-        meta_options = dict(form_name=self.instance.form_name)
-        if self.instance.form_floating_labels:
-            meta_options["floating_labels"] = True
-        meta_options["field_sep"] = f"{self.instance.form_spacing}"
-        meta_options["redirect"] = (
-            SAME_PAGE_REDIRECT  # Default behavior: redirect to same page
+    @classmethod
+    def can_convert(cls, user, instance):
+        """Conversion moves plugins, so the user must be allowed to add them."""
+        if not user.has_perm(get_model_permission_codename(models.Form, "add")):
+            return False
+        if not instance.placeholder.check_source(user):
+            return False
+        return all(
+            has_plugin_permission(user, plugin.plugin_type, "add")
+            for plugin in instance.get_descendants()
         )
-        meta_options["login_required"] = self.instance.form_login_required
-        meta_options["unique"] = self.instance.form_unique
-        form_actions = self.instance.form_actions or "[]"
-        meta_options["form_actions"] = json.loads(form_actions.replace("'", '"'))
-        meta_options["form_parameters"] = getattr(
-            self.instance, "action_parameters", {}
-        )
 
-        fields["Meta"] = type(
-            "Meta",
-            (),
-            dict(
-                options=meta_options,
-                verbose_name=self.instance.form_name.replace("-", " ")
-                .replace("_", " ")
-                .capitalize(),
+    def get_plugin_urls(self):
+        return super().get_plugin_urls() + [
+            path(
+                "convert-to-form/<int:plugin_pk>/",
+                self.convert_to_form_view,
+                name=CONVERT_TO_FORM_URL_NAME,
             ),
-        )  # Meta class with options and verbose name
+        ]
 
-        return type(
-            "FrontendAutoForm",
-            (SimpleFrontendForm,),
-            fields,
+    @transaction.atomic
+    def convert_to_form_view(self, request, plugin_pk):
+        """Move a plugin's children into a form object of their own.
+
+        The plugin keeps its place on the page and points at the new form
+        afterwards, so nothing changes for visitors.
+        """
+        if not request.user.is_staff:
+            raise PermissionDenied
+
+        instance = get_object_or_404(models.FormPlugin, pk=plugin_pk)
+        if not self.is_legacy(instance):
+            raise Http404(
+                "Only a form plugin that still carries its fields as children "
+                "can be converted."
+            )
+        if not self.can_convert(request.user, instance):
+            raise PermissionDenied
+
+        convert_form = forms.ConvertToFormForm(
+            request.POST or None,
+            initial={
+                "name": instance.form_name.replace("-", " ")
+                .replace("_", " ")
+                .capitalize()
+                or gettext("Form"),
+                "form_name": forms.unique_form_name(instance.form_name),
+            },
         )
+
+        if request.method != "POST" or not convert_form.is_valid():
+            self.opts = self.model._meta
+            self.admin_site = admin.site
+            admin_form = admin.helpers.AdminForm(
+                convert_form, self.convert_fieldsets, {}
+            )
+            return self.render_change_form(
+                request,
+                {
+                    "title": _("Convert to form"),
+                    "adminform": admin_form,
+                    "is_popup": True,
+                    "media": admin_form.media,
+                    "errors": convert_form.errors,
+                    "preserved_filters": self.get_preserved_filters(request),
+                    "inline_admin_formsets": [],
+                },
+                add=True,
+                change=False,
+                obj=None,
+            )
+
+        form_content = self.convert_to_form(
+            instance, convert_form.cleaned_data, request.user
+        )
+        messages.success(
+            request,
+            _('The form "%(name)s" has been created from this plugin.')
+            % {"name": form_content.name},
+        )
+        return self.render_close_frame(request, obj=instance, action="edit")
+
+    def convert_to_form(self, instance, data, user=None):
+        """Create the form object and hand the plugin's children over to it."""
+        form = models.Form.objects.create(
+            form_name=data["form_name"],
+            creation_method=models.Form.CREATION_BY_CONVERSION,
+        )
+        form_content = models.FormContent.objects.create(
+            form=form,
+            name=data["name"],
+            # The settings move with the fields, so the form behaves as before.
+            form_login_required=instance.form_login_required,
+            form_unique=instance.form_unique,
+            form_floating_labels=instance.form_floating_labels,
+            form_spacing=instance.form_spacing,
+            form_actions=instance.form_actions,
+            action_parameters=instance.action_parameters,
+            attributes=instance.attributes,
+            captcha_widget=instance.captcha_widget,
+            captcha_requirement=instance.captcha_requirement,
+            captcha_config=instance.captcha_config,
+        )
+        descendants = CMSPlugin.objects.filter(
+            pk__in=instance._get_descendants_ids()
+        ).order_by("position")
+        form_content.populate(list(descendants))
+
+        for child in instance.get_children():
+            instance.placeholder.delete_plugin(child.get_bound_plugin())
+
+        instance.form = form
+        instance.save()
+        instance.child_plugin_instances = []
+
+        # The plugin was already showing this form, so the form object has to
+        # be live from the start - not a draft nobody published yet.
+        create_version(form_content, user, publish=True)
+        return form_content
 
     def render(self, context, instance, placeholder):
         self.instance = instance
+        self.request = context["request"]
         context["RECAPTCHA_PUBLIC_KEY"] = recaptcha.RECAPTCHA_PUBLIC_KEY
-        return super().render(context, instance, placeholder)
+        context = super().render(context, instance, placeholder)
+        form_content = self.get_form_content()
+        context["form_content"] = form_content
+        context["captcha_widget"] = self.get_settings_source().captcha_widget
+        return context
 
     def __str__(self):
         return force_str(super().__str__())

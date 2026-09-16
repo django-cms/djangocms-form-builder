@@ -4,12 +4,16 @@
             <ul class="m-0">
             </ul>
         </div>
-        {% for plugin in instance.child_plugin_instances %}
-            {% render_plugin plugin %}
-        {% empty %}
-            {% render_form form %}
-        {% endfor %}
-        {% if instance.child_plugin_instances and not has_captcha_plugin %}
+        {% if form_content %}
+            {% render_form_placeholder form_content %}
+        {% else %}
+            {% for plugin in form_plugins %}
+                {% render_plugin plugin %}
+            {% empty %}
+                {% render_form form %}
+            {% endfor %}
+        {% endif %}
+        {% if form_plugins and not has_captcha_plugin %}
             {% render_captcha_widget form %}
         {% endif %}
     </div>
@@ -21,11 +25,11 @@
 {% endaddtoblock %}
 
 {% if form.fields.captcha_field %}
-    {% if instance.captcha_widget == "altcha" %}
+    {% if captcha_widget == "altcha" %}
         {% addtoblock 'css' %}
         <link rel="stylesheet" href="{% static 'djangocms_form_builder/css/altcha.css' %}">
         {% endaddtoblock %}
-    {% elif instance.captcha_widget == "v2-checkbox" or instance.captcha_widget == "v2-invisible" %}
+    {% elif captcha_widget == "v2-checkbox" or captcha_widget == "v2-invisible" %}
         {% addtoblock 'js' %}<script src="https://www.google.com/recaptcha/api.js?onload=reCaptchaOnLoadCallback&render=explicit" async defer></script>{% endaddtoblock %}
     {% endif %}
 {% endif %}

@@ -66,45 +66,20 @@ class HelpersTests(SimpleTestCase):
         # Evaluates to a SafeString
         self.assertIn("<b>hi</b>", str(s))
 
-    def test_add_plugin_v4_and_legacy(self):
-        # v4 path: placeholder has add_plugin method
+    def test_add_plugin_delegates(self):
         calls = {}
 
-        class PHv4:
+        class Placeholder:
             def add_plugin(self, plugin):
-                calls["v4"] = plugin
+                calls["added"] = plugin
 
-        class P:
+        class Plugin:
             parent = None
             position = None
 
-            def save(self):
-                calls["legacy_saved"] = True
-
-        helpers.add_plugin(PHv4(), P())
-        self.assertIn("v4", calls)
-
-        # legacy path: no add_plugin on placeholder
-        class PHv3:
-            pass
-
-        parent = P()
-        parent.position = 5
-        child = P()
-        child.parent = parent
-        child.position = 10
-
-        helpers.add_plugin(PHv3(), child)
-        # position decreased by parent.position + 1
-        self.assertEqual(child.position, 10 - (5 + 1))
-        self.assertTrue(calls.get("legacy_saved", False))
-
-        # legacy with no parent sets position 0
-        orphan = P()
-        orphan.parent = None
-        orphan.position = 99
-        helpers.add_plugin(PHv3(), orphan)
-        self.assertEqual(orphan.position, 0)
+        plugin = Plugin()
+        helpers.add_plugin(Placeholder(), plugin)
+        self.assertIs(calls["added"], plugin)
 
     def test_delete_plugin_delegates(self):
         class Placeholder:

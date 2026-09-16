@@ -29,3 +29,12 @@ CHOICE_FIELDS = (
         ),
     ),
 )
+
+
+#: Admin URL names of the form object, used by the toolbar and the plugin menu.
+LIST_FORM_URL_NAME = "djangocms_form_builder_form_changelist"
+CHANGE_FORM_URL_NAME = "djangocms_form_builder_form_change"
+DELETE_FORM_URL_NAME = "djangocms_form_builder_form_delete"
+SETTINGS_FORM_URL_NAME = "djangocms_form_builder_formcontent_change"
+USAGE_FORM_URL_NAME = "djangocms_form_builder_form_usage"
+CONVERT_TO_FORM_URL_NAME = "djangocms_form_builder_convert_to_form"

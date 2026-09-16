@@ -1,3 +1,4 @@
+from cms.toolbar.utils import get_toolbar_from_request
 from django import template
 from django.apps import apps
 from django.template.loader import render_to_string
@@ -175,3 +176,33 @@ def get_fieldset(form):
     elif hasattr(form, "Meta") and hasattr(form.Meta, "fieldsets"):
         return form.Meta.fieldsets
     return ((None, {"fields": [field.name for field in form.visible_fields()]}),)
+
+
+@register.simple_tag(takes_context=True)
+def render_form_placeholder(context, form_content, editable=False):
+    """Render the plugins of a form object into the surrounding context.
+
+    The plugins pick the bound field they belong to out of ``form`` in the
+    context, so this renders the same markup whether the form sits on a page
+    or is being edited in the form editor.
+
+    Unlike ``{% render_placeholder %}`` this bypasses the placeholder cache:
+    the markup depends on the request (CSRF, bound data, per-plugin field ids)
+    rather than on the placeholder alone.
+    """
+    if form_content is None:
+        return ""
+    request = context["request"]
+    toolbar = get_toolbar_from_request(request)
+    renderer = toolbar.get_content_renderer()
+    placeholder = form_content.placeholder
+    editable = (
+        editable and toolbar.edit_mode_active and placeholder.check_source(request.user)
+    )
+    content = renderer.render_placeholder(
+        placeholder=placeholder,
+        context=context,
+        editable=editable,
+        use_cache=False,
+    )
+    return content or ""

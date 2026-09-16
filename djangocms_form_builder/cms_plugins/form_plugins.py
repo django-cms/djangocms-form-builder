@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .. import forms, models, settings
 from .. import forms as forms_module
+from ..form_model import FormContent
 from ..helpers import add_plugin, delete_plugin, insert_fields
 from .ajax_plugins import FormPlugin
 
@@ -20,6 +21,10 @@ class FormElementPlugin(CMSPluginBase):
     # Form elements are rendered by the surrounding FormPlugin, hence any change has to be
     # propageted up to the FormPlugin:
     is_local = False
+    # Whether a plugin may be added depends on the object owning the
+    # placeholder, not just on its slot, so the answer must not be cached
+    # across placeholders.
+    cache_parent_classes = False
 
     fieldsets = (
         (
@@ -34,17 +39,29 @@ class FormElementPlugin(CMSPluginBase):
         ),
     )
 
+    @staticmethod
+    def in_form(page=None, instance=None):
+        """Whether we are looking at the placeholder of a form object."""
+        if isinstance(page, FormContent):
+            return True
+        if instance is not None:
+            return isinstance(
+                getattr(instance.placeholder, "source", None), FormContent
+            )
+        return False
+
     @classmethod
     def get_parent_classes(cls, slot, page, instance=None):
-        """Only valid as indirect child of the cls.top_element"""
+        """Only valid inside a form.
 
-        if instance is None:
-            return [""]
-        parent = instance
-        while parent is not None:
-            if parent.plugin_type == cls.top_element:
-                return super().get_parent_classes(slot, page, instance)
-            parent = parent.parent
+        Form fields are built in the form editor, so they may be added
+        anywhere inside a form object's placeholder. Everywhere else they are
+        not offered: the fields of plugins that still carry their own children
+        stay editable, but are frozen in place until the plugin is converted
+        into a form.
+        """
+        if cls.in_form(page, instance):
+            return super().get_parent_classes(slot, page, instance)
         return [""]
 
     def get_fieldsets(self, request, obj=None):

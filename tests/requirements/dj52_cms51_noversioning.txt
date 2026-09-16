@@ -1,0 +1,6 @@
+# Forms work without djangocms-versioning: a form is live as soon as it is
+# saved. This configuration keeps that path covered.
+-r base.txt
+
+Django>=5.2,<6.0
+django-cms>=5.1a1,<5.2

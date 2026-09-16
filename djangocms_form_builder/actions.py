@@ -93,7 +93,11 @@ class ActionMixin:
         return type("FormActionAdminForm", (self.form, *_action_registry.values()), {})
 
     def get_fieldsets(self, request, obj=None):
-        fieldsets = super().get_fieldsets(request, obj)
+        return self.add_action_fieldsets(super().get_fieldsets(request, obj))
+
+    @staticmethod
+    def add_action_fieldsets(fieldsets):
+        """Append a collapsed block per action that asks for parameters."""
         for action in _action_registry.values():
             new_fields = list(action.declared_fields.keys())
             if new_fields:
@@ -112,7 +116,7 @@ class ActionMixin:
 class FormAction(EntangledModelFormMixin):
     class Meta:
         entangled_fields = {"action_parameters": []}
-        model = models.Form
+        model = models.FormPlugin
         exclude = ()
 
     class Media:

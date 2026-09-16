@@ -77,23 +77,13 @@ mark_safe_lazy = lazy(mark_safe, str)
 
 
 def add_plugin(placeholder, plugin):
-    """CMS version save function to add a plugin to a placeholder"""
-    if hasattr(placeholder, "add_plugin"):  # CMS v4?
-        placeholder.add_plugin(plugin)
-    else:  # CMS < v4
-        if plugin.parent:
-            plugin.position -= plugin.parent.position + 1
-        else:
-            plugin.position = 0
-        plugin.save()
+    """Add a plugin to a placeholder"""
+    placeholder.add_plugin(plugin)
 
 
 def delete_plugin(plugin):
-    """CMS version save function to delete a plugin (and its descendants) from a placeholder"""
-    if hasattr(plugin.placeholder, "delete_plugin"):  # CMS v4?
-        return plugin.placeholder.delete_plugin(plugin)
-    else:  # CMS < v4
-        return plugin.delete()
+    """Delete a plugin (and its descendants) from its placeholder"""
+    return plugin.placeholder.delete_plugin(plugin)
 
 
 def coerce_decimal(value):

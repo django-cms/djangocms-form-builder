@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .entry_model import FormEntry  # NoQA
 from .fields import AttributesField
+from .form_model import Form, FormContent  # NoQA
 from .helpers import coerce_decimal, coerce_int, mark_safe_lazy
 from .rate_limit import SubmissionQuota  # NoQA
 from .upload_form_fields import MultipleUploadedFilesField, ValidatedFileField
@@ -19,10 +20,28 @@ from .upload_form_fields import MultipleUploadedFilesField, ValidatedFileField
 MAX_LENGTH = 256
 
 
-class Form(CMSPlugin):
+class FormPlugin(CMSPlugin):
+    """Places a form on a page.
+
+    Modern instances point at a :class:`~djangocms_form_builder.form_model.Form`
+    object with ``form``, or at a registered Django form with
+    ``form_selection``. Instances created before the form object existed carry
+    their field plugins as children instead, and keep working: all the fields
+    below are their configuration, and are ignored once ``form`` is set.
+    """
+
     class Meta:
         verbose_name = _("Form")
 
+    form = models.ForeignKey(
+        Form,
+        verbose_name=_("Form"),
+        related_name="cms_plugins",
+        null=True,
+        blank=True,
+        # Never let the ORM delete a plugin: a form in use cannot be deleted.
+        on_delete=models.PROTECT,
+    )
     form_selection = models.CharField(
         verbose_name=_("Form"),
         max_length=MAX_LENGTH,
@@ -117,6 +136,8 @@ class Form(CMSPlugin):
     )
 
     def get_short_description(self):
+        if self.form_id:
+            return f"({self.form.name})"
         return f"({self.form_name})" if self.form_name else "<unnamed>"
 
     def __str__(self):

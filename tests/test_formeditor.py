@@ -43,7 +43,7 @@ class FormEditorTestCase(TestFixture, CMSTestCase):
         with self.login_user_context(self.superuser):
             response = self.client.get(self.request_url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'action="/@form-builder/1"')
+        self.assertContains(response, 'action="/@form-builder/1?language=en"')
         self.assertNotContains(
             response, '<input type="hidden" name="csrfmiddlewaretoken"'
         )

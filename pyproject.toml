@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Adds a form editor to the structure board of django CMS."
 readme = "README.rst"
 license.text = "BSD-3-Clause"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     { name = "fsbraun", email = "fsbraun@gmx.de" },
 ]
@@ -17,15 +17,10 @@ classifiers = [
     "Environment :: Web Environment",
     "Framework :: Django",
     "Framework :: Django :: 4.2",
-    "Framework :: Django :: 5.0",
-    "Framework :: Django :: 5.1",
     "Framework :: Django :: 5.2",
     "Framework :: Django :: 6.0",
     "Framework :: Django :: 6.1",
     "Framework :: Django CMS",
-    "Framework :: Django CMS :: 3.11",
-    "Framework :: Django CMS :: 4.0",
-    "Framework :: Django CMS :: 4.1",
     "Framework :: Django CMS :: 5.0",
     "Framework :: Django CMS :: 5.1",
     "Intended Audience :: Developers",
@@ -33,19 +28,20 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
     "Topic :: Software Development",
     "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-    "django-cms>=3.10",
+    "django-cms>=5.0",
     "django-entangled",
-    "Django>=3.2",
+    "Django>=4.2",
     "djangocms-attributes-field>=1",
 ]
 
@@ -77,7 +73,7 @@ include = [
 
 [tool.ruff]
 # Align with supported Python; keep checks predictable.
-target-version = "py39"
+target-version = "py310"
 line-length = 88
 extend-exclude = [
     "docs/_build",

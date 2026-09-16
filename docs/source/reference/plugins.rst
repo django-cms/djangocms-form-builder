@@ -6,21 +6,47 @@ All plugins are listed in the **Forms** category of the plugin picker.
 Form
 ====
 
-The container. It renders the ``<form>`` element, builds the Django form class
-and receives the submission.
+Shows a form on a page. It renders the ``<form>`` element, builds the Django
+form class from the form it points at, and receives the submission.
 
-:Model: ``djangocms_form_builder.models.Form``
-:Children: any plugin; field plugins become form fields
-:Restriction: must not be placed inside another Form plugin
+:Model: ``djangocms_form_builder.models.FormPlugin``
+:Children: none - a form's fields live in the form object
+:Restriction: must not be placed inside another Form plugin, nor inside a form
 
 Editing dialog:
 
-**Form** (``form_selection``)
-   One of the forms your project registered. Hidden while no form is
-   registered. See :doc:`../how-to/use-a-django-form`.
+**Form** (``form``)
+   The form to show. Forms are built in the form editor, reachable through
+   **Forms** in the toolbar's site menu.
 
-**Form identifier** (``form_name``)
-   Slug identifying the form. Required unless a registered form is selected.
+**Registered form** (``form_selection``)
+   One of the forms your project registered, instead of a form object. Hidden
+   while no form is registered. See :doc:`../how-to/use-a-django-form`.
+
+The plugin menu offers **Edit form**, which opens the form it shows.
+
+Plugins that carry their own fields
+-----------------------------------
+
+A plugin created before forms became objects has its field plugins as children
+and its settings on itself. Such a plugin keeps working, keeps its own editing
+dialog - *Form identifier*, *Login required to submit form*, *User can reopen
+form*, *Floating labels*, *Margin between fields*, *Actions* and *Captcha*, all
+described under `Form settings`_ - and offers **Convert to form** in its plugin
+menu. No further child can be added to it. See
+:doc:`../how-to/convert-a-form-plugin`.
+
+Form settings
+=============
+
+What a form does, rather than where it is shown. Reached through **Form
+settings** in the toolbar while editing a form, or from the burger menu in the
+form list.
+
+:Model: ``djangocms_form_builder.models.FormContent``
+
+**Name** (``name``)
+   Shown to editors picking this form. Not shown to visitors.
 
 **Login required to submit form** (``form_login_required``)
    Submissions by anonymous visitors are rejected with a validation error.
@@ -28,21 +54,22 @@ Editing dialog:
 **User can reopen form** (``form_unique``)
    A logged-in user's submission is loaded back into the form and updated
    instead of stored a second time. Requires *Login required* and the *Save form
-   submission* action; the plugin refuses to be saved otherwise.
+   submission* action; the form refuses to be saved otherwise.
 
 **Floating labels** (``form_floating_labels``) and **Margin between fields** (``form_spacing``)
    Rendering options, see :doc:`../how-to/style-forms`.
 
 **Actions**
-   Which actions run after a valid submission. Hidden when a registered form is
-   selected. Actions that ask for parameters add a section of their own below.
+   Which actions run after a valid submission. Actions that ask for parameters
+   add a section of their own below.
 
 **Captcha**
    Only shown if a captcha package is installed, see
    :doc:`../how-to/add-a-captcha`.
 
-If the form plugin has child plugins, the form is built from them and
-``form_selection`` is ignored.
+The form's identifier - the slug submissions are filed under - lives on the
+form itself and is edited through **Rename form**, because it has to stay
+stable across versions.
 
 Field plugins
 =============
@@ -52,8 +79,9 @@ Every field plugin asks for **Label** (``field_label``), **Field name**
 (``field_required``), **Placeholder** (``field_placeholder``) and **Help text**
 (``field_help_text``). Plugin-specific settings are listed below.
 
-A field plugin is only accepted as a descendant of a Form plugin - it may sit
-inside rows, columns or any other plugin in between.
+A field plugin is only offered inside a form - it may sit inside rows, columns
+or any other plugin in between. Fields of a plugin that has not been converted
+stay editable where they are.
 
 .. list-table::
    :header-rows: 1

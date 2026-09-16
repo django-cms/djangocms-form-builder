@@ -1,6 +1,9 @@
+import json
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_slug
+from django.template.defaultfilters import slugify
 from django.utils.translation import gettext_lazy as _
 from entangled.forms import EntangledModelForm, EntangledModelFormMixin
 
@@ -64,25 +67,30 @@ class SimpleFrontendForm(forms.Form):
 
 class SelectMultipleActionsWidget(forms.CheckboxSelectMultiple):
     def format_value(self, value):
-        import json
-
         if isinstance(value, str):
-            value = json.loads(value.replace("'", '"'))
+            # Stored as JSON on the model, but a form with no actions holds
+            # the empty string rather than "[]".
+            value = json.loads(value.replace("'", '"')) if value.strip() else []
         return super().format_value(value)
 
 
-class FormsForm(EntangledModelForm):
-    """
-    Components > "Forms" Plugin
-    https://getbootstrap.com/docs/5.1/forms/overview/
+class FormSettingsFormMixin(EntangledModelFormMixin):
+    """The settings that shape a form, wherever they are stored.
+
+    A form object keeps them on its content model; a form plugin that still
+    carries its fields as children keeps them on itself.
     """
 
+    #: ``ActionMixin`` builds the admin form by mixing the registered actions'
+    #: forms into this one. That generated class has no ``Meta`` of its own, so
+    #: the model it edits is restored per instance.
+    settings_model = None
+
     class Meta:
-        model = models.Form
-        exclude = ()
+        entangled_fields = {
+            "action_parameters": [],
+        }
         untangled_fields = [
-            "form_selection",
-            "form_name",
             "form_login_required",
             "form_unique",
             "form_floating_labels",
@@ -93,24 +101,7 @@ class FormsForm(EntangledModelForm):
             "captcha_requirement",
             "captcha_config",
         ]
-        entangled_fields = {
-            "action_parameters": [],
-        }
 
-    form_selection = forms.ChoiceField(
-        label=_("Form"),
-        required=False,
-        initial="",
-    )
-    form_name = forms.CharField(
-        label=_("Form identifier"),
-        required=False,
-        initial="",
-        validators=[
-            validate_slug,
-        ],
-        help_text=_("Slug that allows to uniquely identify forms."),
-    )
     form_login_required = forms.BooleanField(
         label=_("Login required to submit form"),
         required=False,
@@ -187,39 +178,33 @@ class FormsForm(EntangledModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        if (
-            not _form_registry
-            and "instance" in kwargs
-            and kwargs["instance"] is not None
-        ):
-            # remove form_selection data if widget will be hidden
-            kwargs["instance"].form_selection = ""
-        self._meta.model = models.Form
+        if self.settings_model is not None:
+            self._meta.model = self.settings_model
         super().__init__(*args, **kwargs)
-        registered_forms = get_registered_forms()
-        available_form_actions = actions.get_registered_actions()
-        self.fields["form_selection"].widget = (
-            forms.Select() if _form_registry else forms.HiddenInput()
-        )
-        self.fields["form_selection"].choices = settings.EMPTY_CHOICE + registered_forms
-        self.fields["form_actions"].choices = available_form_actions
+        if "form_actions" in self.fields:
+            self.fields["form_actions"].choices = actions.get_registered_actions()
 
     def clean(self):
-        if self.cleaned_data.get("form_selection", "") == "":
-            if not self.cleaned_data.get("form_name", "-"):
+        """Check the settings against each other.
+
+        Only fields actually present are checked: the admin narrows the form
+        down to the fieldsets it shows.
+        """
+        cleaned_data = super().clean()
+
+        if "form_actions" not in cleaned_data:
+            if "form_actions" in self.fields and self.requires_form_action():
                 raise ValidationError(
                     {
-                        "form_name": _(
-                            "Please provide a form name to be able to evaluate form submissions."
-                        )
-                    },
-                    code="incomplete",
+                        "form_actions": _(
+                            "At least one action needs to be selected for the form to have an effect."
+                        ),
+                    }
                 )
-
-        if "form_actions" in self.cleaned_data:
+        else:
             if (
-                self.cleaned_data["form_unique"]
-                and actions.SAVE_TO_DB_ACTION not in self.cleaned_data["form_actions"]
+                cleaned_data.get("form_unique")
+                and actions.SAVE_TO_DB_ACTION not in cleaned_data["form_actions"]
             ):
                 if actions.SAVE_TO_DB_ACTION:
                     raise ValidationError(
@@ -241,18 +226,9 @@ class FormsForm(EntangledModelForm):
                             ),
                         }
                     )
-        elif not self.cleaned_data.get("form_selection"):
-            raise ValidationError(
-                {
-                    "form_actions": _(
-                        "At least one action needs to be selected for the form to have an effect."
-                    ),
-                }
-            )
 
-        if (
-            self.cleaned_data["form_unique"]
-            and not self.cleaned_data["form_login_required"]
+        if cleaned_data.get("form_unique") and not cleaned_data.get(
+            "form_login_required"
         ):
             error = _("Users can only reopen forms if they are logged in. %(remedy)s")
             raise ValidationError(
@@ -263,7 +239,141 @@ class FormsForm(EntangledModelForm):
                 },
                 code="inconsistent",
             )
-        return self.cleaned_data
+        return cleaned_data
+
+    def requires_form_action(self):
+        """Whether a form without any action is pointless here."""
+        return True
+
+
+class FormContentForm(FormSettingsFormMixin, EntangledModelForm):
+    """Settings of a form object."""
+
+    settings_model = models.FormContent
+
+    class Meta:
+        model = models.FormContent
+        exclude = ()
+        untangled_fields = ["name"]
+        entangled_fields = {
+            "action_parameters": [],
+        }
+
+    name = forms.CharField(
+        label=_("Name"),
+        required=True,
+        help_text=_("Shown to editors when they pick a form. Not shown to users."),
+    )
+
+
+class FormsForm(FormSettingsFormMixin, EntangledModelForm):
+    """Settings of a form plugin.
+
+    New plugins only pick the form to show. The remaining fields configure
+    plugins that still carry their form fields as children - see
+    :class:`~djangocms_form_builder.cms_plugins.FormPlugin`.
+    """
+
+    settings_model = models.FormPlugin
+
+    class Meta:
+        model = models.FormPlugin
+        exclude = ()
+        untangled_fields = [
+            "form",
+            "form_selection",
+            "form_name",
+        ]
+        entangled_fields = {
+            "action_parameters": [],
+        }
+
+    form = forms.ModelChoiceField(
+        label=_("Form"),
+        queryset=models.Form.objects.all(),
+        required=False,
+        help_text=_("The form to show here. Forms are edited in the form editor."),
+    )
+    form_selection = forms.ChoiceField(
+        label=_("Registered form"),
+        required=False,
+        initial="",
+    )
+    form_name = forms.CharField(
+        label=_("Form identifier"),
+        required=False,
+        initial="",
+        validators=[
+            validate_slug,
+        ],
+        help_text=_("Slug that allows to uniquely identify forms."),
+    )
+
+    def __init__(self, *args, **kwargs):
+        if (
+            not _form_registry
+            and "instance" in kwargs
+            and kwargs["instance"] is not None
+        ):
+            # remove form_selection data if widget will be hidden
+            kwargs["instance"].form_selection = ""
+        super().__init__(*args, **kwargs)
+        if "form_selection" in self.fields:
+            self.fields["form_selection"].widget = (
+                forms.Select() if _form_registry else forms.HiddenInput()
+            )
+            self.fields["form_selection"].choices = (
+                settings.EMPTY_CHOICE + get_registered_forms()
+            )
+
+    def requires_form_action(self):
+        # A registered Django form brings its own behaviour.
+        return not self.cleaned_data.get("form_selection")
+
+    def is_legacy(self):
+        """Whether this plugin still carries its form fields as children.
+
+        Only such a plugin configures a form itself; every other one just
+        points at the form to show.
+        """
+        instance = getattr(self, "instance", None)
+        return bool(instance and instance.pk and instance.get_children().exists())
+
+    def clean(self):
+        if not self.is_legacy():
+            if not self.cleaned_data.get("form") and not self.cleaned_data.get(
+                "form_selection"
+            ):
+                raise ValidationError(
+                    {"form": _("Please select the form to show here.")},
+                    code="incomplete",
+                )
+            # A form object (or a registered Django form) carries its own
+            # settings; the plugin's remaining fields do not apply.
+            return self.cleaned_data
+
+        if self.cleaned_data.get("form"):
+            raise ValidationError(
+                {
+                    "form": _(
+                        "This plugin still contains its own form fields. Use "
+                        '"Convert to form" in its plugin menu to turn them '
+                        "into a form first."
+                    )
+                },
+                code="ambiguous",
+            )
+        if self.cleaned_data.get("form_selection", "") == "":
+            if not self.cleaned_data.get("form_name", "-"):
+                raise ValidationError(
+                    {
+                        "form_name": _(
+                            "Please provide a form name to be able to evaluate form submissions."
+                        )
+                    },
+                    code="incomplete",
+                )
+        return super().clean()
 
 
 FORBIDDEN_FORM_NAMES = [
@@ -680,3 +790,66 @@ class CaptchaForm(forms.ModelForm):
     class Meta:
         model = models.Captcha
         fields = ()
+
+
+def unique_form_name(base):
+    """A form identifier derived from ``base`` that is not taken yet."""
+    base = slugify(base) or "form"
+    name, suffix = base, 1
+    while models.Form.objects.filter(form_name=name).exists():
+        suffix += 1
+        name = f"{base}-{suffix}"
+    return name
+
+
+class ConvertToFormForm(forms.Form):
+    """Turns a form plugin's children into a form object of their own."""
+
+    name = forms.CharField(
+        label=_("Name"),
+        help_text=_("Shown to editors when they pick a form. Not shown to users."),
+    )
+    form_name = forms.SlugField(
+        label=_("Form identifier"),
+        help_text=_(
+            "Submissions are filed under this name. Keep the plugin's current "
+            "identifier to keep new submissions together with the ones "
+            "collected so far."
+        ),
+    )
+
+    def clean_form_name(self):
+        form_name = self.cleaned_data["form_name"]
+        if models.Form.objects.filter(form_name=form_name).exists():
+            raise ValidationError(
+                _("A form with this identifier already exists."), code="unique"
+            )
+        return form_name
+
+
+class FormGrouperForm(forms.ModelForm):
+    """What identifies a form: its name and the slug submissions are filed under.
+
+    Everything else a form content carries is edited in the form settings
+    (:class:`FormContentForm`). ``GrouperModelAdmin`` offers every content
+    field as ``content__<name>``, and writes back all of them that the form
+    carries - so the ones not edited here are removed, or saving a rename
+    would reset the form's behaviour.
+    """
+
+    #: Content model fields this form may edit, without the ``content__`` prefix.
+    content_fields = ("name",)
+
+    class Meta:
+        model = models.Form
+        fields = ("form_name",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in list(self.fields):
+            prefix = "content__"
+            if (
+                name.startswith(prefix)
+                and name[len(prefix) :] not in self.content_fields
+            ):
+                del self.fields[name]

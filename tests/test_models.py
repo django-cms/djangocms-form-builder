@@ -14,9 +14,9 @@ from djangocms_form_builder.models import (
     DecimalField,
     EmailField,
     FileField,
-    Form,
     FormEntry,
     FormField,
+    FormPlugin,
     IntegerField,
     MultipleFileField,
     Select,
@@ -36,9 +36,9 @@ from .fixtures import TestFixture
 
 class FormsModelTestCase(TestCase):
     def test_form_instance(self):
-        instance = Form.objects.create()
+        instance = FormPlugin.objects.create()
         instance.save()
-        self.assertEqual(str(instance), "Form (1)")
+        self.assertEqual(str(instance), "FormPlugin (1)")
         self.assertEqual(instance.get_short_description(), "<unnamed>")
         instance.form_name = "my-test-form"
         self.assertEqual(instance.get_short_description(), "(my-test-form)")
