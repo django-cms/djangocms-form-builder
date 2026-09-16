@@ -5,6 +5,45 @@ Changelog
 unpublished
 ==================
 
+Forms now live in an object of their own
+----------------------------------------
+
+Building a form below a plugin on a page tied the form to that page. A form is
+now an object in its own right, edited centrally in django CMS' structure
+board, and placed on as many pages as you like with the form plugin.
+
+* feat: Forms are frontend-editable objects (``Form`` and ``FormContent``),
+  managed under **Forms** in the admin menu and edited in the structure board
+  like any other django CMS content. Where djangocms-versioning is installed,
+  a form is drafted and published independently of the pages showing it;
+  visitors always submit against the published version
+* feat: A form has no language field and no version per language: one form,
+  one identifier, one set of settings. Its plugins carry a language like any
+  other CMS plugin, so a form is built per language inside that one object
+* feat: The form plugin points at a form object. Field plugins can only be
+  added inside a form
+* feat: A form plugin that still carries its form fields as children keeps
+  working unchanged, and its plugin menu offers **Convert to form**, which
+  moves its fields and settings into a form object and points the plugin at it
+* fix: The *Actions* field no longer raises ``JSONDecodeError`` when opening
+  the settings of a form that has no action selected
+
+Backwards-incompatible changes
+------------------------------
+
+* The minimum supported django CMS version is now 5.0. The form object needs
+  frontend-editable models, which django CMS 3.11 and 4.x do not provide
+* The plugin model ``djangocms_form_builder.models.Form`` has been renamed to
+  ``FormPlugin`` to free the name for the form object. Existing plugin
+  instances are migrated automatically and the plugin type is unchanged;
+  projects importing the model have to update the import
+* A form's settings (actions, captcha, login requirements, layout) are edited
+  on the form object. The form plugin only offers them for instances that
+  still carry their fields as children
+
+Other changes
+-------------
+
 * feat: Add support for Django 6.1
 * feat: Add a "Send confirmation email to submitter" action which mails a
   server-owned template to the address submitted with a form. It is only
