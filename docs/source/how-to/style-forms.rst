@@ -33,6 +33,9 @@ you are most likely to want are:
 
 ``djangocms_form_builder/bootstrap5/form.html``
    The ``<form>`` element itself, the CSRF token and the fallback submit button.
+   The form editor renders forms with this template too, with ``form_preview``
+   set - keep the ``{% if form_preview %}`` branch when you override it, so the
+   editor's preview is not submitted.
 
 ``djangocms_form_builder/ajax_form.html``
    What goes inside the form: the error container, the field plugins, the

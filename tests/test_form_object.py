@@ -134,6 +134,24 @@ class FormObjectTestCase(TestFixture, CMSTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="username"')
 
+    def test_form_editor_shows_the_form_as_on_a_page_but_not_submittable(self):
+        self.add_field(field_name="username", field_label="User name")
+
+        for url in (
+            get_object_edit_url(self.form_content),
+            get_object_preview_url(self.form_content),
+        ):
+            with self.subTest(url=url), self.login_user_context(self.superuser):
+                response = self.client.get(url)
+                # Same template as on a page: it adds the submit button.
+                self.assertContains(response, 'type="submit"')
+                self.assertContains(response, "djangocms-form-builder-preview")
+                self.assertContains(response, "js/form_preview.js")
+                # ... but nothing to submit the form to, and no inline script.
+                self.assertNotContains(response, "djangocms-form-builder-ajax-form")
+                self.assertNotContains(response, "js/ajax_form.js")
+                self.assertNotContains(response, "onsubmit")
+
     def test_edit_url_carries_the_language_being_edited(self):
         self.assertIn("language=de", get_object_edit_url(self.form_content, "de"))
 

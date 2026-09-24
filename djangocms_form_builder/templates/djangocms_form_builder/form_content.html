@@ -1,19 +1,16 @@
 {% extends "base.html" %}
-{% load cms_tags sekizai_tags i18n form_builder_tags %}<!DOCTYPE html>
+{% load i18n %}
 {% comment %}
 The form editor: django CMS renders this for the edit and preview endpoints of
-a form object. The form is shown as a visitor would see it, while the structure
-board is used to add and arrange its fields.
+a form object. The form is rendered by the same template as on a page, while
+the structure board is used to add and arrange its fields.
 {% endcomment %}
 {% block content %}
     <div class="djangocms-form-builder-editor-form">
         <h1>{{ form_content.name }}</h1>
-        {# The preview must not submit: a form is tried out on the page showing it. #}
-        <form novalidate onsubmit="return false;">
-            {% render_form_placeholder form_content editable=True %}
-            {% if not form_plugins %}
-                <p>{% translate "This form has no fields yet. Add them in the structure board." %}</p>
-            {% endif %}
-        </form>
+        {% include form_template %}
+        {% if not form_plugins %}
+            <p>{% translate "This form has no fields yet. Add them in the structure board." %}</p>
+        {% endif %}
     </div>
 {% endblock %}

@@ -24,6 +24,20 @@ plugin resolves to the published one for visitors and to the draft while an
 editor is in edit or preview mode. A half-finished field cannot change what a
 visitor is able to submit.
 
+In the admin the split disappears again: one dialog, the form admin, edits the
+identifier on ``Form`` and the settings on ``FormContent`` together, the way
+django CMS' ``GrouperModelAdmin`` presents a grouper with its content.
+
+The form editor - django CMS' edit and preview endpoint for a ``FormContent`` -
+renders the form with the same template a page uses, so an editor sees exactly
+what a visitor will, submit button included. It sets ``form_preview`` in the
+context: the ``<form>`` gets no submission endpoint and the class
+``djangocms-form-builder-preview`` instead of
+``djangocms-form-builder-ajax-form``, so the AJAX script leaves it alone, and
+``form_preview.js`` stops the browser from submitting it. That is a script file
+rather than an inline ``onsubmit`` handler, which a Content Security Policy
+would block.
+
 Why a form has no language
 ==========================
 
@@ -90,6 +104,10 @@ plugins are proxy models. `django-entangled
 <https://github.com/jrief/django-entangled>`_ presents the JSON contents as
 ordinary form fields in the editing dialog.
 
+A form's action parameters follow the same idea: whatever fields the
+registered actions declare, their values are kept in one JSON field,
+``action_parameters``, on the form content.
+
 The result is that a new field type - or a new option on an existing one - does
 not change the database schema. This is also why a form's captcha
 configuration is a JSON attributes field: which captcha packages a project has
@@ -122,6 +140,17 @@ not see the token. The app respects that instead of working around it: the
 endpoint refuses to hand the token out, the template renders ``{% csrf_token %}``
 inline, and the form plugin switches its caching off, because its HTML now
 differs per request.
+
+A form object brings a second concern. Its fields are rendered into the
+placeholder cache of the page showing it - there is no cache of the form's own
+- so a change to the form does not invalidate anything by itself. With
+djangocms-versioning, publishing or unpublishing a form therefore clears the
+cache of exactly those placeholders that hold a form plugin pointing at it;
+otherwise visitors could be shown the old fields while their submission is
+validated against the new ones. Two cases are not covered: without versioning,
+editing a form clears no page cache, and a form placed inside an alias clears
+the alias' placeholder but not the page showing the alias - the cached markup
+then expires after ``CMS_CACHE_DURATIONS["content"]``.
 
 Actions instead of hooks
 ========================

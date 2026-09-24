@@ -66,8 +66,11 @@ pages as you like. Open **Forms** in the toolbar's site menu (or go to
    change later, because changing it separates new submissions from the ones
    already collected.
 
-Save. You are now looking at the form editor: the form as a visitor will see
-it, with django CMS' structure board to build it in.
+The same dialog holds the rest of the form's settings - you will come back to
+them below. Save. You are now looking at the form editor: the form as a visitor
+will see it, rendered by the same template as on a page, with django CMS'
+structure board to build it in. The form cannot be submitted here, neither in
+edit nor in preview mode; you try it out on a page showing it.
 
 Add the fields
 ==============
@@ -106,17 +109,21 @@ Say what happens to a submission
 ================================
 
 A form that nobody does anything with is not much use. Open **Form settings**
-in the toolbar's **Form** menu, expand the **Actions** section and tick **Save
-form submission**. Save.
+in the toolbar's **Form** menu (or click the settings icon next to the form in
+the **Forms** list), expand the **Actions** section and tick **Save form
+submission**. Save.
 
-The same dialog holds the rest of the form's behaviour: whether visitors have
-to be logged in, whether they may reopen their submission, the layout options,
-and the captcha if you have one installed.
+The same dialog holds everything else about the form: its name and identifier,
+whether visitors have to be logged in, whether they may reopen their
+submission, the layout options, and the captcha if you have one installed.
+Actions that need parameters - the recipients of **Send email**, say - show a
+section of their own while they are ticked.
 
 If your project uses `djangocms-versioning
 <https://github.com/django-cms/djangocms-versioning>`_, publish the form now.
 Visitors always get the published version of a form, never the draft you are
-working on.
+working on. The published form's settings are read-only; edit the form to
+create a draft before changing them.
 
 Put the form on a page
 ======================

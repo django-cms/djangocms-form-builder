@@ -1,7 +1,16 @@
 {% load static cms_tags sekizai_tags i18n %}
 {% spaceless %}
    {% if form %}
+        {% comment %}
+        Also renders the form editor's view of a form object: with
+        "form_preview" set the form is shown, but not submitted (see
+        form_preview.js) - it is tried out on a page showing it.
+        {% endcomment %}
         <form id="form{{ uid }}"
+              {% if form_preview %}
+              class="djangocms-form-builder-preview"
+              novalidate
+              {% else %}
               class="djangocms-form-builder-ajax-form"
               {% comment %}
               The submission endpoint is not language-prefixed, so the language
@@ -9,6 +18,7 @@
               plugins, and those carry a language.
               {% endcomment %}
               novalidate action="{% url 'form_builder:ajaxview' instance.id %}?language={{ form_language }}"
+              {% endif %}
               method="post">
             {% if csrf_cookie_httponly %}{% csrf_token %}{% endif %}
             {% include 'djangocms_form_builder/ajax_form.html' with form=form instance=instance tracking=instance.tracking_code RECAPTCHA_PUBLIC_KEY=RECAPTCHA_PUBLIC_KEY %}
@@ -19,3 +29,6 @@
         </form><div class="clearfix"></div>
     {% endif %}
 {% endspaceless %}
+{% if form_preview %}
+    {% addtoblock 'js' %}<script src="{% static 'djangocms_form_builder/js/form_preview.js' %}"></script>{% endaddtoblock %}
+{% endif %}

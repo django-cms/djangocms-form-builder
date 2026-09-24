@@ -5,7 +5,7 @@
             </ul>
         </div>
         {% if form_content %}
-            {% render_form_placeholder form_content %}
+            {% render_form_placeholder form_content editable=form_preview %}
         {% else %}
             {% for plugin in form_plugins %}
                 {% render_plugin plugin %}
@@ -18,11 +18,13 @@
         {% endif %}
     </div>
 {% endspaceless %}
+{% if not form_preview %}
 {% addtoblock 'js' %}
 <script
     data-error-msg="{% translate 'Network connection or server error. Please try again later. We apologize for the inconvenience.' %}"
     src="{% static 'djangocms_form_builder/js/ajax_form.js' %}"></script>
 {% endaddtoblock %}
+{% endif %}
 
 {% if form.fields.captcha_field %}
     {% if captcha_widget == "altcha" %}

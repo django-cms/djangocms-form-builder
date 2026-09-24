@@ -3,11 +3,12 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
+VENV          = env
+SPHINXBUILD   = $(VENV)/bin/sphinx-build
+SPHINXAUTOBUILD = $(VENV)/bin/sphinx-autobuild
 PAPER         =
 BUILDDIR      = _build
 SOURCEDIR	  = source
-VENV = env/bin/activate
 PORT = 8001
 
 # Internal variables.
@@ -51,8 +52,8 @@ help:
 
 install:
 	@echo "... setting up docs virtualenv"
-	python3 -m venv env
-	. $(VENV); pip install -r requirements.txt
+	python3 -m venv $(VENV)
+	$(VENV)/bin/python -m pip install -r requirements.txt
 	@echo "\n" \
 	      "-------------------------------------------------------------------------------------------------- \n" \
 		    "* to build and serve the documentation: make run \n"
@@ -61,7 +62,6 @@ clean:
 	rm -rf $(BUILDDIR)/*
 
 html:
-	. $(VENV)
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -205,4 +205,4 @@ spelling:
 	$(SPHINXBUILD) -b spelling $(ALLSPHINXOPTS) $(BUILDDIR)/spelling
 
 run:
-	. $(VENV); sphinx-autobuild $(ALLSPHINXOPTS) $(BUILDDIR)/html --host 0.0.0.0 --port $(PORT)
+	$(SPHINXAUTOBUILD) $(ALLSPHINXOPTS) $(BUILDDIR)/html --host 0.0.0.0 --port $(PORT)

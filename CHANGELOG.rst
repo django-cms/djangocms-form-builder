@@ -25,6 +25,17 @@ board, and placed on as many pages as you like with the form plugin.
 * feat: A form plugin that still carries its form fields as children keeps
   working unchanged, and its plugin menu offers **Convert to form**, which
   moves its fields and settings into a form object and points the plugin at it
+* feat: All of a form's settings - name, identifier, behaviour, layout,
+  captcha, actions and their parameters - are edited in one dialog, reached
+  through **Form settings** in the form editor's toolbar or the settings icon
+  in the list of forms. An action's parameters are only required while that
+  action is selected
+* feat: The form editor renders a form with the same template as a page, so
+  editors see it exactly as visitors do. It cannot be submitted from the
+  editor; this uses a script file, not an inline handler, so it works under a
+  Content Security Policy
+* feat: With djangocms-versioning, publishing or unpublishing a form clears
+  the placeholder cache of the pages showing it - and only of those
 * fix: The *Actions* field no longer raises ``JSONDecodeError`` when opening
   the settings of a form that has no action selected
 
