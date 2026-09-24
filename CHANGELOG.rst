@@ -2,9 +2,8 @@
 Changelog
 =========
 
-unpublished
+0.7.0 (2026-09-24)
 ==================
-
 * feat: Add support for Django 6.1
 * feat: Add a "Send confirmation email to submitter" action which mails a
   server-owned template to the address submitted with a form. It is only
@@ -16,6 +15,10 @@ unpublished
   ``get_parent_classes()`` walks the ancestor tree to find the surrounding
   form, so the result depends on where the plugin sits in the hierarchy and
   must be recomputed per instance
+
+**New Contributors**
+
+* @oliashford made their first contribution in https://github.com/django-cms/djangocms-form-builder/pull/64
 
 
 0.6.0 (2026-07-23)
