@@ -40,13 +40,19 @@ Form settings
 =============
 
 What a form does, rather than where it is shown. Reached through **Form
-settings** in the toolbar while editing a form, or from the burger menu in the
-form list.
+settings** in the toolbar while editing a form, or with the settings icon in the
+form list. One dialog holds everything about a form.
 
-:Model: ``djangocms_form_builder.models.FormContent``
+:Model: ``djangocms_form_builder.models.Form`` (identifier) and
+   ``djangocms_form_builder.models.FormContent`` (everything else)
 
 **Name** (``name``)
    Shown to editors picking this form. Not shown to visitors.
+
+**Form identifier** (``form_name``)
+   The slug submissions are filed under. It lives on the form itself rather
+   than on its content, so it stays the same across versions. Changing it
+   separates new submissions from the ones collected so far.
 
 **Login required to submit form** (``form_login_required``)
    Submissions by anonymous visitors are rejected with a validation error.
@@ -67,9 +73,8 @@ form list.
    Only shown if a captcha package is installed, see
    :doc:`../how-to/add-a-captcha`.
 
-The form's identifier - the slug submissions are filed under - lives on the
-form itself and is edited through **Rename form**, because it has to stay
-stable across versions.
+With djangocms-versioning, a published form's settings are read-only: edit the
+form to create a draft first.
 
 Field plugins
 =============

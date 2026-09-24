@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase
 
@@ -10,9 +12,10 @@ class FormsFormValidationTests(SimpleTestCase):
 
     @staticmethod
     def _legacy_form():
-        form = FormsForm()
         # Pretend the plugin carries its form fields as children, as the
         # plugins these settings belong to do.
+        with mock.patch.object(FormsForm, "is_legacy", return_value=True):
+            form = FormsForm()
         form.is_legacy = lambda: True
         return form
 

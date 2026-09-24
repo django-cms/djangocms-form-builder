@@ -158,6 +158,23 @@ class FormObjectTestCase(TestFixture, CMSTestCase):
         )
         self.assertIn(self.page, Form.objects.get(pk=self.form.pk).objects_using)
 
+    def test_form_plugin_can_be_added_in_the_plugin_admin(self):
+        """The add form only asks for the form - settings belong to the form."""
+        draft_page = self.create_page(title="draft", template="page.html")
+        placeholder = self.get_draft_placeholders(draft_page).get(slot="content")
+        url = self.get_add_plugin_uri(
+            placeholder, cms_plugins.FormPlugin.__name__, self.language
+        )
+        with self.login_user_context(self.superuser):
+            response = self.client.post(url, data={"form": self.form.pk})
+        if response.status_code != 200 or "adminform" in (
+            getattr(response, "context_data", None) or {}
+        ):
+            form = response.context_data["adminform"].form
+            self.fail(form.errors.as_text() or "Plugin was not added")
+        plugin = FormPlugin.objects.get(placeholder=placeholder)
+        self.assertEqual(plugin.form, self.form)
+
     def test_form_plugin_takes_no_children(self):
         """Fields are added to a form object, not below the plugin."""
         self.assertEqual(
@@ -250,6 +267,55 @@ class FormObjectSubmissionTestCase(TestFixture, CMSTestCase):
             self.assertEqual(response.status_code, 410)
             self.assertEqual(response.json()["result"], "error")
             self.assertIn("Reload the page", response.json()["errors"][0])
+
+        def publish_new_field(self):
+            """Publish a new version of the form with an extra field."""
+            from djangocms_versioning.models import Version
+
+            published = Version.objects.filter_by_grouper(self.form).first()
+            draft = published.copy(self.superuser)
+            new_field = add_plugin(
+                placeholder=draft.content.placeholder,
+                plugin_type="CharFieldPlugin",
+                language=self.language,
+                config={"field_name": "nickname", "field_label": "Nickname"},
+            )
+            new_field.initialize_from_form()
+            new_field.save()
+            draft.publish(self.superuser)
+
+        def test_publishing_a_form_updates_cached_pages(self):
+            """The page's placeholder cache holds the form's rendered fields."""
+            response = self.client.get(self.request_url)
+            self.assertContains(response, 'name="username"')
+            self.assertNotContains(response, 'name="nickname"')
+
+            self.publish_new_field()
+
+            response = self.client.get(self.request_url)
+            self.assertContains(response, 'name="nickname"')
+
+        def test_publishing_a_form_leaves_other_placeholders_cached(self):
+            from cms.cache.placeholder import _get_placeholder_cache_version
+
+            other = self.get_placeholders(self.home).get(slot="content")
+            before = {
+                placeholder.pk: _get_placeholder_cache_version(
+                    placeholder, self.language, 1
+                )
+                for placeholder in (self.placeholder, other)
+            }
+
+            self.publish_new_field()
+
+            self.assertNotEqual(
+                _get_placeholder_cache_version(self.placeholder, self.language, 1),
+                before[self.placeholder.pk],
+            )
+            self.assertEqual(
+                _get_placeholder_cache_version(other, self.language, 1),
+                before[other.pk],
+            )
 
         def test_visitors_submit_against_the_published_form(self):
             """A draft change must not alter what visitors can submit."""
@@ -426,40 +492,128 @@ class FormAdminTestCase(TestFixture, CMSTestCase):
             response, admin_reverse(LIST_FORM_URL_NAME), fetch_redirect_response=False
         )
 
-    def test_settings_can_be_saved(self):
-        url = admin_reverse(SETTINGS_FORM_URL_NAME, args=[self.form_content.pk])
+    def post_settings(self, **changes):
+        """Post the form admin's change form with ``changes`` applied.
+
+        Starts from what the change form actually offers, so the post carries
+        the same values a browser would submit.
+        """
+        url = admin_reverse(CHANGE_FORM_URL_NAME, args=[self.form.pk])
         with self.login_user_context(self.superuser):
-            # Start from what the change form actually offers, so the post
-            # carries the same defaults a browser would submit.
             form = self.client.get(url).context_data["adminform"].form
-            data = {
-                name: field.field.initial or ""
-                for name, field in zip(form.fields, form)
-            }
-            data.update(
-                {
-                    "name": "Contact form",
-                    "form_actions": [actions.SAVE_TO_DB_ACTION],
-                    "form_login_required": "on",
-                    "form_unique": "on",
-                }
-            )
+            data = {}
+            for bound_field in form:
+                value = bound_field.value()
+                if value in (None, False):
+                    continue
+                data[bound_field.html_name] = "on" if value is True else value
+            data.update(changes)
+            data = {key: value for key, value in data.items() if value is not None}
             response = self.client.post(url, data=data)
-
-        self.assertIn(response.status_code, (200, 302))
         if response.status_code == 200:
-            self.assertFalse(
-                response.context_data["adminform"].form.errors,
-                response.context_data["adminform"].form.errors.as_text(),
+            self.fail(
+                response.context_data["adminform"].form.errors.as_text()
+                or "Change form did not save"
             )
+        return FormContent.admin_manager.get(pk=self.form_content.pk)
 
-        content = FormContent.admin_manager.get(pk=self.form_content.pk)
+    def test_change_form_offers_the_settings(self):
+        url = admin_reverse(CHANGE_FORM_URL_NAME, args=[self.form.pk])
+        with self.login_user_context(self.superuser):
+            response = self.client.get(url)
+        fields = response.context_data["adminform"].form.fields
+        for name in (
+            "form_name",
+            "content__name",
+            "content__form_login_required",
+            "content__form_unique",
+            "content__form_floating_labels",
+            "content__form_spacing",
+            "content__form_actions",
+            "sendemail_recipients",
+        ):
+            self.assertIn(name, fields)
+        self.assertNotIn("content__action_parameters", fields)
+
+    def test_settings_can_be_saved(self):
+        content = self.post_settings(
+            content__name="Contact form",
+            content__form_actions=[actions.SAVE_TO_DB_ACTION],
+            content__form_login_required="on",
+            content__form_unique="on",
+        )
         self.assertEqual(
             content.get_form_class().Meta.options["form_actions"],
             [actions.SAVE_TO_DB_ACTION],
         )
         self.assertTrue(content.form_login_required)
         self.assertTrue(content.form_unique)
+
+    def test_action_parameters_are_saved(self):
+        send_mail = actions.get_hash(actions.SendMailAction)
+        content = self.post_settings(
+            content__form_actions=[send_mail],
+            sendemail_recipients="editor@example.com",
+        )
+        options = content.get_form_class().Meta.options
+        self.assertEqual(options["form_actions"], [send_mail])
+        self.assertEqual(
+            options["form_parameters"]["sendemail_recipients"], "editor@example.com"
+        )
+
+    def test_parameters_are_only_required_by_selected_actions(self):
+        success = actions.get_hash(actions.SuccessMessageAction)
+        # Not selected: an empty message does not stand in the way.
+        self.post_settings(
+            content__form_actions=[actions.SAVE_TO_DB_ACTION],
+            submitmessage_message="",
+        )
+
+        url = admin_reverse(CHANGE_FORM_URL_NAME, args=[self.form.pk])
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data={
+                    "form_name": "contact",
+                    "content__name": "Contact form",
+                    "content__form_actions": [success],
+                    "submitmessage_message": "",
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "submitmessage_message", response.context_data["adminform"].form.errors
+        )
+
+    def test_inconsistent_settings_are_rejected(self):
+        url = admin_reverse(CHANGE_FORM_URL_NAME, args=[self.form.pk])
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data={
+                    "form_name": "contact",
+                    "content__name": "Contact form",
+                    "content__form_actions": [actions.SAVE_TO_DB_ACTION],
+                    "content__form_unique": "on",
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "content__form_login_required",
+            response.context_data["adminform"].form.errors,
+        )
+
+    def test_content_change_url_leads_to_the_form_admin(self):
+        with self.login_user_context(self.superuser):
+            response = self.client.get(
+                admin_reverse(SETTINGS_FORM_URL_NAME, args=[self.form_content.pk])
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            response["Location"].startswith(
+                admin_reverse(CHANGE_FORM_URL_NAME, args=[self.form.pk])
+            )
+        )
 
     def test_usage_view_lists_pages_showing_the_form(self):
         add_plugin(
@@ -534,26 +688,20 @@ class FormAdminTestCase(TestFixture, CMSTestCase):
         self.assertEqual(content.name, "Newsletter")
 
     def test_renaming_a_form_keeps_its_settings(self):
-        """The form list edits identity only - behaviour lives in the settings."""
         self.form_content.form_actions = json.dumps([actions.SAVE_TO_DB_ACTION])
         self.form_content.form_login_required = True
+        self.form_content.action_parameters = {
+            "sendemail_recipients": "editor@example.com"
+        }
         self.form_content.save()
 
-        url = admin_reverse(CHANGE_FORM_URL_NAME, args=[self.form.pk])
-        with self.login_user_context(self.superuser):
-            response = self.client.post(
-                url, data={"form_name": "contact", "content__name": "Renamed"}
-            )
-        if response.status_code == 200:
-            self.fail(
-                response.context_data["adminform"].form.errors.as_text()
-                or "Change form did not save"
-            )
+        content = self.post_settings(form_name="contact-us", content__name="Renamed")
 
-        content = FormContent.admin_manager.get(pk=self.form_content.pk)
         self.assertEqual(content.name, "Renamed")
+        self.assertEqual(content.form.form_name, "contact-us")
+        options = content.get_form_class().Meta.options
+        self.assertEqual(options["form_actions"], [actions.SAVE_TO_DB_ACTION])
         self.assertEqual(
-            content.get_form_class().Meta.options["form_actions"],
-            [actions.SAVE_TO_DB_ACTION],
+            options["form_parameters"]["sendemail_recipients"], "editor@example.com"
         )
         self.assertTrue(content.form_login_required)

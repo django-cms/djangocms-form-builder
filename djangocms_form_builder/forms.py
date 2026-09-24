@@ -74,6 +74,43 @@ class SelectMultipleActionsWidget(forms.CheckboxSelectMultiple):
         return super().format_value(value)
 
 
+def form_settings_errors(
+    form_actions, form_unique, form_login_required, check_actions=True
+):
+    """Check a form's settings against each other.
+
+    Returns the errors as ``{field_name: message}``, empty if the settings are
+    consistent. Shared by every form editing these settings, whatever the
+    names of its fields. ``check_actions=False`` skips the checks involving
+    ``form_actions``, e.g. when that field is not being edited.
+    """
+    if not form_unique:
+        return {}
+    if check_actions and actions.SAVE_TO_DB_ACTION not in (form_actions or []):
+        if not actions.SAVE_TO_DB_ACTION:
+            return {
+                "form_unique": _(
+                    "No form action to save form contents available. Users will "
+                    "not be able to reopen a form."
+                ),
+            }
+        return {
+            "form_actions": _(
+                'Please select "Save form submission" to allow users to reopen forms.'
+            ),
+            "form_unique": _(
+                'Please select the action "Save form submission" to allow users to reopen forms.'
+            ),
+        }
+    if not form_login_required:
+        error = _("Users can only reopen forms if they are logged in. %(remedy)s")
+        return {
+            "form_login_required": error % dict(remedy=_("Either enable this.")),
+            "form_unique": _("Or disable this."),
+        }
+    return {}
+
+
 class FormSettingsFormMixin(EntangledModelFormMixin):
     """The settings that shape a form, wherever they are stored.
 
@@ -192,78 +229,31 @@ class FormSettingsFormMixin(EntangledModelFormMixin):
         """
         cleaned_data = super().clean()
 
-        if "form_actions" not in cleaned_data:
-            if "form_actions" in self.fields and self.requires_form_action():
-                raise ValidationError(
-                    {
-                        "form_actions": _(
-                            "At least one action needs to be selected for the form to have an effect."
-                        ),
-                    }
-                )
-        else:
-            if (
-                cleaned_data.get("form_unique")
-                and actions.SAVE_TO_DB_ACTION not in cleaned_data["form_actions"]
-            ):
-                if actions.SAVE_TO_DB_ACTION:
-                    raise ValidationError(
-                        {
-                            "form_actions": _(
-                                'Please select "Save form submission" to allow users to reopen forms.'
-                            ),
-                            "form_unique": _(
-                                'Please select the action "Save form submission" to allow users to reopen forms.'
-                            ),
-                        }
-                    )
-                else:
-                    raise ValidationError(
-                        {
-                            "form_unique": _(
-                                "No form action to save form contents available. Users will not be "
-                                "able to reopen a form."
-                            ),
-                        }
-                    )
-
-        if cleaned_data.get("form_unique") and not cleaned_data.get(
-            "form_login_required"
+        if (
+            "form_actions" not in cleaned_data
+            and "form_actions" in self.fields
+            and self.requires_form_action()
         ):
-            error = _("Users can only reopen forms if they are logged in. %(remedy)s")
             raise ValidationError(
                 {
-                    "form_login_required": error
-                    % dict(remedy=_("Either enable this.")),
-                    "form_unique": _("Or disable this."),
-                },
-                code="inconsistent",
+                    "form_actions": _(
+                        "At least one action needs to be selected for the form to have an effect."
+                    ),
+                }
             )
+        errors = form_settings_errors(
+            form_actions=cleaned_data.get("form_actions"),
+            form_unique=cleaned_data.get("form_unique"),
+            form_login_required=cleaned_data.get("form_login_required"),
+            check_actions="form_actions" in cleaned_data,
+        )
+        if errors:
+            raise ValidationError(errors, code="inconsistent")
         return cleaned_data
 
     def requires_form_action(self):
         """Whether a form without any action is pointless here."""
         return True
-
-
-class FormContentForm(FormSettingsFormMixin, EntangledModelForm):
-    """Settings of a form object."""
-
-    settings_model = models.FormContent
-
-    class Meta:
-        model = models.FormContent
-        exclude = ()
-        untangled_fields = ["name"]
-        entangled_fields = {
-            "action_parameters": [],
-        }
-
-    name = forms.CharField(
-        label=_("Name"),
-        required=True,
-        help_text=_("Shown to editors when they pick a form. Not shown to users."),
-    )
 
 
 class FormsForm(FormSettingsFormMixin, EntangledModelForm):
@@ -275,6 +265,10 @@ class FormsForm(FormSettingsFormMixin, EntangledModelForm):
     """
 
     settings_model = models.FormPlugin
+
+    #: The only fields of a plugin that does not carry its form fields itself.
+    #: ``action_parameters`` stays because entangled always fills it in.
+    picker_fields = ("form", "form_selection", "action_parameters")
 
     class Meta:
         model = models.FormPlugin
@@ -318,6 +312,14 @@ class FormsForm(FormSettingsFormMixin, EntangledModelForm):
             # remove form_selection data if widget will be hidden
             kwargs["instance"].form_selection = ""
         super().__init__(*args, **kwargs)
+        if not self.is_legacy():
+            # Only the form to show is picked here. The settings - including
+            # the fields the actions mix in - belong to the form object, and
+            # left in place their validation would fail on fields the plugin
+            # admin does not render.
+            for name in list(self.fields):
+                if name not in self.picker_fields:
+                    del self.fields[name]
         if "form_selection" in self.fields:
             self.fields["form_selection"].widget = (
                 forms.Select() if _form_registry else forms.HiddenInput()
@@ -825,31 +827,3 @@ class ConvertToFormForm(forms.Form):
                 _("A form with this identifier already exists."), code="unique"
             )
         return form_name
-
-
-class FormGrouperForm(forms.ModelForm):
-    """What identifies a form: its name and the slug submissions are filed under.
-
-    Everything else a form content carries is edited in the form settings
-    (:class:`FormContentForm`). ``GrouperModelAdmin`` offers every content
-    field as ``content__<name>``, and writes back all of them that the form
-    carries - so the ones not edited here are removed, or saving a rename
-    would reset the form's behaviour.
-    """
-
-    #: Content model fields this form may edit, without the ``content__`` prefix.
-    content_fields = ("name",)
-
-    class Meta:
-        model = models.Form
-        fields = ("form_name",)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for name in list(self.fields):
-            prefix = "content__"
-            if (
-                name.startswith(prefix)
-                and name[len(prefix) :] not in self.content_fields
-            ):
-                del self.fields[name]

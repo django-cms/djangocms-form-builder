@@ -220,7 +220,7 @@ class AjaxFormMixin(FormMixin):
             return JsonResponse(
                 {
                     "result": "error",
-                    "errors": [_('This form is no longer available. Reload the page.')],
+                    "errors": [_("This form is no longer available. Reload the page.")],
                 },
                 status=410,
             )

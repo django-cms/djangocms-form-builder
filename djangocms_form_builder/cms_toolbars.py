@@ -15,7 +15,6 @@ from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 
 from .constants import (
-    CHANGE_FORM_URL_NAME,
     LIST_FORM_URL_NAME,
     SETTINGS_FORM_URL_NAME,
     USAGE_FORM_URL_NAME,
@@ -60,14 +59,10 @@ class FormToolbar(CMSToolbar):
         can_change = self.request.user.has_perm(
             get_model_permission_codename(FormContent, "change")
         )
+        # Leads to the form admin, showing the content being edited here.
         menu.add_modal_item(
             _("Form settings"),
             url=admin_reverse(SETTINGS_FORM_URL_NAME, args=[form_content.pk]),
-            disabled=not can_change,
-        )
-        menu.add_modal_item(
-            _("Rename form"),
-            url=admin_reverse(CHANGE_FORM_URL_NAME, args=[form_content.form_id]),
             disabled=not can_change,
         )
         menu.add_modal_item(

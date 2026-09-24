@@ -35,6 +35,7 @@ CHOICE_FIELDS = (
 LIST_FORM_URL_NAME = "djangocms_form_builder_form_changelist"
 CHANGE_FORM_URL_NAME = "djangocms_form_builder_form_change"
 DELETE_FORM_URL_NAME = "djangocms_form_builder_form_delete"
+#: Redirects to the form admin, showing that very content object.
 SETTINGS_FORM_URL_NAME = "djangocms_form_builder_formcontent_change"
 USAGE_FORM_URL_NAME = "djangocms_form_builder_form_usage"
 CONVERT_TO_FORM_URL_NAME = "djangocms_form_builder_convert_to_form"

@@ -9,9 +9,9 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from djangocms_form_builder.actions import SaveToDBAction, get_registered_actions
-from djangocms_form_builder.admin import FormContentAdmin
+from djangocms_form_builder.admin import FormAdmin
 from djangocms_form_builder.entry_model import FormEntry
-from djangocms_form_builder.models import FormContent
+from djangocms_form_builder.models import Form
 
 from .fixtures import TestFixture
 
@@ -524,9 +524,10 @@ class ActionTestCase(TestFixture, CMSTestCase):
     def test_actions_appear_in_form_settings_fieldsets(self):
         """Registered actions appear in the form object's settings"""
         admin_site = AdminSite()
-        form_admin = FormContentAdmin(FormContent, admin_site)
+        form_admin = FormAdmin(Form, admin_site)
 
         request = self.get_request("/")
+        request.user = self.superuser
         fieldsets = form_admin.get_fieldsets(request, obj=None)
 
         # Convert fieldsets to a flat list of (block_name, fields) for easier inspection
@@ -542,7 +543,9 @@ class ActionTestCase(TestFixture, CMSTestCase):
                 flat_fields.append(field)
 
         self.assertIn(
-            "form_actions", flat_fields, "form_actions field should appear in fieldsets"
+            "content__form_actions",
+            flat_fields,
+            "form_actions field should appear in fieldsets",
         )
 
         # Check that action-specific fieldsets are added by ActionMixin.get_fieldsets
@@ -563,9 +566,10 @@ class ActionTestCase(TestFixture, CMSTestCase):
     def test_actions_fieldsets_include_action_fields(self):
         """Test that action fieldsets include the action's declared fields"""
         admin_site = AdminSite()
-        form_admin = FormContentAdmin(FormContent, admin_site)
+        form_admin = FormAdmin(Form, admin_site)
 
         request = self.get_request("/")
+        request.user = self.superuser
         fieldsets = form_admin.get_fieldsets(request, obj=None)
 
         # Look for SendMailAction fieldset and its fields
@@ -593,9 +597,10 @@ class ActionTestCase(TestFixture, CMSTestCase):
     def test_actions_fieldsets_have_action_hide_class(self):
         """Test that action fieldsets have action-related CSS classes"""
         admin_site = AdminSite()
-        form_admin = FormContentAdmin(FormContent, admin_site)
+        form_admin = FormAdmin(Form, admin_site)
 
         request = self.get_request("/")
+        request.user = self.superuser
         fieldsets = form_admin.get_fieldsets(request, obj=None)
 
         # Check that action fieldsets have appropriate CSS classes

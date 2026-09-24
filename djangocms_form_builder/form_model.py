@@ -335,32 +335,22 @@ def create_version(form_content, user=None, publish=False):
     return version
 
 
-def copy_form_content(original_content):
-    """Copy a FormContent along with its placeholder and plugins.
+def clear_placeholder_caches(form):
+    """Invalidate the cached markup of every placeholder showing ``form``.
 
-    Used as djangocms-versioning's ``copy_function``.
+    A form's fields are rendered into the placeholder cache of the page (or
+    other object) showing it, not into a cache of their own - so a change to
+    the form does not reach visitors until those caches are cleared.
     """
-    from cms.models import Placeholder
+    placeholders = {}
+    for plugin in form.cms_plugins.select_related("placeholder"):
+        placeholders.setdefault(
+            (plugin.placeholder_id, plugin.language), plugin.placeholder
+        )
+    for (_placeholder_id, language), placeholder in placeholders.items():
+        placeholder.clear_cache(language)
 
-    content_fields = {
-        field.name: getattr(original_content, field.name)
-        for field in FormContent._meta.fields
-        if field.name != FormContent._meta.pk.name
-    }
-    new_content = FormContent.objects.create(**content_fields)
 
-    new_placeholders = []
-    for placeholder in original_content.placeholders.all():
-        placeholder_fields = {
-            field.name: getattr(placeholder, field.name)
-            for field in Placeholder._meta.fields
-            if field.name not in (Placeholder._meta.pk.name, "source")
-        }
-        if placeholder.source:
-            placeholder_fields["source"] = new_content
-        new_placeholder = Placeholder.objects.create(**placeholder_fields)
-        placeholder.copy_plugins(new_placeholder)
-        new_placeholders.append(new_placeholder)
-    new_content.placeholders.add(*new_placeholders)
-
-    return new_content
+def on_form_content_publish(version):
+    """djangocms-versioning hook: visitors now see a different version."""
+    clear_placeholder_caches(version.content.form)

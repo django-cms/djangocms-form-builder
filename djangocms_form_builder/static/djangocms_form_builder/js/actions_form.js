@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     'use strict';
 
-    for (const element of document.querySelectorAll('fieldset.action-auto-hide input[type="checkbox"][name="form_actions"]')) {
+    for (const element of document.querySelectorAll('fieldset.action-auto-hide input[type="checkbox"][name$="form_actions"]')) {
         const getByClass = (className) => (document.getElementsByClassName('c' + className) || [undefined])[0];
         const target = getByClass(element.value);
 

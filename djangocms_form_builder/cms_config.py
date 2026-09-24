@@ -1,7 +1,7 @@
 from cms.app_base import CMSAppConfig
 from django.conf import settings
 
-from .form_model import FormContent, copy_form_content
+from .form_model import FormContent, on_form_content_publish
 from .rendering import render_form_content
 from .utils import get_versionable_item
 
@@ -26,7 +26,9 @@ class FormBuilderCMSConfig(CMSAppConfig):
                 VersionableItem(
                     content_model=FormContent,
                     grouper_field_name="form",
-                    copy_function=copy_form_content,
                     grouper_admin_mixin="__default__",
+                    # Pages showing the form cache its rendered fields.
+                    on_publish=on_form_content_publish,
+                    on_unpublish=on_form_content_publish,
                 ),
             ]
