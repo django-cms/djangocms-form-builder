@@ -3,12 +3,13 @@
 {% if form %}
     {% if use_django_formset %}
         {% formsetify form "bootstrap" %}
-        <django-formset endpoint="{% url 'form_builder:ajaxview' instance.id %}"
+        <django-formset data-djangocms-form-builder-formset
+                        endpoint="{% url 'form_builder:ajaxview' instance.id %}"
                         csrf-token="{{ csrf_token }}">
             <form id="{{ form.form_id }}" method="post"></form>
             {% include "djangocms_form_builder/django_formset/ajax_form.html" %}
             {% if not has_submit_button %}
-                <button type="button" df-click="submit -> proceed"
+                <button type="button" data-djangocms-form-builder-submit
                         class="btn btn-{{ instance.form_submit_context|default:'primary' }}">
                     {{ instance.form_submit_message|default:_('Submit') }}
                 </button>
@@ -19,6 +20,7 @@
         {% endaddtoblock %}
         {% addtoblock "js" %}
             <script type="module" src="{% static 'formset/js/django-formset.js' %}"></script>
+            <script type="module" src="{% static 'djangocms_form_builder/js/django_formset.js' %}"></script>
         {% endaddtoblock %}
     {% else %}
         <form id="form{{ uid }}"

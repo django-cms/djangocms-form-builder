@@ -66,10 +66,18 @@ class AjaxFormMixin(FormMixin):
 
     def json_return(self, errors, result, redirect, content):
         if self._get_formset_payload() is not None:
+            if errors or result == "error":
+                return JsonResponse(
+                    {"__all__": [force_str(error) for error in errors] or [result]},
+                    status=422,
+                )
             success_url = redirect
             if not success_url or success_url == SAME_PAGE_REDIRECT:
                 success_url = self.request.headers.get("Referer")
-            return JsonResponse({"success_url": success_url})
+            response = {"success_url": success_url}
+            if content:
+                response["content"] = content
+            return JsonResponse(response)
         return JsonResponse(
             {
                 "result": result,
@@ -102,13 +110,18 @@ class AjaxFormMixin(FormMixin):
             render_success += "_" + form.slug
 
         if get_option(form, render_success, None):
+            submitted_data = (
+                form.data
+                if self._get_formset_payload() is not None
+                else self.request.POST
+            )
             context = SekizaiContext(
                 {
                     "form": form,
                     "instance": self.instance,
                     "request": self.request,
                     "get_str": urlencode(
-                        {x: y for x, y in self.request.POST.items() if "csrf" not in x}
+                        {x: y for x, y in submitted_data.items() if "csrf" not in x}
                     ),
                 }
             )
@@ -216,6 +229,12 @@ class AjaxFormMixin(FormMixin):
         self.request = request
         self.instance = instance
         self.parameter = parameter
+
+        if (
+            request.content_type == "application/json"
+            and self._get_formset_payload() is None
+        ):
+            return JsonResponse({"error": "Invalid formset JSON payload"}, status=400)
 
         form = self.get_ajax_form()
         if form.is_valid():

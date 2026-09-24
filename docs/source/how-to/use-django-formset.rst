@@ -55,6 +55,8 @@ Fields are rendered by django-formset's Bootstrap renderer. The web component
 validates browser-side constraints and submits JSON to the form plugin's normal
 endpoint. Valid submissions still execute the actions selected by the editor;
 invalid submissions return django-formset's ``422`` error response.
+The "Success message" action replaces the submitted form with its configured
+message. Redirect actions still navigate to their configured URL.
 
 The form plugin is not cached because the web component receives a request CSRF
 token in its markup.

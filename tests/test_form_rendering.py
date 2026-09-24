@@ -75,6 +75,8 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         if builder_settings.frontend == "django_formset":
             self.assertIn("<django-formset", content)
             self.assertIn("formset/js/django-formset.js", content)
+            self.assertIn("djangocms_form_builder/js/django_formset.js", content)
+            self.assertIn("data-djangocms-form-builder-submit", content)
             self.assertIn("dj-field-errors", content)
             self.assertFalse(cms_plugins.FormPlugin.cache)
 
@@ -432,6 +434,7 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         captcha_position = content.index('name="captcha_field"')
         if builder_settings.frontend == "django_formset":
             submit_position = content.index("Send form")
+            self.assertIn("data-djangocms-form-builder-submit", content)
         else:
             submit_position = content.index('value="Send form"')
         self.assertLess(field_position, captcha_position)

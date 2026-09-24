@@ -12,12 +12,12 @@ from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import Http404, HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.template import Context
-from django.test import RequestFactory, override_settings
+from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.urls import reverse
 
 from djangocms_form_builder import cms_plugins
 from djangocms_form_builder import settings as builder_settings
-from djangocms_form_builder.actions import SAVE_TO_DB_ACTION
+from djangocms_form_builder.actions import SAVE_TO_DB_ACTION, get_registered_actions
 from djangocms_form_builder.file_validation import FileValidationError
 from djangocms_form_builder.models import FormEntry
 from djangocms_form_builder.views import AjaxView, register_form_view
@@ -899,6 +899,17 @@ class DjangoFormsetAjaxPluginTestCase(TestFixture, CMSTestCase):
         self.assertFalse(hasattr(context["form"], "form_id"))
         self.assertNotIn("csrf_token", context)
 
+    def test_render_context_uses_multipart_fallback_for_multiple_files(self):
+        form_plugin, field = self._create_form(
+            plugin_type="MultipleFileFieldPlugin",
+            field_file_validation_presets=[],
+        )
+
+        context = self._render_plugin_context(form_plugin, field)
+
+        self.assertFalse(context["use_django_formset"])
+        self.assertFalse(hasattr(context["form"], "form_id"))
+
     def test_json_submission_executes_actions_and_persists_data(self):
         form_plugin, _field = self._create_form(
             form_options={
@@ -924,6 +935,130 @@ class DjangoFormsetAjaxPluginTestCase(TestFixture, CMSTestCase):
         self.assertEqual(response.json(), {"success_url": self.request_url})
         entry = FormEntry.objects.get(form_name="django-formset-ajax")
         self.assertEqual(entry.entry_data["message"], "Stored value")
+
+    def test_json_submission_returns_success_message_content(self):
+        success_action = next(
+            key
+            for key, label in get_registered_actions()
+            if str(label) == "Success message"
+        )
+        form_plugin, _field = self._create_form(
+            form_options={
+                "form_actions": json.dumps([success_action]),
+                "action_parameters": {
+                    "submitmessage_message": "<p>Thanks for writing!</p>"
+                },
+            }
+        )
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data=json.dumps({"formset_data": {"message": "Hello"}}),
+                content_type="application/json",
+                headers={"accept": "application/json", "referer": self.request_url},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["content"].strip(), "<p>Thanks for writing!</p>")
+        self.assertEqual(response.json()["success_url"], self.request_url)
+
+    def test_malformed_formset_json_is_rejected(self):
+        form_plugin, _field = self._create_form()
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        for body in ('{"formset_data":', "{}", '{"formset_data": []}', b"\xff"):
+            with self.subTest(body=body), self.login_user_context(self.superuser):
+                response = self.client.post(
+                    url,
+                    data=body,
+                    content_type="application/json",
+                    headers={"accept": "application/json"},
+                )
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("error", response.json())
+
+    def test_formset_non_field_validation_error(self):
+        form_plugin, _field = self._create_form(
+            form_options={"form_login_required": True}
+        )
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        response = self.client.post(
+            url,
+            data=json.dumps({"formset_data": {"message": "hello"}}),
+            content_type="application/json",
+            headers={"accept": "application/json"},
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("Please login", response.json()["__all__"][0])
+
+
+class DjangoFormsetResponseTestCase(SimpleTestCase):
+    def setUp(self):
+        self.plugin = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        self.plugin.request = RequestFactory().post(
+            "/form/",
+            data=json.dumps({"formset_data": {"message": "hello"}}),
+            content_type="application/json",
+            HTTP_REFERER="/original/",
+        )
+
+    def test_formset_redirect_uses_explicit_url(self):
+        response = self.plugin.json_return([], "success", "/done/", "")
+
+        self.assertEqual(json.loads(response.content), {"success_url": "/done/"})
+
+    def test_formset_error_does_not_claim_success(self):
+        response = self.plugin.json_return(
+            ["No content in response form"], "error", "", ""
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn(
+            "No content in response form", json.loads(response.content)["__all__"]
+        )
+
+    def test_formset_error_without_details_is_still_an_error(self):
+        response = self.plugin.json_return([], "error", "", "")
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(json.loads(response.content), {"__all__": ["error"]})
+
+    def test_formset_payload_is_cached_on_request(self):
+        first = self.plugin._get_formset_payload()
+        self.assertIs(first, self.plugin._get_formset_payload())
+        self.assertEqual(self.plugin.get_form_kwargs()["data"], {"message": "hello"})
+
+    @mock.patch(
+        "djangocms_form_builder.cms_plugins.ajax_plugins.render_to_string",
+        return_value="<p>Done</p>",
+    )
+    def test_formset_success_template_receives_submitted_data(self, render):
+        class SuccessForm(forms.Form):
+            slug = "thanks"
+
+            class Meta:
+                options = {"render_success_thanks": "thanks.html"}
+
+            def get_success_context_thanks(self, request, instance, form):
+                return {"message": "Done"}
+
+        response = self.plugin.form_valid(SuccessForm(data={"message": "hello"}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content), {"success_url": "/original/"})
+        self.assertEqual(render.call_args.args[0], "thanks.html")
+        self.assertEqual(render.call_args.args[1]["get_str"], "message=hello")
+        self.assertEqual(render.call_args.args[1]["message"], "Done")
 
 
 @skipIf(cms_version < "4", "Form plugin tests require django CMS 4 or higher")
