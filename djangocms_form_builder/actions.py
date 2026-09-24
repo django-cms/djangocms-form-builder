@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 
 from django import forms
@@ -42,6 +43,52 @@ from .settings import (
 logger = logging.getLogger(__name__)
 
 _action_registry = {}
+
+
+def _selected_action_keys(form):
+    """Return action keys selected in submitted data or the form's initial data."""
+    if form.is_bound:
+        field_name = form.add_prefix("form_actions")
+        if hasattr(form.data, "getlist"):
+            values = form.data.getlist(field_name)
+        else:
+            values = form.data.get(field_name, [])
+    else:
+        values = form.initial.get("form_actions", [])
+
+    if isinstance(values, str):
+        try:
+            values = json.loads(values.replace("'", '"'))
+        except json.JSONDecodeError:
+            values = [values]
+    if not isinstance(values, (list, tuple, set)):
+        values = []
+    return set(values)
+
+
+class ActionAdminFormMixin:
+    """Make fields required only while their corresponding action is selected."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        selected_actions = _selected_action_keys(self)
+        selected_fields = {
+            field_name
+            for action_key, action in _action_registry.items()
+            if action_key in selected_actions
+            for field_name in action.declared_fields
+        }
+        action_fields = {
+            field_name
+            for action in _action_registry.values()
+            for field_name in action.declared_fields
+        }
+        for field_name in action_fields:
+            if field_name in self.fields and self.fields[field_name].required:
+                self.fields[field_name].widget.attrs["data-action-required"] = "true"
+        for field_name in action_fields - selected_fields:
+            if field_name in self.fields:
+                self.fields[field_name].required = False
 
 
 def get_registered_actions():
@@ -90,7 +137,11 @@ class ActionMixin:
 
     def get_form(self, request, *args, **kwargs):
         """Creates new form class based adding the actions as mixins"""
-        return type("FormActionAdminForm", (self.form, *_action_registry.values()), {})
+        return type(
+            "FormActionAdminForm",
+            (ActionAdminFormMixin, self.form, *_action_registry.values()),
+            {},
+        )
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
@@ -370,13 +421,6 @@ if apps.is_installed("djangocms_link"):
             label=_("Link"),
             required=True,
         )
-
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            if args:
-                self.fields["redirect_link"].required = get_hash(
-                    RedirectAction
-                ) in args[0].get("form_actions", [])
 
         def execute(self, form, request):
             form.Meta.options["redirect"] = get_link(

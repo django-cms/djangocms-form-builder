@@ -7,11 +7,17 @@ All settings are optional. Unless noted otherwise they are read once, when
 Forms and rendering
 ===================
 
+``DJANGOCMS_FORM_BUILDER_FRONTEND``
+   Selects the form templates and widget rendering. If unset, it uses
+   ``DJANGOCMS_FRONTEND_FRAMEWORK``, falling back to ``"bootstrap5"``. The
+   included frontends are ``"bootstrap5"`` and, when the optional dependency is
+   installed, ``"django_formset"``. See
+   :doc:`../how-to/use-django-formset`.
+
 ``DJANGOCMS_FRONTEND_FRAMEWORK``
-   Name of the CSS framework. Default ``"bootstrap5"``. It selects the template
-   directory (``djangocms_form_builder/<framework>/``) and the module in
-   ``djangocms_form_builder.frontends`` that maps widget classes to CSS classes.
-   Templates ship for ``bootstrap5`` only.
+   Compatibility fallback for selecting the frontend and the CSS framework
+   used by djangocms-frontend. Prefer ``DJANGOCMS_FORM_BUILDER_FRONTEND`` when
+   changing form rendering only.
 
 ``DJANGOCMS_FRONTEND_THEME``
    Module that may provide additional render mixins for the field plugins.
@@ -166,6 +172,9 @@ Django settings that matter
    excluded from the CMS plugin cache, and the JSON ``GET`` endpoint refuses to
    hand out a token (``405``). When ``False`` (the default), the plugin's HTML
    is cacheable and the token is fetched at submit time.
+
+   The django-formset frontend always embeds a token for its web component and
+   therefore always disables plugin caching, independently of this setting.
 
 ``DATA_UPLOAD_MAX_MEMORY_SIZE``, ``FILE_UPLOAD_MAX_MEMORY_SIZE``, ``DATA_UPLOAD_MAX_NUMBER_FIELDS``
    Django's own upload limits. They apply to every submission, whether or not a

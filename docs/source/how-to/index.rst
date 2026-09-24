@@ -14,4 +14,5 @@ Recipes for a concrete goal. They assume you have a working installation - see
    rate-limit-actions
    write-an-action
    use-a-django-form
+   use-django-formset
    style-forms

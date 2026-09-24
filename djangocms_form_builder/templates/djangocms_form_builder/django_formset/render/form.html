@@ -1,0 +1,6 @@
+{% load form_builder_tags %}{% spaceless %}
+    {% for hidden_field in form.hidden_fields %}{{ hidden_field }}{% endfor %}
+    {% for title, prop in form|get_fieldset %}
+        {% include "djangocms_form_builder/django_formset/render/section.html" with form=form title=title prop=prop %}
+    {% endfor %}
+{% endspaceless %}
