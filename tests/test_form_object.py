@@ -238,6 +238,19 @@ class FormObjectSubmissionTestCase(TestFixture, CMSTestCase):
 
     if VERSIONING:
 
+        def test_submission_after_unpublishing_returns_a_form_error(self):
+            self.unpublish(self.form)
+
+            response = self.client.post(
+                f"/@form-builder/{self.plugin.pk}?language={self.language}",
+                data={"username": "Alice"},
+                HTTP_ACCEPT="application/json",
+            )
+
+            self.assertEqual(response.status_code, 410)
+            self.assertEqual(response.json()["result"], "error")
+            self.assertIn("Reload the page", response.json()["errors"][0])
+
         def test_visitors_submit_against_the_published_form(self):
             """A draft change must not alter what visitors can submit."""
             from djangocms_versioning.models import Version
@@ -460,6 +473,27 @@ class FormAdminTestCase(TestFixture, CMSTestCase):
                 admin_reverse(USAGE_FORM_URL_NAME, args=[self.form.pk])
             )
         self.assertContains(response, str(self.page))
+
+    def test_usage_view_requires_form_view_permission(self):
+        from django.contrib.auth.models import Permission
+
+        url = admin_reverse(USAGE_FORM_URL_NAME, args=[self.form.pk])
+        staff = self.get_staff_user_with_no_permissions()
+        with self.login_user_context(staff):
+            self.assertEqual(self.client.get(url).status_code, 403)
+
+        staff.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label="djangocms_form_builder",
+                content_type__model="form",
+                codename="view_form",
+            )
+        )
+        staff = type(staff).objects.get(pk=staff.pk)
+        with self.login_user_context(staff):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context_data["has_change_permission"])
 
     def test_form_in_use_cannot_be_deleted(self):
         from django.contrib.admin.sites import AdminSite

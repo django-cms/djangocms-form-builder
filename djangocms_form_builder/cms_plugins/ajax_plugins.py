@@ -216,6 +216,14 @@ class AjaxFormMixin(FormMixin):
         self.parameter = parameter
 
         form = self.get_ajax_form()
+        if form is None:
+            return JsonResponse(
+                {
+                    "result": "error",
+                    "errors": [_('This form is no longer available. Reload the page.')],
+                },
+                status=410,
+            )
         if form.is_valid():
             return self.form_valid(form)
         else:

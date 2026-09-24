@@ -202,16 +202,16 @@ class FormAdmin(GrouperModelAdmin):
         ] + super().get_urls()
 
     def usage_view(self, request, pk):
-        if not request.user.is_staff:
-            raise PermissionDenied
         form = get_object_or_404(Form, pk=pk)
+        if not self.has_view_permission(request, form):
+            raise PermissionDenied
         opts = self.model._meta
         title = _("Objects using form: %(form)s") % {"form": form}
         return TemplateResponse(
             request,
             "djangocms_form_builder/admin/form_usage.html",
             {
-                "has_change_permission": True,
+                "has_change_permission": self.has_change_permission(request, form),
                 "opts": opts,
                 "root_path": admin_reverse("index"),
                 "is_popup": True,
