@@ -962,7 +962,9 @@ class DjangoFormsetAjaxPluginTestCase(TestFixture, CMSTestCase):
             )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["content"].strip(), "<p>Thanks for writing!</p>")
+        self.assertEqual(
+            response.json()["content"].strip(), "<p>Thanks for writing!</p>"
+        )
         self.assertEqual(response.json()["success_url"], self.request_url)
 
     def test_malformed_formset_json_is_rejected(self):
