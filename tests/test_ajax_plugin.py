@@ -1013,7 +1013,7 @@ class DjangoFormsetResponseTestCase(SimpleTestCase):
         )
 
     def test_formset_redirect_uses_explicit_url(self):
-        response = self.plugin.json_return([], "success", "/done/", "")
+        response = self.plugin.json_return([], "success", "/done/", "<p>Done</p>")
 
         self.assertEqual(json.loads(response.content), {"success_url": "/done/"})
 

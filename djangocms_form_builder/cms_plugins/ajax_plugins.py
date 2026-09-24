@@ -75,7 +75,7 @@ class AjaxFormMixin(FormMixin):
             if not success_url or success_url == SAME_PAGE_REDIRECT:
                 success_url = self.request.headers.get("Referer")
             response = {"success_url": success_url}
-            if content:
+            if content and (not redirect or redirect == SAME_PAGE_REDIRECT):
                 response["content"] = content
             return JsonResponse(response)
         return JsonResponse(
