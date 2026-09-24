@@ -13,7 +13,7 @@ from .fixtures import TestFixture
 class FormEditorTestCase(TestFixture, CMSTestCase):
     def assert_submit_action(self, content, label):
         if settings.frontend == "django_formset":
-            self.assertEqual(content.count('df-click="submit -> proceed"'), 1)
+            self.assertEqual(content.count("data-djangocms-form-builder-submit"), 1)
             self.assertIn(label, content)
         else:
             self.assertEqual(content.count('type="submit"'), 1)

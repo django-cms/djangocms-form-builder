@@ -1057,7 +1057,10 @@ class DjangoFormsetResponseTestCase(SimpleTestCase):
         response = self.plugin.form_valid(SuccessForm(data={"message": "hello"}))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(json.loads(response.content), {"success_url": "/original/"})
+        self.assertEqual(
+            json.loads(response.content),
+            {"success_url": "/original/", "content": "<p>Done</p>"},
+        )
         self.assertEqual(render.call_args.args[0], "thanks.html")
         self.assertEqual(render.call_args.args[1]["get_str"], "message=hello")
         self.assertEqual(render.call_args.args[1]["message"], "Done")
