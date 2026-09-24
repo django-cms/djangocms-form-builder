@@ -20,6 +20,9 @@ class FormElementPlugin(CMSPluginBase):
     # Form elements are rendered by the surrounding FormPlugin, hence any change has to be
     # propageted up to the FormPlugin:
     is_local = False
+    # get_parent_classes walks the instance's ancestor tree to find a FormPlugin,
+    # so the result varies by position in the plugin hierarchy and must not be cached.
+    cache_parent_classes = False
 
     fieldsets = (
         (

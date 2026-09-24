@@ -651,6 +651,50 @@ class FormPluginTestCase(TestFixture, CMSTestCase):
         # Should return [""] which means no valid parent (prevents nesting)
         self.assertEqual(result, [""])
 
+    def test_form_element_parent_classes_are_not_cached(self):
+        """FormElementPlugin.get_parent_classes depends on the instance's ancestors.
+
+        django CMS caches get_parent_classes per plugin type, so form element
+        plugins must opt out of that cache or the first answer would be reused
+        for every instance regardless of its position in the tree.
+        """
+        self.assertFalse(cms_plugins.CharFieldPlugin.cache_parent_classes)
+
+    def test_form_element_get_parent_classes_depends_on_position(self):
+        """A field inside a form is allowed; the same field type outside one is not"""
+        form = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_name="a-form",
+        )
+        inside = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form,
+            language=self.language,
+            config={"field_name": "inside", "field_label": "Inside"},
+        )
+        outside = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            language=self.language,
+            config={"field_name": "outside", "field_label": "Outside"},
+        )
+
+        self.assertNotEqual(
+            cms_plugins.CharFieldPlugin.get_parent_classes(
+                slot=None, page=None, instance=inside
+            ),
+            [""],
+        )
+        self.assertEqual(
+            cms_plugins.CharFieldPlugin.get_parent_classes(
+                slot=None, page=None, instance=outside
+            ),
+            [""],
+        )
+
     def test_form_plugin_allows_form_as_top_level(self):
         """Test that FormPlugin is allowed at top level"""
         # Without an instance (top level), should allow normal parent classes
