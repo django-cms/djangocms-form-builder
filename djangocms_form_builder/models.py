@@ -7,6 +7,7 @@ from django.core.validators import validate_slug
 from django.db import models
 from django.forms.widgets import Input
 from django.utils.html import conditional_escape, mark_safe
+from django.utils.text import format_lazy
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
@@ -85,9 +86,12 @@ class Form(CMSPlugin):
         blank=True,
         default="",
         help_text=mark_safe_lazy(
-            _(
-                'Read more in the <a href="{link}" target="_blank">documentation</a>.'
-            ).format(link="https://developers.google.com/recaptcha")
+            format_lazy(
+                _(
+                    'Read more in the <a href="{link}" target="_blank">documentation</a>.'
+                ),
+                link="https://developers.google.com/recaptcha",
+            )
         ),
     )
     captcha_requirement = models.DecimalField(
@@ -103,13 +107,14 @@ class Form(CMSPlugin):
     captcha_config = AttributesField(
         verbose_name=_("Recaptcha configuration parameters"),
         help_text=mark_safe_lazy(
-            _(
-                'The reCAPTCHA widget supports several <a href="{attr_link}" target="_blank">data attributes</a> '
-                "that customize the behaviour of the widget, such as <code>data-theme</code>, "
-                "<code>data-size</code>. "
-                'The reCAPTCHA api supports several <a href="{api_link}" target="_blank">parameters</a>. '
-                "Add these api parameters as attributes, e.g. <code>hl</code> to set the language."
-            ).format(
+            format_lazy(
+                _(
+                    'The reCAPTCHA widget supports several <a href="{attr_link}" target="_blank">data attributes</a> '
+                    "that customize the behaviour of the widget, such as <code>data-theme</code>, "
+                    "<code>data-size</code>. "
+                    'The reCAPTCHA api supports several <a href="{api_link}" target="_blank">parameters</a>. '
+                    "Add these api parameters as attributes, e.g. <code>hl</code> to set the language."
+                ),
                 attr_link="https://developers.google.com/recaptcha/docs/display#render_param",
                 api_link="https://developers.google.com/recaptcha/docs/display#javascript_resource_apijs_parameters",
             )
@@ -130,7 +135,7 @@ class FormField(CMSPlugin):
     """
 
     class Meta:
-        verbose_name = gettext("Form field item")
+        verbose_name = _("Form field item")
 
     ui_item = models.CharField(max_length=30)
     config = models.JSONField(default=dict, encoder=DjangoJSONEncoder)

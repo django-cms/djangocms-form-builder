@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_slug
+from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from entangled.forms import EntangledModelForm, EntangledModelFormMixin
 
@@ -155,9 +156,12 @@ class FormsForm(EntangledModelForm):
         initial=recaptcha.CAPTCHA_CHOICES[0][0] if recaptcha.installed else "",
         choices=settings.EMPTY_CHOICE + recaptcha.CAPTCHA_CHOICES,
         help_text=mark_safe_lazy(
-            _(
-                'Read more in the <a href="{link}" target="_blank">documentation</a>.'
-            ).format(link="https://developers.google.com/recaptcha")
+            format_lazy(
+                _(
+                    'Read more in the <a href="{link}" target="_blank">documentation</a>.'
+                ),
+                link="https://developers.google.com/recaptcha",
+            )
         ),
     )
     captcha_requirement = forms.DecimalField(
@@ -173,13 +177,14 @@ class FormsForm(EntangledModelForm):
     captcha_config = AttributesFormField(
         label=_("Recaptcha configuration parameters"),
         help_text=mark_safe_lazy(
-            _(
-                'The reCAPTCHA widget supports several <a href="{attr_link}" target="_blank">data attributes</a> '
-                "that customize the behaviour of the widget, such as <code>data-theme</code>, "
-                "<code>data-size</code>. "
-                'The reCAPTCHA api supports several <a href="{api_link}" target="_blank">parameters</a>. '
-                "Add these api parameters as attributes, e.g. <code>hl</code> to set the language."
-            ).format(
+            format_lazy(
+                _(
+                    'The reCAPTCHA widget supports several <a href="{attr_link}" target="_blank">data attributes</a> '
+                    "that customize the behaviour of the widget, such as <code>data-theme</code>, "
+                    "<code>data-size</code>. "
+                    'The reCAPTCHA api supports several <a href="{api_link}" target="_blank">parameters</a>. '
+                    "Add these api parameters as attributes, e.g. <code>hl</code> to set the language."
+                ),
                 attr_link="https://developers.google.com/recaptcha/docs/display#render_param",
                 api_link="https://developers.google.com/recaptcha/docs/display#javascript_resource_apijs_parameters",
             )
