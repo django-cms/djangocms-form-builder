@@ -140,15 +140,27 @@ class FormEntry(models.Model):
         return type("DynamicFormEntryForm", (EntangledModelForm,), fields)
 
     @classmethod
-    def from_submission(cls, form):
+    def from_submission(cls, form, request=None):
         """Build an unsaved entry straight from a submitted form.
 
         The entry carries the form's serialized data (uploads stored once,
         shared with the other actions) and the human-readable field labels, so
         :meth:`get_mail_data` can show verbose labels in submission emails
         without a database round-trip.
+
+        The submission's ``form_name`` (and, when ``request`` is given, its
+        ``form_user``) are populated too, so custom mail templates can read the
+        same metadata they used to get from a stored entry. The entry is not
+        saved, so ``pk`` and the timestamps remain unset.
         """
-        entry = cls(entry_data=form.get_entry_data())
+        from .helpers import get_option
+
+        entry = cls(
+            form_name=get_option(form, "form_name", "") or "",
+            entry_data=form.get_entry_data(),
+        )
+        if request is not None and not request.user.is_anonymous:
+            entry.form_user = request.user
         entry.field_labels = form.get_field_labels()
         return entry
 

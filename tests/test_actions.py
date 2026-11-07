@@ -92,6 +92,31 @@ class ActionTestCase(TestFixture, CMSTestCase):
         storage.delete.assert_not_called()
 
     @patch("djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE")
+    def test_unique_submission_removes_explicitly_cleared_upload(self, storage):
+        # An explicit ``False`` (clear checkbox) must not be mistaken for an
+        # empty optional input: the previous upload is removed, not preserved.
+        metadata = {
+            "_form_builder_file": True,
+            "filename": "old.pdf",
+            "name": "form_uploads/old.pdf",
+            "url": "/media/form_uploads/old.pdf",
+        }
+        entry = FormEntry.objects.create(
+            form_name="unique-upload",
+            form_user=self.superuser,
+            entry_data={"attachment": metadata},
+        )
+
+        SaveToDBAction().execute(
+            self._unique_upload_form({"attachment": False}),
+            self._authenticated_upload_request(),
+        )
+
+        entry.refresh_from_db()
+        self.assertEqual(entry.entry_data["attachment"], False)
+        storage.delete.assert_called_once_with("form_uploads/old.pdf")
+
+    @patch("djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE")
     def test_unique_submission_deletes_replaced_upload(self, storage):
         old_metadata = {
             "_form_builder_file": True,

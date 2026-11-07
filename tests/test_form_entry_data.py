@@ -3,6 +3,7 @@
 import tempfile
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
@@ -91,6 +92,53 @@ class FormEntryMailDataTests(TestCase):
                 },
             ],
         )
+
+    def test_from_submission_populates_form_metadata(self):
+        user = get_user_model().objects.create(username="ada")
+
+        class FakeForm:
+            class Meta:
+                options = {"form_name": "contact"}
+
+            def get_entry_data(self):
+                return {"first_name": "Ada"}
+
+            def get_field_labels(self):
+                return {"first_name": "First name"}
+
+        class FakeRequest:
+            pass
+
+        request = FakeRequest()
+        request.user = user
+
+        entry = FormEntry.from_submission(FakeForm(), request)
+
+        # Metadata custom mail templates may read is populated ...
+        self.assertEqual(entry.form_name, "contact")
+        self.assertEqual(entry.form_user, user)
+        # ... alongside the data and labels used by get_mail_data().
+        self.assertEqual(
+            entry.get_mail_data(),
+            [{"name": "first_name", "label": "First name", "value": "Ada"}],
+        )
+        # The entry is not persisted.
+        self.assertIsNone(entry.pk)
+
+    def test_from_submission_without_request_leaves_user_unset(self):
+        class FakeForm:
+            class Meta:
+                options = {"form_name": "contact"}
+
+            def get_entry_data(self):
+                return {}
+
+            def get_field_labels(self):
+                return {}
+
+        entry = FormEntry.from_submission(FakeForm())
+        self.assertEqual(entry.form_name, "contact")
+        self.assertIsNone(entry.form_user)
 
     def test_mail_data_uses_human_readable_labels_when_available(self):
         entry = FormEntry(entry_data={"first_name": "Ada", "subscribe": True})
