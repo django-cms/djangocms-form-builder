@@ -41,6 +41,12 @@ Forms and rendering
       prefixes values taken from ``DJANGOCMS_FRONTEND_COLOR_STYLE_CHOICES`` with
       ``mb-``.
 
+``DJANGOCMS_FORM_BUILDER_DEFAULT_SUBMIT_LABEL``
+   Label of the default submit button that the form plugin renders when a form
+   does not contain its own **Submit button** plugin. Default ``_("Submit")``.
+   Set it to ``None`` to render no default button at all, which requires every
+   form to include a custom submit button plugin.
+
 ``DJANGOCMS_FORMS_OPTIONS``
    Dictionary of project-wide defaults for the per-form options described in
    :ref:`form-options`. A form's own ``Meta.options`` takes precedence.

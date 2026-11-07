@@ -15,6 +15,10 @@ Changelog
   when no label is set (#68). ``FormEntry.get_mail_data()`` additionally
   exposes each field's technical ``name`` next to its ``label`` for use in
   custom mail templates
+* feat: Add the ``DJANGOCMS_FORM_BUILDER_DEFAULT_SUBMIT_LABEL`` setting to
+  configure the label of the default submit button. Setting it to ``None``
+  renders no default button, requiring every form to include its own submit
+  button plugin
 * fix: The send email action now builds its data from the submitted form
   rather than the most recently stored database entry, so labels and values
   always match the current submission (and no longer depend on
