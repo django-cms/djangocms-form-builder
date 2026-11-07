@@ -1,83 +1,111 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-10 13:40+0200\n"
+"PO-Revision-Date: 2026-10-10 14:00+0200\n"
+"Last-Translator: \n"
+"Language-Team: Albanian\n"
+"Language: sq\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #: __init__.py:33
 msgid "No forms registered"
-msgstr ""
+msgstr "Nuk ka formularë të regjistruar"
 
-#: actions.py:28
+#: actions.py:53
 msgid "No actions registered"
-msgstr ""
+msgstr "Nuk ka veprime të regjistruara"
 
-#: actions.py:109
+#: actions.py:151
 msgid "Save form submission"
-msgstr ""
+msgstr "Ruaj dërgesën e formularit"
 
-#: actions.py:152
+#: actions.py:226
 #, python-format
 msgid "Please replace \"%s\" by a valid email address."
-msgstr ""
+msgstr "Ju lutemi zëvendësoni \"%s\" me një adresë email të vlefshme."
 
-#: actions.py:166
+#: actions.py:240
 msgid "Send email"
-msgstr ""
-
-#: actions.py:169
-#, python-format
-msgid "%(form_name)s form submission"
-msgstr ""
-
-#: actions.py:172
-msgid "Mail recipients"
-msgstr ""
-
-#: actions.py:178
-msgid "Space or newline separated list of email addresses."
-msgstr ""
-
-#: actions.py:183
-msgid "Mail template set"
-msgstr ""
+msgstr "Dërgo email"
 
 #: actions.py:243
+#, python-format
+msgid "%(form_name)s form submission"
+msgstr "Dërgesë e formularit %(form_name)s"
+
+#: actions.py:246
+msgid "Mail recipients"
+msgstr "Marrësit e email-it"
+
+#: actions.py:252
+msgid "Space or newline separated list of email addresses."
+msgstr "Listë adresash email të ndara me hapësirë ose rresht të ri."
+
+#: actions.py:257
+msgid "Mail template set"
+msgstr "Grupi i shablloneve të email-it"
+
+#: actions.py:325
 msgid "Success message"
-msgstr ""
+msgstr "Mesazhi i suksesit"
 
-#: actions.py:253
+#: actions.py:335
 msgid "Message"
-msgstr ""
+msgstr "Mesazh"
 
-#: actions.py:255
+#: actions.py:337
 msgid "<p>Thank you for your submission.</p>"
-msgstr ""
+msgstr "<p>Faleminderit për dërgesën tuaj.</p>"
 
-#: actions.py:278
+#: actions.py:360
 msgid "Redirect after submission"
-msgstr ""
+msgstr "Ridrejtim pas dërgimit"
 
-#: actions.py:288
+#: actions.py:370
 msgid "Link"
-msgstr ""
+msgstr "Lidhje"
+
+#: actions.py:402
+msgid "Send confirmation email to submitter"
+msgstr "Dërgo email konfirmimi te dërguesi"
+
+#: actions.py:409
+msgid "Confirmation mail template set"
+msgstr "Grupi i shablloneve të email-it të konfirmimit"
+
+#: admin.py:53
+msgid "Uploaded files"
+msgstr "Skedarët e ngarkuar"
 
 #: apps.py:12
 msgid "Form builder"
-msgstr ""
+msgstr "Ndërtuesi i formularëve"
 
-#: cms_plugins/ajax_plugins.py:105
+#: cms_plugins/ajax_plugins.py:113
 msgid "No content in response form"
-msgstr ""
+msgstr "Nuk ka përmbajtje në formularin e përgjigjes"
 
-#: cms_plugins/ajax_plugins.py:266 entry_model.py:32 forms.py:103 models.py:23
-#: models.py:26
+#: cms_plugins/ajax_plugins.py:263 entry_model.py:40 forms.py:101 models.py:24
+#: models.py:27
 msgid "Form"
-msgstr ""
+msgstr "Formular"
 
-#: cms_plugins/ajax_plugins.py:314
+#: cms_plugins/ajax_plugins.py:316
 msgid "Actions"
-msgstr ""
+msgstr "Veprime"
 
-#: cms_plugins/ajax_plugins.py:323
+#: cms_plugins/ajax_plugins.py:325 cms_plugins/form_plugins.py:286
+#: models.py:533
 msgid "Captcha"
-msgstr ""
+msgstr "Captcha"
 
-#: cms_plugins/ajax_plugins.py:329
+#: cms_plugins/ajax_plugins.py:331
 #, python-brace-format
 msgid ""
 "<blockquote style=\"color: var(--error-fg);\">Please get a public and secret "
@@ -86,59 +114,65 @@ msgid ""
 "and <code>RECAPTCHA_PRIVATE_KEY</code>. Without these keys captcha "
 "protection will not work.</blockquote>"
 msgstr ""
+"<blockquote style=\"color: var(--error-fg);\">Ju lutemi merrni një çelës "
+"publik dhe një çelës sekret nga <a href=\"{key_link}\" "
+"target=\"_blank\">Google</a> dhe sigurohuni që të jenë të disponueshëm "
+"përmes cilësimeve të Django <code>RECAPTCHA_PUBLIC_KEY</code> dhe "
+"<code>RECAPTCHA_PRIVATE_KEY</code>. Pa këta çelësa mbrojtja captcha nuk do "
+"të funksionojë.</blockquote>"
 
 #: cms_plugins/form_plugins.py:16 cms_plugins/form_plugins.py:213
-#: cms_plugins/form_plugins.py:245
+#: cms_plugins/form_plugins.py:264 cms_plugins/form_plugins.py:287
 msgid "Forms"
-msgstr ""
+msgstr "Formularë"
 
 #: cms_plugins/form_plugins.py:19
 msgid "Settings"
-msgstr ""
+msgstr "Cilësime"
 
 #: cms_plugins/form_plugins.py:72
 msgid "Text"
-msgstr ""
+msgstr "Tekst"
 
 #: cms_plugins/form_plugins.py:80
 msgid "Email"
-msgstr ""
+msgstr "Email"
 
 #: cms_plugins/form_plugins.py:87
 msgid "URL"
-msgstr ""
+msgstr "URL"
 
 #: cms_plugins/form_plugins.py:94
 msgid "Decimal"
-msgstr ""
+msgstr "Numër dhjetor"
 
 #: cms_plugins/form_plugins.py:102
 msgid "Integer"
-msgstr ""
+msgstr "Numër i plotë"
 
 #: cms_plugins/form_plugins.py:110
 msgid "Textarea"
-msgstr ""
+msgstr "Zonë teksti"
 
 #: cms_plugins/form_plugins.py:121
 msgid "Date"
-msgstr ""
+msgstr "Data"
 
 #: cms_plugins/form_plugins.py:128
 msgid "Date and time"
-msgstr ""
+msgstr "Data dhe ora"
 
 #: cms_plugins/form_plugins.py:135
 msgid "Time"
-msgstr ""
+msgstr "Ora"
 
-#: cms_plugins/form_plugins.py:142 models.py:395
+#: cms_plugins/form_plugins.py:142 models.py:407
 msgid "Select"
-msgstr ""
+msgstr "Përzgjedhje"
 
-#: cms_plugins/form_plugins.py:162 fields.py:131
+#: cms_plugins/form_plugins.py:162 fields.py:54
 msgid "Choices"
-msgstr ""
+msgstr "Opsionet"
 
 #: cms_plugins/form_plugins.py:166
 msgid ""
@@ -148,154 +182,220 @@ msgid ""
 "to the user. The order of choices can be adjusted in the structure tree "
 "<b>after saving</b> the edits."
 msgstr ""
+"Përdoreni këtë fushë për të ndryshuar shpejt opsionet. Opsionet mund të "
+"shtohen (<kbd>+</kbd>), fshihen (<kbd>&times;</kbd>) dhe përditësohen. Në "
+"anën e majtë vendosni vlerën që do të ruhet në bazën e të dhënave. Në anën e "
+"djathtë vendosni tekstin që do t'i shfaqet përdoruesit. Renditja e opsioneve "
+"mund të ndryshohet në pemën e strukturës <b>pasi të ruhen</b> ndryshimet."
 
-#: cms_plugins/form_plugins.py:212 models.py:443
+#: cms_plugins/form_plugins.py:212 models.py:455
 msgid "Choice"
-msgstr ""
+msgstr "Opsion"
 
-#: cms_plugins/form_plugins.py:223
+#: cms_plugins/form_plugins.py:223 models.py:486
+msgid "File upload"
+msgstr "Ngarkim skedari"
+
+#: cms_plugins/form_plugins.py:231 models.py:504
+msgid "Multiple file upload"
+msgstr "Ngarkim i shumë skedarëve"
+
+#: cms_plugins/form_plugins.py:242
 msgid "Boolean"
-msgstr ""
+msgstr "Po/Jo"
 
-#: cms_plugins/form_plugins.py:244 models.py:476
+#: cms_plugins/form_plugins.py:263 models.py:527
 msgid "Submit button"
-msgstr ""
+msgstr "Butoni i dërgimit"
 
 #: constants.py:18
 msgid "Single choice"
-msgstr ""
+msgstr "Zgjedhje e vetme"
 
 #: constants.py:20
 msgid "Drop down"
-msgstr ""
+msgstr "Listë rënëse"
 
 #: constants.py:21
 msgid "Radio buttons"
-msgstr ""
+msgstr "Butona radio"
 
 #: constants.py:25
 msgid "Multiple choice"
-msgstr ""
+msgstr "Zgjedhje e shumëfishtë"
 
 #: constants.py:27
 msgid "Checkboxes"
-msgstr ""
+msgstr "Kutiza zgjedhjeje"
 
 #: constants.py:28
 msgid "List"
-msgstr ""
+msgstr "Listë"
 
-#: entry_model.py:28
+#: entry_model.py:36
 msgid "Form entry"
-msgstr ""
-
-#: entry_model.py:29
-msgid "Form entries"
-msgstr ""
+msgstr "Hyrje formulari"
 
 #: entry_model.py:37
+msgid "Form entries"
+msgstr "Hyrjet e formularit"
+
+#: entry_model.py:45
 msgid "User"
-msgstr ""
+msgstr "Përdorues"
 
-#: entry_model.py:114
+#: entry_model.py:177
 msgid "User-entered data"
-msgstr ""
+msgstr "Të dhëna të futura nga përdoruesi"
 
-#: fields.py:94
-msgid "Please select at least one device size"
-msgstr ""
-
-#: fields.py:102 fields.py:110
+#: fields.py:25 fields.py:33
 msgid "Attributes"
-msgstr ""
+msgstr "Atribute"
 
-#: fields.py:142
+#: fields.py:65
 msgid ""
 "Please enter at least one choice. Use the <code>+</code> symbol to add a "
 "choice."
 msgstr ""
+"Ju lutemi vendosni të paktën një opsion. Përdorni simbolin <code>+</code> "
+"për të shtuar një opsion."
 
-#: fields.py:161 fields.py:175
+#: fields.py:85
 msgid "Tag type"
-msgstr ""
+msgstr "Lloji i etiketës"
 
-#: fields.py:169
+#: fields.py:93
 msgid "Select the HTML tag to be used."
-msgstr ""
+msgstr "Zgjidhni etiketën HTML që do të përdoret."
 
-#: forms.py:46
-msgid "Please login before submitting this form."
+#: file_validation_validators.py:36
+#, python-format
+msgid "%(size)s MB"
+msgstr "%(size)s MB"
+
+#: file_validation_validators.py:39
+#, python-format
+msgid "%(size)s KB"
+msgstr "%(size)s KB"
+
+#: file_validation_validators.py:40
+#, python-format
+msgid "%(n)s bytes"
+msgstr "%(n)s bajt"
+
+#: file_validation_validators.py:58
+#, python-format
+msgid "File \"%(name)s\" is too large (maximum %(limit)s)."
+msgstr "Skedari \"%(name)s\" është shumë i madh (maksimumi %(limit)s)."
+
+#: file_validation_validators.py:80
+#, python-format
+msgid ""
+"File \"%(name)s\" has a disallowed extension. Allowed formats: %(allowed)s."
 msgstr ""
+"Skedari \"%(name)s\" ka një prapashtesë të palejuar. Formatet e lejuara: "
+"%(allowed)s."
+
+#: file_validation_validators.py:86
+#, python-format
+msgid "File \"%(name)s\" has a disallowed extension."
+msgstr "Skedari \"%(name)s\" ka një prapashtesë të palejuar."
+
+#: file_validation_validators.py:118
+#, python-format
+msgid "Could not determine file type for \"%(name)s\"."
+msgstr "Lloji i skedarit \"%(name)s\" nuk mund të përcaktohej."
+
+#: file_validation_validators.py:124
+#, python-format
+msgid ""
+"File \"%(name)s\" has a disallowed type (%(mime)s). Allowed types: "
+"%(allowed)s."
+msgstr ""
+"Skedari \"%(name)s\" ka një lloj të palejuar (%(mime)s). Llojet e lejuara: "
+"%(allowed)s."
+
+#: forms.py:39
+msgid "Please login before submitting this form."
+msgstr "Ju lutemi identifikohuni para se të dërgoni këtë formular."
+
+#: forms.py:52
+msgid "Action not available any more"
+msgstr "Veprimi nuk është më i disponueshëm"
+
+#: forms.py:57
+msgid "Rate limit reached"
+msgstr "U arrit kufiri"
 
 #: forms.py:61
-msgid "Action not available any more"
-msgstr ""
-
-#: forms.py:63
 msgid "No action registered"
-msgstr ""
+msgstr "Asnjë veprim i regjistruar"
 
-#: forms.py:108
+#: forms.py:106
 msgid "Form identifier"
-msgstr ""
+msgstr "Identifikuesi i formularit"
 
-#: forms.py:114
+#: forms.py:112
 msgid "Slug that allows to uniquely identify forms."
-msgstr ""
+msgstr "Slug që lejon identifikimin unik të formularëve."
 
-#: forms.py:117 models.py:41
+#: forms.py:115 models.py:42
 msgid "Login required to submit form"
-msgstr ""
+msgstr "Kërkohet identifikimi për të dërguar formularin"
 
-#: forms.py:121 models.py:45
+#: forms.py:119 models.py:46
 msgid ""
 "To avoid issues with user experience use this type of form only on pages, "
 "which require login."
 msgstr ""
+"Për të shmangur probleme me përvojën e përdoruesit, përdoreni këtë lloj "
+"formulari vetëm në faqe që kërkojnë identifikim."
 
-#: forms.py:127 models.py:50
+#: forms.py:125 models.py:51
 msgid "User can reopen form"
-msgstr ""
+msgstr "Përdoruesi mund ta rihapë formularin"
 
-#: forms.py:130 models.py:52
+#: forms.py:128 models.py:53
 msgid "Requires \"Login required\" to be checked to work."
-msgstr ""
+msgstr "Funksionon vetëm nëse është zgjedhur \"Kërkohet identifikimi\"."
 
-#: forms.py:134 models.py:59
+#: forms.py:132 models.py:60
 msgid "Margin between fields"
-msgstr ""
+msgstr "Hapësira midis fushave"
 
-#: forms.py:141 models.py:55
+#: forms.py:139 models.py:56
 msgid "Floating labels"
-msgstr ""
+msgstr "Etiketa lundruese"
 
-#: forms.py:147 models.py:64
+#: forms.py:145 models.py:66
 msgid "Actions to be taken after form submission"
-msgstr ""
+msgstr "Veprimet që kryhen pas dërgimit të formularit"
 
-#: forms.py:155
+#: forms.py:153
 msgid "Captcha widget"
-msgstr ""
+msgstr "Elementi captcha"
 
-#: forms.py:161 models.py:86
+#: forms.py:159 models.py:89
 #, python-brace-format
 msgid ""
 "Read more in the <a href=\"{link}\" target=\"_blank\">documentation</a>."
 msgstr ""
+"Lexoni më shumë në <a href=\"{link}\" target=\"_blank\">dokumentacion</a>."
 
-#: forms.py:166 models.py:91
+#: forms.py:164 models.py:94
 msgid "Minimum score requirement"
-msgstr ""
+msgstr "Pikët minimale të kërkuara"
 
-#: forms.py:172 models.py:97
+#: forms.py:170 models.py:100
 msgid "Only for reCaptcha v3: Minimum score required to accept challenge."
 msgstr ""
+"Vetëm për reCaptcha v3: Pikët minimale të kërkuara për të pranuar sfidën."
 
-#: forms.py:176 models.py:101
+#: forms.py:174 models.py:104
 msgid "Recaptcha configuration parameters"
-msgstr ""
+msgstr "Parametrat e konfigurimit të reCaptcha"
 
-#: forms.py:179 models.py:104
+#: forms.py:177 models.py:107
 #, python-brace-format
 msgid ""
 "The reCAPTCHA widget supports several <a href=\"{attr_link}\" "
@@ -305,288 +405,393 @@ msgid ""
 "target=\"_blank\">parameters</a>. Add these api parameters as attributes, "
 "e.g. <code>hl</code> to set the language."
 msgstr ""
+"Elementi reCAPTCHA mbështet disa <a href=\"{attr_link}\" "
+"target=\"_blank\">atribute të dhënash</a> që përshtatin sjelljen e tij, si "
+"<code>data-theme</code>, <code>data-size</code>. API-ja e reCAPTCHA mbështet "
+"disa <a href=\"{api_link}\" target=\"_blank\">parametra</a>. Shtojini këta "
+"parametra të API-së si atribute, p.sh. <code>hl</code> për të caktuar gjuhën."
 
-#: forms.py:215
+#: forms.py:213
 msgid "Please provide a form name to be able to evaluate form submissions."
 msgstr ""
+"Ju lutemi jepni një emër formulari për të qenë në gjendje të vlerësoni "
+"dërgesat e formularit."
 
-#: forms.py:230
+#: forms.py:228
 msgid "Please select \"Save form submission\" to allow users to reopen forms."
 msgstr ""
+"Ju lutemi zgjidhni \"Ruaj dërgesën e formularit\" që përdoruesit të mund t'i "
+"rihapin formularët."
 
-#: forms.py:233
+#: forms.py:231
 msgid ""
 "Please select the action \"Save form submission\" to allow users to reopen "
 "forms."
 msgstr ""
+"Ju lutemi zgjidhni veprimin \"Ruaj dërgesën e formularit\" që përdoruesit të "
+"mund t'i rihapin formularët."
 
-#: forms.py:241
+#: forms.py:239
 msgid ""
 "No form action to save form contents available. Users will not be able to "
 "reopen a form."
 msgstr ""
+"Nuk ka asnjë veprim të disponueshëm për ruajtjen e përmbajtjes së "
+"formularit. Përdoruesit nuk do të mund ta rihapin një formular."
 
-#: forms.py:250
+#: forms.py:248
 msgid ""
 "At least one action needs to be selected for the form to have an effect."
-msgstr ""
+msgstr "Duhet zgjedhur të paktën një veprim që formulari të ketë efekt."
 
-#: forms.py:259
+#: forms.py:257
 #, python-format
 msgid "Users can only reopen forms if they are logged in. %(remedy)s"
 msgstr ""
+"Përdoruesit mund t'i rihapin formularët vetëm nëse janë të identifikuar. "
+"%(remedy)s"
 
-#: forms.py:263
+#: forms.py:261
 msgid "Either enable this."
-msgstr ""
+msgstr "Ose aktivizoni këtë."
 
-#: forms.py:264
+#: forms.py:262
 msgid "Or disable this."
-msgstr ""
+msgstr "Ose çaktivizoni këtë."
 
-#: forms.py:288
+#: forms.py:282
 msgid "This name is reserved. Please chose a different one."
-msgstr ""
+msgstr "Ky emër është i rezervuar. Ju lutemi zgjidhni një tjetër."
 
-#: forms.py:310
+#: forms.py:304
 msgid "Field name"
-msgstr ""
+msgstr "Emri i fushës"
 
-#: forms.py:312
+#: forms.py:306
 msgid ""
 "Internal field name consisting of letters, numbers, underscores or hyphens"
 msgstr ""
+"Emri i brendshëm i fushës, i përbërë nga shkronja, numra, nënvija ose viza"
 
-#: forms.py:318
+#: forms.py:312
 msgid "Label"
-msgstr ""
+msgstr "Etiketa"
 
-#: forms.py:320
+#: forms.py:314
 msgid "Field label shown to the user describing the entity to be entered"
 msgstr ""
+"Etiketa e fushës që i shfaqet përdoruesit dhe përshkruan se çfarë duhet futur"
 
-#: forms.py:325
+#: forms.py:319
 msgid "Placeholder"
-msgstr ""
+msgstr "Teksti zëvendësues"
 
-#: forms.py:326
+#: forms.py:320
 msgid "Example input shown muted in an empty field"
-msgstr ""
+msgstr "Shembull i të dhënave që shfaqet i zbehur në një fushë bosh"
 
-#: forms.py:330
+#: forms.py:324
 msgid "Required"
-msgstr ""
+msgstr "E detyrueshme"
 
-#: forms.py:334
+#: forms.py:328
 msgid "If selected form will not accept submissions with with empty data"
-msgstr ""
+msgstr "Nëse zgjidhet, formulari nuk do të pranojë dërgesa me të dhëna bosh"
 
-#: forms.py:338
+#: forms.py:332
 msgid "Help text"
-msgstr ""
+msgstr "Teksti ndihmës"
 
-#: forms.py:341
+#: forms.py:335
 msgid "Help text shown below the field."
-msgstr ""
+msgstr "Teksti ndihmës shfaqet poshtë fushës."
 
-#: forms.py:357 forms.py:452
+#: forms.py:351 forms.py:440
 msgid "Minimum text length"
-msgstr ""
+msgstr "Gjatësia minimale e tekstit"
 
-#: forms.py:362 forms.py:457
+#: forms.py:356 forms.py:445
 msgid "Maximum text length"
-msgstr ""
+msgstr "Gjatësia maksimale e tekstit"
 
-#: forms.py:394 forms.py:422
+#: forms.py:386 forms.py:412
 msgid "Minimum value"
-msgstr ""
+msgstr "Vlera minimale"
 
-#: forms.py:399 forms.py:427
+#: forms.py:391 forms.py:417
 msgid "Maximum value"
-msgstr ""
+msgstr "Vlera maksimale"
 
-#: forms.py:402
+#: forms.py:394
 msgid "Decimal places"
-msgstr ""
+msgstr "Shifrat dhjetore"
 
-#: forms.py:445
+#: forms.py:433
 msgid "Rows"
-msgstr ""
+msgstr "Rreshta"
 
-#: forms.py:449
+#: forms.py:437
 msgid "Defines the vertical size of the text area in number of rows."
-msgstr ""
+msgstr "Përcakton madhësinë vertikale të zonës së tekstit në numër rreshtash."
 
-#: forms.py:470 forms.py:482 forms.py:492
+#: forms.py:458 forms.py:468 forms.py:478
 msgid "Not visible on most browsers."
-msgstr ""
+msgstr "Nuk shfaqet në shumicën e shfletuesve."
 
-#: forms.py:511
+#: forms.py:497
 msgid "Selection type"
-msgstr ""
+msgstr "Lloji i përzgjedhjes"
 
-#: forms.py:531
+#: forms.py:517
 msgid ""
 "For a required multiple choice fild select the <b>list</b> selection type."
 msgstr ""
+"Për një fushë të detyrueshme me zgjedhje të shumëfishtë zgjidhni llojin e "
+"përzgjedhjes <b>listë</b>."
 
-#: forms.py:535
+#: forms.py:521
 msgid "Checkbox multiple choice field <b>must not be required</b>."
 msgstr ""
+"Fusha me zgjedhje të shumëfishtë me kutiza <b>nuk duhet të jetë e "
+"detyrueshme</b>."
 
-#: forms.py:553 templates/djangocms_form_builder/mails/default/mail_html.html:8
+#: forms.py:539 templates/djangocms_form_builder/mails/default/mail_html.html:8
 msgid "Value"
-msgstr ""
+msgstr "Vlera"
 
-#: forms.py:555
+#: forms.py:541
 msgid "Stored in database if the choice is selected."
-msgstr ""
+msgstr "Ruhet në bazën e të dhënave nëse zgjidhet opsioni."
 
-#: forms.py:558
+#: forms.py:544
 msgid "Display text"
-msgstr ""
+msgstr "Teksti i shfaqur"
 
-#: forms.py:560
+#: forms.py:546
 msgid "Representation of choice displayed to the user."
-msgstr ""
+msgstr "Paraqitja e opsionit që i shfaqet përdoruesit."
 
-#: forms.py:576
+#: forms.py:551
+msgid ""
+"Uploaded files are stored via Django file storage. With default_storage, "
+"anyone who knows or guesses the URL can access them. Set "
+"DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE to a private storage backend for "
+"sensitive attachments."
+msgstr ""
+"Skedarët e ngarkuar ruhen përmes hapësirës ruajtëse të skedarëve të Django. "
+"Me default_storage, kushdo që e di ose e gjen URL-në mund t'i aksesojë. Për "
+"bashkëngjitje të ndjeshme vendosni DJANGOCMS_FORM_BUILDER_FILE_FIELD_STORAGE "
+"në një hapësirë ruajtëse private."
+
+#: forms.py:568 forms.py:608
+msgid "Validation presets"
+msgstr "Rregullat e paracaktuara të vlefshmërisë"
+
+#: forms.py:572
+msgid ""
+"Choose a rule to control which file types or sizes users can upload. Leave "
+"empty to allow all files permitted by default."
+msgstr ""
+"Zgjidhni një rregull për të kontrolluar se cilat lloje ose madhësi skedarësh "
+"mund të ngarkojnë përdoruesit. Lëreni bosh për të lejuar të gjithë skedarët "
+"e lejuar si parazgjedhje."
+
+#: forms.py:598
+msgid "Max files"
+msgstr "Numri maksimal i skedarëve"
+
+#: forms.py:603
+msgid ""
+"Allowing to upload too many files may crash your website (denial of service "
+"attack)."
+msgstr ""
+"Lejimi i ngarkimit të shumë skedarëve mund ta rrëzojë faqen tuaj të "
+"internetit (sulm i tipit mohim shërbimi)."
+
+#: forms.py:613
+msgid ""
+"Choose a rule to control which file types or sizes users can upload. Leave "
+"empty to allow all files permitted by default (applied to each uploaded file "
+"in order)."
+msgstr ""
+"Zgjidhni një rregull për të kontrolluar se cilat lloje ose madhësi skedarësh "
+"mund të ngarkojnë përdoruesit. Lëreni bosh për të lejuar të gjithë skedarët "
+"e lejuar si parazgjedhje (zbatohet me radhë për çdo skedar të ngarkuar)."
+
+#: forms.py:639
 msgid "Layout"
-msgstr ""
+msgstr "Paraqitja"
 
-#: forms.py:580
+#: forms.py:643
 msgid "Checkbox"
-msgstr ""
+msgstr "Kutizë zgjedhjeje"
 
-#: forms.py:580
+#: forms.py:643
 msgid "Switch"
-msgstr ""
+msgstr "Çelës"
 
-#: forms.py:588
+#: forms.py:651
 msgid ""
 "If checked, the form can only be submitted if the checkbox is checked or the "
 "switch set to on."
 msgstr ""
+"Nëse zgjidhet, formulari mund të dërgohet vetëm nëse kutiza është e zgjedhur "
+"ose çelësi është i aktivizuar."
 
-#: forms.py:606
+#: forms.py:667
 msgid "Button label"
-msgstr ""
+msgstr "Etiketa e butonit"
 
-#: forms.py:607 templates/djangocms_form_builder/bootstrap5/form.html:11
+#: forms.py:668 templates/djangocms_form_builder/bootstrap5/form.html:11
 #: templates/djangocms_form_builder/bootstrap5/widgets/submit.html:1
 msgid "Submit"
-msgstr ""
+msgstr "Dërgo"
 
-#: forms.py:612
+#: forms.py:673
 msgid "Button context"
-msgstr ""
+msgstr "Konteksti i butonit"
 
 #: frontends/bootstrap5.py:32 frontends/foundation6.py:29
 msgid "Primary"
-msgstr ""
+msgstr "Primar"
 
 #: frontends/bootstrap5.py:33 frontends/foundation6.py:30
 msgid "Secondary"
-msgstr ""
+msgstr "Sekondar"
 
-#: models.py:32
+#: models.py:33
 msgid "Form name"
-msgstr ""
+msgstr "Emri i formularit"
 
-#: models.py:79
+#: models.py:83
 msgid "captcha widget"
-msgstr ""
+msgstr "elementi captcha"
 
-#: models.py:130
+#: models.py:133
 msgid "Form field item"
-msgstr ""
+msgstr "Fushë formulari"
 
-#: models.py:201
+#: models.py:209
 msgid "Character field"
-msgstr ""
+msgstr "Fushë karakteresh"
 
-#: models.py:217
+#: models.py:227
 msgid "Email field"
-msgstr ""
+msgstr "Fushë email-i"
 
-#: models.py:233
+#: models.py:243
 msgid "URL field"
-msgstr ""
+msgstr "Fushë URL-je"
 
-#: models.py:249
+#: models.py:259
 msgid "Decimal field"
-msgstr ""
+msgstr "Fushë numri dhjetor"
 
-#: models.py:294
+#: models.py:304
 msgid "Integer field"
-msgstr ""
+msgstr "Fushë numri të plotë"
 
-#: models.py:310
+#: models.py:320
 msgid "Text field"
-msgstr ""
+msgstr "Fushë teksti"
 
-#: models.py:330 models.py:349 models.py:376
+#: models.py:342
 msgid "Date field"
-msgstr ""
+msgstr "Fushë date"
 
-#: models.py:398
+#: models.py:361
+msgid "Date and time field"
+msgstr "Fushë date dhe ore"
+
+#: models.py:388
+msgid "Time field"
+msgstr "Fushë ore"
+
+#: models.py:410
 msgid "No selection"
-msgstr ""
+msgstr "Asnjë përzgjedhje"
 
-#: models.py:456
+#: models.py:470
 msgid "Boolean field"
-msgstr ""
+msgstr "Fushë Po/Jo"
 
-#: recaptcha.py:24
+#: rate_limit.py:46
+msgid "Submission quota"
+msgstr "Kuota e dërgesave"
+
+#: rate_limit.py:47
+msgid "Submission quotas"
+msgstr "Kuotat e dërgesave"
+
+#: recaptcha.py:26
 msgid "v2 checkbox"
-msgstr ""
+msgstr "v2 me kutizë"
 
-#: recaptcha.py:25
+#: recaptcha.py:27
 msgid "v2 invisible"
-msgstr ""
+msgstr "v2 e padukshme"
 
-#: recaptcha.py:37
+#: recaptcha.py:39
 msgid "hCaptcha"
-msgstr ""
+msgstr "hCaptcha"
 
-#: settings.py:17
+#: recaptcha.py:48
+msgid "Altcha"
+msgstr "Altcha"
+
+#: settings.py:13
 msgid "Default"
-msgstr ""
+msgstr "Parazgjedhje"
 
 #: templates/djangocms_form_builder/ajax_form.html:19
 msgid ""
 "Network connection or server error. Please try again later. We apologize for "
 "the inconvenience."
 msgstr ""
+"Gabim në lidhjen e rrjetit ose në server. Ju lutemi provoni përsëri më vonë. "
+"Kërkojmë ndjesë për shqetësimin."
 
 #: templates/djangocms_form_builder/mails/default/mail_html.html:2
 msgid "Form submission"
-msgstr ""
+msgstr "Dërgesë formulari"
 
 #: templates/djangocms_form_builder/mails/default/mail_html.html:3
 msgid "by"
-msgstr ""
+msgstr "nga"
 
 #: templates/djangocms_form_builder/mails/default/mail_html.html:3
 msgid "by anonymous"
-msgstr ""
+msgstr "nga anonim"
 
 #: templates/djangocms_form_builder/mails/default/mail_html.html:7
 msgid "Field"
-msgstr ""
-
-#: templates/djangocms_form_builder/mails/default/mail_html.html:19
-msgid "time"
-msgstr ""
-
-#: templates/djangocms_form_builder/mails/default/mail_html.html:23
-msgid "user agent"
-msgstr ""
+msgstr "Fusha"
 
 #: templates/djangocms_form_builder/mails/default/mail_html.html:27
-msgid "referer"
-msgstr ""
+msgid "time"
+msgstr "koha"
 
-#: views.py:25
-msgid "Only unique slugs accepted for form views"
+#: templates/djangocms_form_builder/mails/default/mail_html.html:31
+msgid "user agent"
+msgstr "agjenti i përdoruesit"
+
+#: templates/djangocms_form_builder/mails/default/mail_html.html:35
+msgid "referer"
+msgstr "referuesi"
+
+#: upload_form_fields.py:47
+msgid "This field could not be validated. Contact the site administrator."
+msgstr "Kjo fushë nuk mund të verifikohej. Kontaktoni administratorin e faqes."
+
+#: upload_form_fields.py:102
+msgid "This field is required."
+msgstr "Kjo fushë është e detyrueshme."
+
+#: upload_form_fields.py:104
+#, python-format
+msgid ""
+"Too many files in \"%(field)s\": at most %(max)s allowed, but %(count)s were "
+"sent."
 msgstr ""
+"Shumë skedarë në \"%(field)s\": lejohen maksimumi %(max)s, por u dërguan "
+"%(count)s."
