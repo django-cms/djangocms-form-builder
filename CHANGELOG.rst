@@ -2,6 +2,28 @@
 Changelog
 =========
 
+0.8.0 (2026-11-07)
+==================
+
+.. warning::
+   The default emails sent on form submission change in this release: field
+   rows now show the configured human-readable labels instead of the technical
+   field names.
+
+* feat: Submission emails now display the configured human-readable field
+  labels instead of the technical field names, falling back to the field name
+  when no label is set (#68). ``FormEntry.get_mail_data()`` additionally
+  exposes each field's technical ``name`` next to its ``label`` for use in
+  custom mail templates
+* fix: The send email action now builds its data from the submitted form
+  rather than the most recently stored database entry, so labels and values
+  always match the current submission (and no longer depend on
+  ``SaveToDBAction`` having run or on concurrent submissions)
+* fix: Uploaded files are serialized and stored only once per submission,
+  shared across all form actions
+* fix: Avoid spurious migrations in non-English installations
+
+
 0.7.0 (2026-09-24)
 ==================
 * feat: Add support for Django 6.1

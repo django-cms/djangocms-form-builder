@@ -17,6 +17,7 @@ from . import (
 from .entry_model import FormEntry
 from .fields import AttributesFormField, ButtonGroup, ChoicesFormField
 from .file_validation import validation_preset_choice_tuples
+from .form_entry_data import serialize_cleaned_data_for_entry
 from .helpers import get_option, mark_safe_lazy
 
 
@@ -43,6 +44,20 @@ class SimpleFrontendForm(forms.Form):
         cleaned_data = super().clean()
         cleaned_data.pop("captcha_field", None)
         return cleaned_data
+
+    def get_entry_data(self):
+        """Serialize the submitted data once and cache it on the form.
+
+        Uploaded files are therefore stored exactly once, and every action
+        (saving to the database, sending mail, ...) sees identical data.
+        """
+        if not hasattr(self, "_entry_data"):
+            self._entry_data = serialize_cleaned_data_for_entry(dict(self.cleaned_data))
+        return self._entry_data
+
+    def get_field_labels(self):
+        """Map each field name to its human-readable label (falling back to the name)."""
+        return {name: str(field.label or name) for name, field in self.fields.items()}
 
     def save(self):
         results = {}

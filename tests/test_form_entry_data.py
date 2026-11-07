@@ -78,8 +78,9 @@ class FormEntryMailDataTests(TestCase):
         self.assertEqual(
             entry.get_mail_data(),
             [
-                {"label": "name", "value": "Ada"},
+                {"name": "name", "label": "name", "value": "Ada"},
                 {
+                    "name": "attachments",
                     "label": "attachments",
                     "files": [
                         {
@@ -88,6 +89,20 @@ class FormEntryMailDataTests(TestCase):
                         }
                     ],
                 },
+            ],
+        )
+
+    def test_mail_data_uses_human_readable_labels_when_available(self):
+        entry = FormEntry(entry_data={"first_name": "Ada", "subscribe": True})
+        entry.field_labels = {"first_name": "First name"}
+
+        self.assertEqual(
+            entry.get_mail_data(),
+            [
+                # Configured label is used ...
+                {"name": "first_name", "label": "First name", "value": "Ada"},
+                # ... and the technical name is the fallback.
+                {"name": "subscribe", "label": "subscribe", "value": True},
             ],
         )
 
