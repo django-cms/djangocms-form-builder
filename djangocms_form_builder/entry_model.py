@@ -177,7 +177,10 @@ class FormEntry(models.Model):
 
         for name, value in self.entry_data.items():
             label = labels.get(name, name)
-            if _is_file_entry_value(value):
+            # Normalize so a single File upload (stored as one dict) is handled
+            # just like a Multiple File upload (stored as a list of dicts).
+            files = self.get_file_entry_items(value)
+            if files:
                 data.append(
                     {
                         "name": name,
@@ -187,7 +190,7 @@ class FormEntry(models.Model):
                                 "filename": f["filename"],
                                 "url": f["url"],
                             }
-                            for f in value
+                            for f in files
                         ],
                     }
                 )

@@ -93,6 +93,33 @@ class FormEntryMailDataTests(TestCase):
             ],
         )
 
+    def test_mail_data_handles_single_file_upload(self):
+        # A single File upload is stored as one dict (not a list); it must be
+        # rendered just like a Multiple File upload and not raise TypeError.
+        entry = FormEntry(
+            entry_data={
+                "cv": {
+                    "_form_builder_file": True,
+                    "filename": "cv.pdf",
+                    "name": "form_uploads/internal-token.pdf",
+                    "url": "/media/form_uploads/cv.pdf",
+                },
+            }
+        )
+
+        self.assertEqual(
+            entry.get_mail_data(),
+            [
+                {
+                    "name": "cv",
+                    "label": "cv",
+                    "files": [
+                        {"filename": "cv.pdf", "url": "/media/form_uploads/cv.pdf"}
+                    ],
+                },
+            ],
+        )
+
     def test_from_submission_populates_form_metadata(self):
         user = get_user_model().objects.create(username="ada")
 
