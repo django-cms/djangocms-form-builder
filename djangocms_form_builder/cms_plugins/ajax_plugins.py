@@ -252,6 +252,7 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
                 "has_captcha_plugin": has_captcha_plugin(
                     instance.child_plugin_instances
                 ),
+                "default_submit_label": settings.DEFAULT_SUBMIT_LABEL,
                 "csrf_cookie_httponly": django_settings.CSRF_COOKIE_HTTPONLY,
             }
         )

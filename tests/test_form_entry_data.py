@@ -3,6 +3,7 @@
 import tempfile
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
@@ -78,8 +79,9 @@ class FormEntryMailDataTests(TestCase):
         self.assertEqual(
             entry.get_mail_data(),
             [
-                {"label": "name", "value": "Ada"},
+                {"name": "name", "label": "name", "value": "Ada"},
                 {
+                    "name": "attachments",
                     "label": "attachments",
                     "files": [
                         {
@@ -88,6 +90,94 @@ class FormEntryMailDataTests(TestCase):
                         }
                     ],
                 },
+            ],
+        )
+
+    def test_mail_data_handles_single_file_upload(self):
+        # A single File upload is stored as one dict (not a list); it must be
+        # rendered just like a Multiple File upload and not raise TypeError.
+        entry = FormEntry(
+            entry_data={
+                "cv": {
+                    "_form_builder_file": True,
+                    "filename": "cv.pdf",
+                    "name": "form_uploads/internal-token.pdf",
+                    "url": "/media/form_uploads/cv.pdf",
+                },
+            }
+        )
+
+        self.assertEqual(
+            entry.get_mail_data(),
+            [
+                {
+                    "name": "cv",
+                    "label": "cv",
+                    "files": [
+                        {"filename": "cv.pdf", "url": "/media/form_uploads/cv.pdf"}
+                    ],
+                },
+            ],
+        )
+
+    def test_from_submission_populates_form_metadata(self):
+        user = get_user_model().objects.create(username="ada")
+
+        class FakeForm:
+            class Meta:
+                options = {"form_name": "contact"}
+
+            def get_entry_data(self):
+                return {"first_name": "Ada"}
+
+            def get_field_labels(self):
+                return {"first_name": "First name"}
+
+        class FakeRequest:
+            pass
+
+        request = FakeRequest()
+        request.user = user
+
+        entry = FormEntry.from_submission(FakeForm(), request)
+
+        # Metadata custom mail templates may read is populated ...
+        self.assertEqual(entry.form_name, "contact")
+        self.assertEqual(entry.form_user, user)
+        # ... alongside the data and labels used by get_mail_data().
+        self.assertEqual(
+            entry.get_mail_data(),
+            [{"name": "first_name", "label": "First name", "value": "Ada"}],
+        )
+        # The entry is not persisted.
+        self.assertIsNone(entry.pk)
+
+    def test_from_submission_without_request_leaves_user_unset(self):
+        class FakeForm:
+            class Meta:
+                options = {"form_name": "contact"}
+
+            def get_entry_data(self):
+                return {}
+
+            def get_field_labels(self):
+                return {}
+
+        entry = FormEntry.from_submission(FakeForm())
+        self.assertEqual(entry.form_name, "contact")
+        self.assertIsNone(entry.form_user)
+
+    def test_mail_data_uses_human_readable_labels_when_available(self):
+        entry = FormEntry(entry_data={"first_name": "Ada", "subscribe": True})
+        entry.field_labels = {"first_name": "First name"}
+
+        self.assertEqual(
+            entry.get_mail_data(),
+            [
+                # Configured label is used ...
+                {"name": "first_name", "label": "First name", "value": "Ada"},
+                # ... and the technical name is the fallback.
+                {"name": "subscribe", "label": "subscribe", "value": True},
             ],
         )
 

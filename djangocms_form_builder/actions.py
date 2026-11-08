@@ -28,7 +28,6 @@ from .entry_model import FormEntry
 from .form_entry_data import (
     delete_stored_files,
     iter_stored_file_metadata,
-    serialize_cleaned_data_for_entry,
 )
 from .helpers import get_option, insert_fields
 from .rate_limit import check_rate_limits, client_address
@@ -167,7 +166,10 @@ class SaveToDBAction(FormAction):
             }
         previous_data = None
         previous_names = set()
-        cleaned_data = dict(form.cleaned_data)
+        preserve_file_keys = ()
+        # Look the existing entry up *before* serializing, so uploads (which are
+        # stored as a side effect of serialization) are not left orphaned in
+        # storage should the lookup raise.
         if keys:
             existing_entries = FormEntry.objects.filter(**keys).only("entry_data")
             previous = existing_entries.first()
@@ -180,13 +182,17 @@ class SaveToDBAction(FormAction):
                     meta.get("name")
                     for meta in iter_stored_file_metadata(previous_data)
                 }
-                # An empty optional file input means "no replacement". Preserve
-                # the existing upload; an explicit False still removes it.
-                for key in previous.get_file_entry_data_keys():
-                    if cleaned_data.get(key) in (None, []):
-                        cleaned_data[key] = previous_data[key]
+                preserve_file_keys = previous.get_file_entry_data_keys()
 
-        serialized_data = serialize_cleaned_data_for_entry(cleaned_data)
+        # Shared, already-serialized submission data (uploads stored once).
+        serialized_data = dict(form.get_entry_data())
+        # An empty optional file input means "no replacement": preserve the
+        # existing upload. An explicit ``False`` (the clear checkbox) is kept as
+        # is, so the upload is removed.
+        for key in preserve_file_keys:
+            if serialized_data.get(key) in (None, []):
+                serialized_data[key] = previous_data[key]
+
         defaults["entry_data"] = serialized_data
         if keys:  # update_or_create only works if at least one key is given
             try:
@@ -267,7 +273,7 @@ class SendMailAction(FormAction):
         recipients = self.get_parameter(form, "sendemail_recipients") or ""
         template_set = self.get_parameter(form, "sendemail_template") or "default"
         context = dict(
-            form_entry=FormEntry.objects.last(),
+            form_entry=FormEntry.from_submission(form, request),
             form_name=getattr(form.Meta, "verbose_name", ""),
             user=request.user,
             user_agent=request.headers["User-Agent"]
