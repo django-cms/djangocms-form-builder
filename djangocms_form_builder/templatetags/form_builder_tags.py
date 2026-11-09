@@ -49,7 +49,15 @@ def render_form(form, **kwargs):
             helper.form_tag = False
             helper.disable_csrf = True
             return mark_safe(render_form_implementation(form, helper, None))
-    template = kwargs.pop("template", FORM_TEMPLATE)
+    default_template = FORM_TEMPLATE
+    if (
+        frontend == "django_formset"
+        and FORM_TEMPLATE == "djangocms_form_builder/django_formset/render/form.html"
+        and not form.renderer.__class__.__module__.startswith("formset.")
+    ):
+        # Registered forms using the multipart fallback have not been formsetified.
+        default_template = "djangocms_form_builder/bootstrap5/render/form.html"
+    template = kwargs.pop("template", default_template)
     return render_to_string(template, {"form": form, **kwargs})
 
 

@@ -4,12 +4,16 @@
     {% if use_django_formset %}
         {% formsetify form "bootstrap" %}
         <django-formset data-djangocms-form-builder-formset
+                        data-error-message="{% translate 'Network connection or server error. Please try again later. We apologize for the inconvenience.' %}"
+                        data-csrf-error-message="{% translate 'Your session may have expired. Reload this page and try again.' %}"
                         endpoint="{% url 'form_builder:ajaxview' instance.id %}"
                         csrf-token="{{ csrf_token }}">
             <form id="{{ form.form_id }}" method="post"></form>
             {% include "djangocms_form_builder/django_formset/ajax_form.html" %}
+            <div data-djangocms-form-builder-error role="alert" tabindex="-1"
+                 class="alert alert-danger" hidden></div>
             {% if not has_submit_button %}
-                <button type="button" data-djangocms-form-builder-submit
+                <button type="submit" form="{{ form.form_id }}" data-djangocms-form-builder-submit
                         class="btn btn-{{ instance.form_submit_context|default:'primary' }}">
                     {{ instance.form_submit_message|default:_('Submit') }}
                 </button>
@@ -25,6 +29,7 @@
     {% else %}
         <form id="form{{ uid }}"
               class="djangocms-form-builder-ajax-form"
+              data-captcha-error-message="{% translate 'Please complete the CAPTCHA.' %}"
               novalidate action="{% url 'form_builder:ajaxview' instance.id %}"
               method="post">
             {% if csrf_cookie_httponly %}{% csrf_token %}{% endif %}

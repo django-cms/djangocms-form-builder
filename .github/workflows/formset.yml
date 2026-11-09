@@ -1,0 +1,36 @@
+name: Django formset frontend
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  formset:
+    runs-on: ubuntu-latest
+    env:
+      DJANGOCMS_FORM_BUILDER_FRONTEND: django_formset
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install Python dependencies
+        run: |
+          python -m pip install -r tests/requirements/dj52_cms50.txt
+          python -m pip install -e '.[formset]'
+      - name: Test the django-formset frontend
+        run: python run_tests.py
+      - name: Install browser dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Test browser submission
+        run: |
+          python tests/browser/render_fixtures.py
+          npm run test:browser

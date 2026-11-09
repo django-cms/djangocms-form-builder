@@ -18,7 +18,5 @@
         {% addtoblock "css" %}
             <link rel="stylesheet" href="{% static 'djangocms_form_builder/css/altcha.css' %}">
         {% endaddtoblock %}
-    {% elif instance.captcha_widget == "v2-checkbox" or instance.captcha_widget == "v2-invisible" %}
-        {% addtoblock "js" %}<script src="https://www.google.com/recaptcha/api.js?onload=reCaptchaOnLoadCallback&render=explicit" async defer></script>{% endaddtoblock %}
     {% endif %}
 {% endif %}

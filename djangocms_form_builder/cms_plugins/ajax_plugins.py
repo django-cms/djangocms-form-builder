@@ -215,6 +215,13 @@ class AjaxFormMixin(FormMixin):
                 form = form_class(request=self.request, **self.get_form_kwargs(slug))
             else:
                 form = form_class(**self.get_form_kwargs(slug))
+            if self._get_formset_payload() is not None and form.prefix:
+                # django-formset sends local field names, whereas a regular
+                # Django form binds prefixed names. Use the instantiated form:
+                # registered forms can choose their prefix in __init__.
+                form.data = {
+                    form.add_prefix(name): value for name, value in form.data.items()
+                }
             if self.instance:
                 for field in form.base_fields:
                     form.fields[field].widget.attrs.update(
@@ -293,9 +300,28 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
                 "csrf_cookie_httponly": django_settings.CSRF_COOKIE_HTTPONLY,
             }
         )
+        if (
+            form is not None
+            and recaptcha.field_name in form.fields
+            and getattr(instance, "captcha_widget", "")
+            in ("v2-checkbox", "v2-invisible")
+        ):
+            widget = form.fields[recaptcha.field_name].widget
+            api_params = {
+                **getattr(widget, "api_params", {}),
+                "onload": "reCaptchaOnLoadCallback",
+                "render": "explicit",
+            }
+            domain = getattr(django_settings, "RECAPTCHA_DOMAIN", "www.google.com")
+            context["recaptcha_api_url"] = (
+                f"https://{domain}/recaptcha/api.js?{urlencode(api_params)}"
+            )
         if settings.frontend == "django_formset" and form is not None:
             context["use_django_formset"] = not any(
                 isinstance(field, (django_forms.FileField, MultipleUploadedFilesField))
+                for field in form.fields.values()
+            ) and not any(
+                isinstance(field, tuple(recaptcha.CAPTCHA_FIELDS.values()))
                 for field in form.fields.values()
             )
             if context["use_django_formset"]:

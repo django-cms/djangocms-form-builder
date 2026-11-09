@@ -152,7 +152,7 @@ function djangocms_form_builder_form(form) {
                 form.csrfToken = token;
                 return token;
             });
-        tokenPromise.then((csrfToken) => {
+        return tokenPromise.then((csrfToken) => {
             return submitForm(node, csrfToken ? { 'X-CSRFToken': csrfToken } : {});
         });
     }
@@ -168,15 +168,27 @@ function djangocms_form_builder_form(form) {
                     let gid = grecaptcha.render(recaptcha[0], {
                         "callback": (token) => {
                             form.getElementsByClassName("g-recaptcha-response")[0].value = token;
-                            post_ajax(form);
-                            grecaptcha.reset(gid);
+                            if (recaptcha[0].dataset.size === 'invisible') {
+                                post_ajax(form).finally(() => grecaptcha.reset(gid));
+                            }
                         },
                     });
                     if(!form.dataset.submitEvent) {
                         form.dataset.submitEvent = true;
                         form.addEventListener('submit', (event) => {
                             event.preventDefault();
-                            grecaptcha.execute(gid);
+                            if (recaptcha[0].dataset.size === 'invisible') {
+                                grecaptcha.execute(gid);
+                            } else if (grecaptcha.getResponse(gid)) {
+                                post_ajax(form).finally(() => grecaptcha.reset(gid));
+                            } else {
+                                const feedback = form.querySelector('.all-invalid');
+                                const message = document.createElement('li');
+                                message.textContent = form.dataset.captchaErrorMessage || 'Please complete the CAPTCHA.';
+                                feedback.querySelector('ul').replaceChildren(message);
+                                feedback.classList.remove('d-none');
+                                recaptcha[0].scrollIntoView({block: 'center'});
+                            }
                         });
                     }
                 }

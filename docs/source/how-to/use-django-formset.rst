@@ -57,6 +57,10 @@ endpoint. Valid submissions still execute the actions selected by the editor;
 invalid submissions return django-formset's ``422`` error response.
 The "Success message" action replaces the submitted form with its configured
 message. Redirect actions still navigate to their configured URL.
+Forms submit both by activating their submit button and by pressing Enter in a
+text field. Network and server failures show a message within the form, and a
+CSRF rejection asks the visitor to reload the page. Validation errors remain
+next to their fields. Prefixed registered Django forms are supported.
 
 The form plugin is not cached because the web component receives a request CSRF
 token in its markup.
@@ -74,6 +78,10 @@ to djangocms-form-builder's standard multipart frontend. Uploads, validation
 presets and storage lifecycle continue to work, but that whole form does not use
 django-formset's rendering or browser-side validation. Registered forms
 rendered through django-formset ignore django-crispy-forms helpers.
+
+Forms using Google reCAPTCHA or hCaptcha also use the standard frontend. These
+providers need their own browser initialization and token flow, which is not
+integrated with django-formset yet. ALTCHA continues to use django-formset.
 
 Native file support
 ===================

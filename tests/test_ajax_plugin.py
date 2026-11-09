@@ -910,6 +910,60 @@ class DjangoFormsetAjaxPluginTestCase(TestFixture, CMSTestCase):
         self.assertFalse(context["use_django_formset"])
         self.assertFalse(hasattr(context["form"], "form_id"))
 
+    def test_provider_captchas_use_existing_submission_frontend(self):
+        class ProviderCaptchaField(forms.CharField):
+            pass
+
+        form_plugin, field = self._create_form()
+        with (
+            mock.patch.dict(
+                "djangocms_form_builder.recaptcha.CAPTCHA_FIELDS",
+                {
+                    "v2-checkbox": ProviderCaptchaField,
+                    "v2-invisible": ProviderCaptchaField,
+                    "hcaptcha": ProviderCaptchaField,
+                },
+                clear=True,
+            ),
+            mock.patch(
+                "djangocms_form_builder.recaptcha.get_recaptcha_field",
+                return_value=ProviderCaptchaField(),
+            ),
+        ):
+            for provider in ("v2-checkbox", "v2-invisible", "hcaptcha"):
+                with self.subTest(provider=provider):
+                    form_plugin.captcha_widget = provider
+                    context = self._render_plugin_context(form_plugin, field)
+                    self.assertFalse(context["use_django_formset"])
+                    self.assertFalse(hasattr(context["form"], "form_id"))
+
+    @override_settings(RECAPTCHA_DOMAIN="www.recaptcha.net")
+    def test_captcha_fallback_preserves_api_parameters_and_domain(self):
+        class ProviderCaptchaField(forms.CharField):
+            pass
+
+        captcha_field = ProviderCaptchaField()
+        captcha_field.widget.api_params = {"hl": "de"}
+        form_plugin, field = self._create_form()
+        form_plugin.captcha_widget = "v2-checkbox"
+        with (
+            mock.patch.dict(
+                "djangocms_form_builder.recaptcha.CAPTCHA_FIELDS",
+                {"v2-checkbox": ProviderCaptchaField},
+            ),
+            mock.patch(
+                "djangocms_form_builder.recaptcha.get_recaptcha_field",
+                return_value=captcha_field,
+            ),
+        ):
+            context = self._render_plugin_context(form_plugin, field)
+
+        self.assertEqual(
+            context["recaptcha_api_url"],
+            "https://www.recaptcha.net/recaptcha/api.js?hl=de&"
+            "onload=reCaptchaOnLoadCallback&render=explicit",
+        )
+
     def test_json_submission_executes_actions_and_persists_data(self):
         form_plugin, _field = self._create_form(
             form_options={
@@ -1039,6 +1093,63 @@ class DjangoFormsetResponseTestCase(SimpleTestCase):
         first = self.plugin._get_formset_payload()
         self.assertIs(first, self.plugin._get_formset_payload())
         self.assertEqual(self.plugin.get_form_kwargs()["data"], {"message": "hello"})
+
+    def test_prefixed_registered_form_binds_local_json_field_names(self):
+        class ContactForm(forms.Form):
+            prefix = "contact"
+            message = forms.CharField()
+            choices = forms.MultipleChoiceField(choices=[("a", "A"), ("b", "B")])
+            date = forms.SplitDateTimeField(required=False)
+
+        self.plugin.request = RequestFactory().post(
+            "/form/",
+            data=json.dumps(
+                {
+                    "formset_data": {
+                        "message": "hello",
+                        "choices": ["a", "b"],
+                        "date_0": "2026-11-09",
+                        "date_1": "12:30",
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        with mock.patch.object(self.plugin, "get_form_class", return_value=ContactForm):
+            form = self.plugin.get_ajax_form()
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["message"], "hello")
+        self.assertEqual(form.cleaned_data["choices"], ["a", "b"])
+        self.assertEqual(form.cleaned_data["date"].hour, 12)
+
+    def test_registered_form_can_choose_prefix_in_constructor(self):
+        class ContactForm(forms.Form):
+            message = forms.CharField()
+
+            def __init__(self, **kwargs):
+                kwargs["prefix"] = "contact"
+                super().__init__(**kwargs)
+
+        with mock.patch.object(self.plugin, "get_form_class", return_value=ContactForm):
+            form = self.plugin.get_ajax_form()
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["message"], "hello")
+
+    def test_prefixed_multipart_submission_keeps_django_field_names(self):
+        class ContactForm(forms.Form):
+            prefix = "contact"
+            message = forms.CharField()
+
+        self.plugin.request = RequestFactory().post(
+            "/form/", data={"contact-message": "hello"}
+        )
+        with mock.patch.object(self.plugin, "get_form_class", return_value=ContactForm):
+            form = self.plugin.get_ajax_form()
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["message"], "hello")
 
     @mock.patch(
         "djangocms_form_builder.cms_plugins.ajax_plugins.render_to_string",
