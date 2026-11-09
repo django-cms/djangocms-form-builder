@@ -12,6 +12,7 @@ from django.http import QueryDict
 from djangocms_form_builder.actions import SaveToDBAction, get_registered_actions
 from djangocms_form_builder.cms_plugins.ajax_plugins import FormPlugin
 from djangocms_form_builder.entry_model import FormEntry
+from djangocms_form_builder.form_entry_data import serialize_cleaned_data_for_entry
 
 from .fixtures import TestFixture
 
@@ -38,7 +39,7 @@ class ActionTestCase(TestFixture, CMSTestCase):
             None,
         )
 
-    def _unique_upload_form(self, cleaned_data):
+    def _unique_upload_form(self, cleaned_data, entry_data=None):
         class UniqueUploadForm:
             class Meta:
                 options = {
@@ -46,6 +47,16 @@ class ActionTestCase(TestFixture, CMSTestCase):
                     "login_required": True,
                     "form_name": "unique-upload",
                 }
+
+            def get_entry_data(self):
+                # Mirror SimpleFrontendForm: serialize once (storing uploads),
+                # unless the test supplies a pre-serialized payload to control.
+                if entry_data is not None:
+                    return entry_data
+                return serialize_cleaned_data_for_entry(dict(self.cleaned_data))
+
+            def get_field_labels(self):
+                return {}
 
         form = UniqueUploadForm()
         form.cleaned_data = cleaned_data
@@ -82,6 +93,31 @@ class ActionTestCase(TestFixture, CMSTestCase):
         storage.delete.assert_not_called()
 
     @patch("djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE")
+    def test_unique_submission_removes_explicitly_cleared_upload(self, storage):
+        # An explicit ``False`` (clear checkbox) must not be mistaken for an
+        # empty optional input: the previous upload is removed, not preserved.
+        metadata = {
+            "_form_builder_file": True,
+            "filename": "old.pdf",
+            "name": "form_uploads/old.pdf",
+            "url": "/media/form_uploads/old.pdf",
+        }
+        entry = FormEntry.objects.create(
+            form_name="unique-upload",
+            form_user=self.superuser,
+            entry_data={"attachment": metadata},
+        )
+
+        SaveToDBAction().execute(
+            self._unique_upload_form({"attachment": False}),
+            self._authenticated_upload_request(),
+        )
+
+        entry.refresh_from_db()
+        self.assertEqual(entry.entry_data["attachment"], False)
+        storage.delete.assert_called_once_with("form_uploads/old.pdf")
+
+    @patch("djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE")
     def test_unique_submission_deletes_replaced_upload(self, storage):
         old_metadata = {
             "_form_builder_file": True,
@@ -108,11 +144,9 @@ class ActionTestCase(TestFixture, CMSTestCase):
         storage.delete.assert_called_once_with("form_uploads/old.pdf")
 
     @patch("djangocms_form_builder.actions.delete_stored_files")
-    @patch("djangocms_form_builder.actions.serialize_cleaned_data_for_entry")
-    def test_create_failure_cleans_up_new_uploads(self, serialize, delete_files):
+    def test_create_failure_cleans_up_new_uploads(self, delete_files):
         serialized = {"attachment": {"name": "form_uploads/new.pdf"}}
-        serialize.return_value = serialized
-        form = self._unique_upload_form({"attachment": object()})
+        form = self._unique_upload_form({"attachment": object()}, entry_data=serialized)
         form.Meta.options["unique"] = False
 
         with patch.object(FormEntry.objects, "create", side_effect=OSError("db down")):
@@ -125,9 +159,8 @@ class ActionTestCase(TestFixture, CMSTestCase):
         delete_files.assert_called_once_with(serialized)
 
     @patch("djangocms_form_builder.actions.delete_stored_files")
-    @patch("djangocms_form_builder.actions.serialize_cleaned_data_for_entry")
     def test_update_failure_preserves_previous_upload_during_cleanup(
-        self, serialize, delete_files
+        self, delete_files
     ):
         old_metadata = {
             "_form_builder_file": True,
@@ -148,14 +181,15 @@ class ActionTestCase(TestFixture, CMSTestCase):
                 "url": "/media/form_uploads/new.pdf",
             }
         }
-        serialize.return_value = serialized
 
         with patch.object(
             FormEntry.objects, "update_or_create", side_effect=OSError("db down")
         ):
             with self.assertRaisesMessage(OSError, "db down"):
                 SaveToDBAction().execute(
-                    self._unique_upload_form({"attachment": object()}),
+                    self._unique_upload_form(
+                        {"attachment": object()}, entry_data=serialized
+                    ),
                     self._authenticated_upload_request(),
                 )
 
@@ -164,10 +198,7 @@ class ActionTestCase(TestFixture, CMSTestCase):
         )
 
     @patch("djangocms_form_builder.actions.delete_stored_files")
-    @patch("djangocms_form_builder.actions.serialize_cleaned_data_for_entry")
-    def test_duplicate_recovery_failure_cleans_up_new_uploads(
-        self, serialize, delete_files
-    ):
+    def test_duplicate_recovery_failure_cleans_up_new_uploads(self, delete_files):
         FormEntry.objects.create(
             form_name="unique-upload",
             form_user=self.superuser,
@@ -183,7 +214,6 @@ class ActionTestCase(TestFixture, CMSTestCase):
         )
         cleanup_queryset = Mock()
         serialized = {"attachment": {"name": "form_uploads/new.pdf"}}
-        serialize.return_value = serialized
 
         with (
             patch.object(
@@ -200,7 +230,9 @@ class ActionTestCase(TestFixture, CMSTestCase):
         ):
             with self.assertRaisesMessage(OSError, "db down"):
                 SaveToDBAction().execute(
-                    self._unique_upload_form({"attachment": object()}),
+                    self._unique_upload_form(
+                        {"attachment": object()}, entry_data=serialized
+                    ),
                     self._authenticated_upload_request(),
                 )
 

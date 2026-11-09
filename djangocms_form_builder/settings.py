@@ -103,6 +103,14 @@ frontend = getattr(
 framework = frontend
 theme = getattr(django_settings, "DJANGOCMS_FRONTEND_THEME", "djangocms_frontend")
 
+#: Label of the default submit button rendered when a form does not contain its
+#: own "Submit button" plugin. Set this to ``None`` to render no default button
+#: at all, which effectively requires every form to include a custom submit
+#: button plugin.
+DEFAULT_SUBMIT_LABEL = getattr(
+    django_settings, "DJANGOCMS_FORM_BUILDER_DEFAULT_SUBMIT_LABEL", _("Submit")
+)
+
 DEFAULT_SPACER_SIZE_CHOICES = (("mb-3", "Default"),)
 TAG_CHOICES = (("div", "div"),)
 FORM_TEMPLATE = getattr(

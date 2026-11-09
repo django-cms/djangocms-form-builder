@@ -208,6 +208,54 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         self.assertIn("test-container", response.content.decode())
         self.assertNotIn("<django-formset", response.content.decode())
 
+    def _render_bare_form(self):
+        """Render a form plugin that has a field but no Submit button plugin."""
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="no-submit-form",
+        )
+        char_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.CharFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={"field_name": "full_name", "field_label": "Full Name"},
+        )
+        char_field.initialize_from_form()
+        self.publish(self.page, self.language)
+        with self.login_user_context(self.superuser):
+            response = self.client.get(self.request_url)
+        self.assertEqual(response.status_code, 200)
+        return response.content.decode()
+
+    def test_default_submit_button_uses_configured_label(self):
+        """The default submit button label comes from the setting."""
+        with patch.object(builder_settings, "DEFAULT_SUBMIT_LABEL", "Send it off"):
+            content = self._render_bare_form()
+        self.assertIn('type="submit"', content)
+        if builder_settings.frontend == "django_formset":
+            self.assertRegex(content, r">\s*Send it off\s*</button>")
+        else:
+            self.assertIn('value="Send it off"', content)
+
+    def test_default_submit_button_label_defaults_to_submit(self):
+        """Without an override the default button reads "Submit"."""
+        content = self._render_bare_form()
+        self.assertIn('type="submit"', content)
+        if builder_settings.frontend == "django_formset":
+            self.assertRegex(content, r">\s*Submit\s*</button>")
+        else:
+            self.assertIn('value="Submit"', content)
+
+    def test_no_default_submit_button_when_label_is_none(self):
+        """``None`` renders no default button, requiring a custom submit plugin."""
+        with patch.object(builder_settings, "DEFAULT_SUBMIT_LABEL", None):
+            content = self._render_bare_form()
+        self.assertNotIn('type="submit"', content)
+
     def test_render_form_with_select_field(self):
         """Test rendering form with Select field and choices"""
         form_plugin = add_plugin(

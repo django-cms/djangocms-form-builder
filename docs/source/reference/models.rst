@@ -67,14 +67,12 @@ Helper methods:
    The keys of ``entry_data`` that hold uploads.
 
 ``get_mail_data()``
-   The entry as a list of ``{"label", "value"}`` - or ``{"label", "files"}`` for
-   uploads - as used by the mail templates.
-
-   .. warning::
-
-      Only a *list* of files is handled. An entry holding a single **File
-      upload** raises ``TypeError`` here, which breaks the *Send email* action
-      for such forms.
+   The entry as a list of ``{"name", "label", "value"}`` - or ``{"name",
+   "label", "files"}`` for uploads - as used by the mail templates. ``name`` is
+   the technical field name and ``label`` the configured human-readable label,
+   which falls back to ``name`` when the entry was not built from a live
+   submission. Both a single **File upload** and a **Multiple File upload** are
+   handled.
 
 ``get_admin_form()``, ``get_admin_fieldsets()``
    Build the admin form for this particular entry. Strings, lists, booleans,

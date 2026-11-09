@@ -59,6 +59,10 @@ class FormEntry(models.Model):
     entry_created_at = models.DateTimeField(auto_now_add=True)
     entry_updated_at = models.DateTimeField(auto_now=True)
 
+    #: Optional, non-persisted ``{field_name: label}`` map. Set by
+    #: :meth:`from_submission` so emails can show human-readable field labels.
+    field_labels = None
+
     @staticmethod
     def get_file_entry_items(value):
         """
@@ -135,29 +139,65 @@ class FormEntry(models.Model):
         )
         return type("DynamicFormEntryForm", (EntangledModelForm,), fields)
 
+    @classmethod
+    def from_submission(cls, form, request=None):
+        """Build an unsaved entry straight from a submitted form.
+
+        The entry carries the form's serialized data (uploads stored once,
+        shared with the other actions) and the human-readable field labels, so
+        :meth:`get_mail_data` can show verbose labels in submission emails
+        without a database round-trip.
+
+        The submission's ``form_name`` (and, when ``request`` is given, its
+        ``form_user``) are populated too, so custom mail templates can read the
+        same metadata they used to get from a stored entry. The entry is not
+        saved, so ``pk`` and the timestamps remain unset.
+        """
+        from .helpers import get_option
+
+        entry = cls(
+            form_name=get_option(form, "form_name", "") or "",
+            entry_data=form.get_entry_data(),
+        )
+        if request is not None and not request.user.is_anonymous:
+            entry.form_user = request.user
+        entry.field_labels = form.get_field_labels()
+        return entry
+
     def get_mail_data(self):
         """
         Format json to display its content in an email.
+
+        When the entry was built from a submitted form (see
+        :meth:`from_submission`), the configured human-readable field labels are
+        used; otherwise the technical field name is used as a fallback.
         """
+        labels = getattr(self, "field_labels", None) or {}
         data = []
 
-        for label, value in self.entry_data.items():
-            if _is_file_entry_value(value):
+        for name, value in self.entry_data.items():
+            label = labels.get(name, name)
+            # Normalize so a single File upload (stored as one dict) is handled
+            # just like a Multiple File upload (stored as a list of dicts).
+            files = self.get_file_entry_items(value)
+            if files:
                 data.append(
                     {
+                        "name": name,
                         "label": label,
                         "files": [
                             {
                                 "filename": f["filename"],
                                 "url": f["url"],
                             }
-                            for f in value
+                            for f in files
                         ],
                     }
                 )
             else:
                 data.append(
                     {
+                        "name": name,
                         "label": label,
                         "value": value,
                     }
