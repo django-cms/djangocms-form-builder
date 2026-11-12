@@ -1,5 +1,6 @@
 import json
-from unittest import mock, skipIf
+import tempfile
+from unittest import mock, skipIf, skipUnless
 from urllib.parse import urlencode
 
 from cms import __version__ as cms_version
@@ -7,16 +8,26 @@ from cms.api import add_plugin
 from cms.test_utils.testcases import CMSTestCase
 from django import forms
 from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.files.storage import FileSystemStorage
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import Http404, HttpResponse, HttpResponseNotAllowed, JsonResponse
-from django.test import RequestFactory, override_settings
+from django.template import Context
+from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.urls import reverse
 
 from djangocms_form_builder import cms_plugins
+from djangocms_form_builder import settings as builder_settings
+from djangocms_form_builder.actions import SAVE_TO_DB_ACTION, get_registered_actions
+from djangocms_form_builder.file_validation import FileValidationError
 from djangocms_form_builder.models import FormEntry
 from djangocms_form_builder.views import AjaxView, register_form_view
 from tests.helpers import make_valid_altcha_payload
 
 from .fixtures import TestFixture
+
+
+def reject_upload(_uploaded_file, *, user, request, field_name):
+    raise FileValidationError("Rejected by the endpoint test.")
 
 
 class AjaxViewTestCase(TestFixture, CMSTestCase):
@@ -307,8 +318,8 @@ class FormEntryCreationTestCase(TestFixture, CMSTestCase):
             language=self.language,
             form_selection="",
             form_name="entry-test",
-            form_actions='["save_to_database"]',  # Must be valid JSON
-            action_parameters={"save_to_database": {}},
+            form_actions=json.dumps([SAVE_TO_DB_ACTION]),
+            action_parameters={SAVE_TO_DB_ACTION: {}},
         )
 
         char_field = add_plugin(
@@ -355,23 +366,11 @@ class FormEntryCreationTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 200)
 
-        # Check if a FormEntry was created
-        new_count = FormEntry.objects.count()
-
-        # Note: FormEntry creation depends on action configuration
-        # If no entry is created, it means the action isn't properly configured
-        if new_count > initial_count:
-            self.assertEqual(new_count, initial_count + 1)
-
-            # Verify the entry data
-            entry = FormEntry.objects.latest("entry_created_at")
-            self.assertEqual(entry.form_name, "entry-test")
-            self.assertEqual(entry.entry_data.get("full_name"), "John Doe")
-            self.assertEqual(entry.entry_data.get("email"), "john@example.com")
-        else:
-            # If FormEntry wasn't created, at least verify the response was successful
-            json_data = response.json()
-            self.assertIn("result", json_data)
+        self.assertEqual(FormEntry.objects.count(), initial_count + 1)
+        entry = FormEntry.objects.latest("entry_created_at")
+        self.assertEqual(entry.form_name, "entry-test")
+        self.assertEqual(entry.entry_data.get("full_name"), "John Doe")
+        self.assertEqual(entry.entry_data.get("email"), "john@example.com")
 
     def test_form_entry_not_created_on_invalid_submission(self):
         """Test that FormEntry is NOT created when form validation fails"""
@@ -381,7 +380,7 @@ class FormEntryCreationTestCase(TestFixture, CMSTestCase):
             language=self.language,
             form_selection="",
             form_name="no-entry-test",
-            form_actions='["save_to_database"]',  # Must be valid JSON
+            form_actions=json.dumps([SAVE_TO_DB_ACTION]),
         )
 
         email_field = add_plugin(
@@ -415,6 +414,181 @@ class FormEntryCreationTestCase(TestFixture, CMSTestCase):
         # No new FormEntry should be created
         new_count = FormEntry.objects.count()
         self.assertEqual(new_count, initial_count)
+
+    def _create_upload_form(self, plugin_type, field_name, **config):
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name=f"{field_name}-entry-test",
+            form_actions=json.dumps([SAVE_TO_DB_ACTION]),
+            action_parameters={SAVE_TO_DB_ACTION: {}},
+            captcha_widget="",
+        )
+        field_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=plugin_type,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": field_name,
+                "field_label": field_name.title(),
+                "field_required": True,
+                **config,
+            },
+        )
+        field_plugin.initialize_from_form()
+        self.publish(self.page, self.language)
+        return form_plugin
+
+    def test_ajax_submission_stores_single_uploaded_file(self):
+        form_plugin = self._create_upload_form("FileFieldPlugin", "attachment")
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with tempfile.TemporaryDirectory() as upload_root:
+            storage = FileSystemStorage(location=upload_root, base_url="/uploads/")
+            with (
+                mock.patch(
+                    "djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE",
+                    storage,
+                ),
+                self.login_user_context(self.superuser),
+            ):
+                response = self.client.post(
+                    url,
+                    data={
+                        "attachment": SimpleUploadedFile(
+                            "notes.txt", b"uploaded through ajax", "text/plain"
+                        )
+                    },
+                    headers={"accept": "application/json"},
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["result"], "success")
+                entry = FormEntry.objects.get(form_name="attachment-entry-test")
+                metadata = entry.entry_data["attachment"]
+                self.assertTrue(metadata["_form_builder_file"])
+                self.assertEqual(metadata["filename"], "notes.txt")
+                self.assertEqual(metadata["url"], f"/uploads/{metadata['name']}")
+                with storage.open(metadata["name"]) as stored:
+                    self.assertEqual(stored.read(), b"uploaded through ajax")
+
+                stored_name = metadata["name"]
+                entry.delete()
+                self.assertFalse(storage.exists(stored_name))
+
+    def test_ajax_submission_stores_multiple_uploaded_files(self):
+        form_plugin = self._create_upload_form(
+            "MultipleFileFieldPlugin", "attachments", max_files=2
+        )
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with tempfile.TemporaryDirectory() as upload_root:
+            storage = FileSystemStorage(location=upload_root, base_url="/uploads/")
+            with (
+                mock.patch(
+                    "djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE",
+                    storage,
+                ),
+                self.login_user_context(self.superuser),
+            ):
+                response = self.client.post(
+                    url,
+                    data={
+                        "attachments": [
+                            SimpleUploadedFile("one.txt", b"one", "text/plain"),
+                            SimpleUploadedFile("two.txt", b"two", "text/plain"),
+                        ]
+                    },
+                    headers={"accept": "application/json"},
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["result"], "success")
+                entry = FormEntry.objects.get(form_name="attachments-entry-test")
+                metadata = entry.entry_data["attachments"]
+                self.assertEqual(
+                    [item["filename"] for item in metadata], ["one.txt", "two.txt"]
+                )
+                self.assertTrue(all(item["_form_builder_file"] for item in metadata))
+                stored_contents = []
+                for item in metadata:
+                    with storage.open(item["name"]) as stored:
+                        stored_contents.append(stored.read())
+                self.assertEqual(stored_contents, [b"one", b"two"])
+
+                stored_names = [item["name"] for item in metadata]
+                entry.delete()
+                self.assertFalse(any(storage.exists(name) for name in stored_names))
+
+    def test_ajax_rejects_too_many_files_without_creating_an_entry(self):
+        form_plugin = self._create_upload_form(
+            "MultipleFileFieldPlugin", "attachments", max_files=1
+        )
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        response = self.client.post(
+            url,
+            data={
+                "attachments": [
+                    SimpleUploadedFile("one.txt", b"one", "text/plain"),
+                    SimpleUploadedFile("two.txt", b"two", "text/plain"),
+                ]
+            },
+            headers={"accept": "application/json"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["result"], "invalid form")
+        self.assertTrue(
+            any(
+                key.startswith("attachments") for key in response.json()["field_errors"]
+            )
+        )
+        self.assertFalse(
+            FormEntry.objects.filter(form_name="attachments-entry-test").exists()
+        )
+
+    @override_settings(
+        DJANGOCMS_FORM_BUILDER_FILE_VALIDATION_PRESETS={
+            "reject": {
+                "label": "Reject",
+                "validate": f"{__name__}.reject_upload",
+            }
+        }
+    )
+    def test_ajax_upload_validation_failure_does_not_store_the_file(self):
+        form_plugin = self._create_upload_form(
+            "FileFieldPlugin",
+            "attachment",
+            field_file_validation_presets=["reject"],
+        )
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with mock.patch(
+            "djangocms_form_builder.form_entry_data.FILE_FIELD_STORAGE"
+        ) as storage:
+            response = self.client.post(
+                url,
+                data={
+                    "attachment": SimpleUploadedFile(
+                        "rejected.txt", b"reject me", "text/plain"
+                    )
+                },
+                headers={"accept": "application/json"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["result"], "invalid form")
+        self.assertTrue(
+            any(key.startswith("attachment") for key in response.json()["field_errors"])
+        )
+        storage.save.assert_not_called()
+        self.assertFalse(
+            FormEntry.objects.filter(form_name="attachment-entry-test").exists()
+        )
 
 
 class RegisterFormViewTestCase(CMSTestCase):
@@ -615,6 +789,478 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         self.assertIn("result", json_data)
         self.assertIn(json_data["result"], ["success", "error"])
         self.assertIn("field_errors", json_data)
+
+    def test_django_formset_json_submission(self):
+        form_plugin = self._create_simple_form_plugin("formset-json-post")
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data=json.dumps({"formset_data": {"simple_field": "posted value"}}),
+                content_type="application/json",
+                headers={
+                    "accept": "application/json",
+                    "referer": self.request_url,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"success_url": self.request_url})
+
+    def test_django_formset_validation_errors(self):
+        form_plugin = self._create_simple_form_plugin("formset-json-invalid")
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data=json.dumps({"formset_data": {}}),
+                content_type="application/json",
+                headers={"accept": "application/json"},
+            )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("simple_field", response.json())
+
+
+class DjangoFormsetAjaxPluginTestCase(TestFixture, CMSTestCase):
+    def setUp(self):
+        super().setUp()
+        # The plugin reads the frontend at render time, so these tests do not
+        # depend on the frontend the test run was started with.
+        patcher = mock.patch.object(builder_settings, "frontend", "django_formset")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _create_form(self, plugin_type="CharFieldPlugin", **field_config):
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="django-formset-ajax",
+            captcha_widget="",
+            **field_config.pop("form_options", {}),
+        )
+        field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=plugin_type,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": "message",
+                "field_label": "Message",
+                "field_required": True,
+                **field_config,
+            },
+        )
+        field.initialize_from_form()
+        return form_plugin, field
+
+    def _render_plugin_context(self, form_plugin, field):
+        plugin = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        plugin.instance = form_plugin
+        form_plugin.child_plugin_instances = [field]
+        field.child_plugin_instances = []
+        return plugin.render(
+            Context({"request": self.get_request("/")}),
+            form_plugin,
+            self.placeholder,
+        )
+
+    def test_render_context_enables_django_formset_submission(self):
+        form_plugin, field = self._create_form()
+
+        context = self._render_plugin_context(form_plugin, field)
+
+        self.assertTrue(context["use_django_formset"])
+        self.assertEqual(context["form"].form_id, f"form{context['uid']}")
+        self.assertTrue(context["csrf_token"])
+
+    @skipUnless(
+        builder_settings.frontend == "django_formset",
+        "FormPlugin.cache is evaluated at import time",
+    )
+    def test_plugin_is_not_cached_with_django_formset(self):
+        self.assertFalse(cms_plugins.FormPlugin.cache)
+
+    def test_render_context_uses_multipart_fallback_for_file_fields(self):
+        form_plugin, field = self._create_form(
+            plugin_type="FileFieldPlugin",
+            field_file_validation_presets=[],
+        )
+
+        context = self._render_plugin_context(form_plugin, field)
+
+        self.assertFalse(context["use_django_formset"])
+        self.assertFalse(hasattr(context["form"], "form_id"))
+        self.assertNotIn("csrf_token", context)
+
+    def test_render_context_uses_multipart_fallback_for_multiple_files(self):
+        form_plugin, field = self._create_form(
+            plugin_type="MultipleFileFieldPlugin",
+            field_file_validation_presets=[],
+        )
+
+        context = self._render_plugin_context(form_plugin, field)
+
+        self.assertFalse(context["use_django_formset"])
+        self.assertFalse(hasattr(context["form"], "form_id"))
+
+    def test_provider_captchas_use_existing_submission_frontend(self):
+        class ProviderCaptchaField(forms.CharField):
+            pass
+
+        form_plugin, field = self._create_form()
+        with (
+            mock.patch.dict(
+                "djangocms_form_builder.recaptcha.CAPTCHA_FIELDS",
+                {
+                    "v2-checkbox": ProviderCaptchaField,
+                    "v2-invisible": ProviderCaptchaField,
+                    "hcaptcha": ProviderCaptchaField,
+                },
+                clear=True,
+            ),
+            mock.patch(
+                "djangocms_form_builder.recaptcha.get_recaptcha_field",
+                return_value=ProviderCaptchaField(),
+            ),
+        ):
+            for provider in ("v2-checkbox", "v2-invisible", "hcaptcha"):
+                with self.subTest(provider=provider):
+                    form_plugin.captcha_widget = provider
+                    context = self._render_plugin_context(form_plugin, field)
+                    self.assertFalse(context["use_django_formset"])
+                    self.assertFalse(hasattr(context["form"], "form_id"))
+
+    @override_settings(RECAPTCHA_DOMAIN="www.recaptcha.net")
+    def test_captcha_fallback_preserves_api_parameters_and_domain(self):
+        class ProviderCaptchaField(forms.CharField):
+            pass
+
+        captcha_field = ProviderCaptchaField()
+        captcha_field.widget.api_params = {"hl": "de"}
+        form_plugin, field = self._create_form()
+        form_plugin.captcha_widget = "v2-checkbox"
+        with (
+            mock.patch.dict(
+                "djangocms_form_builder.recaptcha.CAPTCHA_FIELDS",
+                {"v2-checkbox": ProviderCaptchaField},
+            ),
+            mock.patch(
+                "djangocms_form_builder.recaptcha.get_recaptcha_field",
+                return_value=captcha_field,
+            ),
+        ):
+            context = self._render_plugin_context(form_plugin, field)
+
+        self.assertEqual(
+            context["recaptcha_api_url"],
+            "https://www.recaptcha.net/recaptcha/api.js?hl=de&"
+            "onload=reCaptchaOnLoadCallback&render=explicit",
+        )
+
+    def test_json_submission_executes_actions_and_persists_data(self):
+        form_plugin, _field = self._create_form(
+            form_options={
+                "form_actions": json.dumps([SAVE_TO_DB_ACTION]),
+                "action_parameters": {SAVE_TO_DB_ACTION: {}},
+            }
+        )
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data=json.dumps({"formset_data": {"message": "Stored value"}}),
+                content_type="application/json",
+                headers={
+                    "accept": "application/json",
+                    "referer": self.request_url,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"success_url": self.request_url})
+        entry = FormEntry.objects.get(form_name="django-formset-ajax")
+        self.assertEqual(entry.entry_data["message"], "Stored value")
+
+    def test_json_submission_returns_success_message_content(self):
+        success_action = next(
+            key
+            for key, label in get_registered_actions()
+            if str(label) == "Success message"
+        )
+        form_plugin, _field = self._create_form(
+            form_options={
+                "form_actions": json.dumps([success_action]),
+                "action_parameters": {
+                    "submitmessage_message": "<p>Thanks for writing!</p>"
+                },
+            }
+        )
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        with self.login_user_context(self.superuser):
+            response = self.client.post(
+                url,
+                data=json.dumps({"formset_data": {"message": "Hello"}}),
+                content_type="application/json",
+                headers={"accept": "application/json", "referer": self.request_url},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["content"].strip(), "<p>Thanks for writing!</p>"
+        )
+        self.assertEqual(response.json()["success_url"], self.request_url)
+
+    def test_malformed_formset_json_is_rejected(self):
+        form_plugin, _field = self._create_form()
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        for body in ('{"formset_data":', "{}", '{"formset_data": []}', b"\xff"):
+            with self.subTest(body=body), self.login_user_context(self.superuser):
+                response = self.client.post(
+                    url,
+                    data=body,
+                    content_type="application/json",
+                    headers={"accept": "application/json"},
+                )
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("error", response.json())
+
+    def test_altcha_uses_existing_submission_frontend(self):
+        # ALTCHA keeps its solved payload in an input inside <altcha-widget>,
+        # which django-formset does not collect.
+        form_plugin, field = self._create_form()
+        form_plugin.captcha_widget = "altcha"
+
+        context = self._render_plugin_context(form_plugin, field)
+
+        self.assertIn("captcha_field", context["form"].fields)
+        self.assertFalse(context["use_django_formset"])
+        self.assertFalse(hasattr(context["form"], "form_id"))
+
+    def test_non_string_formset_values_do_not_crash_validation(self):
+        form_plugin, _field = self._create_form(plugin_type="DateFieldPlugin")
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        for value in (5, 1.5, True, None, [5], ["2026-11-12", 3]):
+            with self.subTest(value=value), self.login_user_context(self.superuser):
+                response = self.client.post(
+                    url,
+                    data=json.dumps({"formset_data": {"message": value}}),
+                    content_type="application/json",
+                    headers={"accept": "application/json"},
+                )
+
+                self.assertEqual(response.status_code, 422)
+                self.assertIn("message", response.json())
+
+    def test_structured_formset_values_are_rejected(self):
+        form_plugin, _field = self._create_form(plugin_type="DateFieldPlugin")
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+        deeply_nested = (
+            '{"formset_data": {"message": ' + "[" * 100_000 + "]" * 100_000 + "}}"
+        )
+
+        for body in (
+            json.dumps({"formset_data": {"message": {"day": 1}}}),
+            json.dumps({"formset_data": {"message": [["2026-11-12"]]}}),
+            json.dumps({"formset_data": {"message": [{"day": 1}]}}),
+            deeply_nested,
+        ):
+            with (
+                self.subTest(body=body[:40]),
+                self.login_user_context(self.superuser),
+            ):
+                response = self.client.post(
+                    url,
+                    data=body,
+                    content_type="application/json",
+                    headers={"accept": "application/json"},
+                )
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("error", response.json())
+
+    def test_formset_non_field_validation_error(self):
+        form_plugin, _field = self._create_form(
+            form_options={"form_login_required": True}
+        )
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        response = self.client.post(
+            url,
+            data=json.dumps({"formset_data": {"message": "hello"}}),
+            content_type="application/json",
+            headers={"accept": "application/json"},
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("Please login", response.json()["__all__"][0])
+
+
+class DjangoFormsetResponseTestCase(SimpleTestCase):
+    def setUp(self):
+        self.plugin = cms_plugins.FormPlugin(
+            model=cms_plugins.FormPlugin.model, admin_site=None
+        )
+        self.plugin.request = RequestFactory().post(
+            "/form/",
+            data=json.dumps({"formset_data": {"message": "hello"}}),
+            content_type="application/json",
+            HTTP_REFERER="/original/",
+        )
+
+    def test_formset_redirect_uses_explicit_url(self):
+        response = self.plugin.json_return([], "success", "/done/", "<p>Done</p>")
+
+        self.assertEqual(json.loads(response.content), {"success_url": "/done/"})
+
+    def test_formset_error_does_not_claim_success(self):
+        response = self.plugin.json_return(
+            ["No content in response form"], "error", "", ""
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn(
+            "No content in response form", json.loads(response.content)["__all__"]
+        )
+
+    def test_formset_error_without_details_is_still_an_error(self):
+        response = self.plugin.json_return([], "error", "", "")
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(json.loads(response.content), {"__all__": ["error"]})
+
+    def test_formset_payload_is_cached_on_request(self):
+        first = self.plugin._get_formset_payload()
+        self.assertIs(first, self.plugin._get_formset_payload())
+        self.assertEqual(
+            self.plugin.get_form_kwargs()["data"].dict(), {"message": "hello"}
+        )
+
+    def test_formset_data_is_normalized_like_a_form_post(self):
+        self.plugin.request = RequestFactory().post(
+            "/form/",
+            data=json.dumps(
+                {
+                    "formset_data": {
+                        "text": "hello",
+                        "number": 5,
+                        "flag": True,
+                        "empty": None,
+                        "choices": ["a", 2],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+
+        data = self.plugin.get_form_kwargs()["data"]
+
+        self.assertEqual(data["text"], "hello")
+        self.assertEqual(data["number"], "5")
+        self.assertEqual(data["flag"], "True")
+        self.assertIsNone(data["empty"])
+        self.assertEqual(data.getlist("choices"), ["a", "2"])
+
+    def test_prefixed_registered_form_binds_local_json_field_names(self):
+        class ContactForm(forms.Form):
+            prefix = "contact"
+            message = forms.CharField()
+            choices = forms.MultipleChoiceField(choices=[("a", "A"), ("b", "B")])
+            date = forms.SplitDateTimeField(required=False)
+
+        self.plugin.request = RequestFactory().post(
+            "/form/",
+            data=json.dumps(
+                {
+                    "formset_data": {
+                        "message": "hello",
+                        "choices": ["a", "b"],
+                        "date_0": "2026-11-09",
+                        "date_1": "12:30",
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        with mock.patch.object(self.plugin, "get_form_class", return_value=ContactForm):
+            form = self.plugin.get_ajax_form()
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["message"], "hello")
+        self.assertEqual(form.cleaned_data["choices"], ["a", "b"])
+        self.assertEqual(form.cleaned_data["date"].hour, 12)
+
+    def test_registered_form_can_choose_prefix_in_constructor(self):
+        class ContactForm(forms.Form):
+            message = forms.CharField()
+
+            def __init__(self, **kwargs):
+                kwargs["prefix"] = "contact"
+                super().__init__(**kwargs)
+
+        with mock.patch.object(self.plugin, "get_form_class", return_value=ContactForm):
+            form = self.plugin.get_ajax_form()
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["message"], "hello")
+
+    def test_prefixed_multipart_submission_keeps_django_field_names(self):
+        class ContactForm(forms.Form):
+            prefix = "contact"
+            message = forms.CharField()
+
+        self.plugin.request = RequestFactory().post(
+            "/form/", data={"contact-message": "hello"}
+        )
+        with mock.patch.object(self.plugin, "get_form_class", return_value=ContactForm):
+            form = self.plugin.get_ajax_form()
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["message"], "hello")
+
+    @mock.patch(
+        "djangocms_form_builder.cms_plugins.ajax_plugins.render_to_string",
+        return_value="<p>Done</p>",
+    )
+    def test_formset_success_template_receives_submitted_data(self, render):
+        class SuccessForm(forms.Form):
+            slug = "thanks"
+
+            class Meta:
+                options = {"render_success_thanks": "thanks.html"}
+
+            def get_success_context_thanks(self, request, instance, form):
+                return {"message": "Done"}
+
+        response = self.plugin.form_valid(SuccessForm(data={"message": "hello"}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content),
+            {"success_url": "/original/", "content": "<p>Done</p>"},
+        )
+        self.assertEqual(render.call_args.args[0], "thanks.html")
+        self.assertEqual(render.call_args.args[1]["get_str"], "message=hello")
+        self.assertEqual(render.call_args.args[1]["message"], "Done")
 
 
 @skipIf(cms_version < "4", "Form plugin tests require django CMS 4 or higher")

@@ -61,11 +61,15 @@ they work in your own templates too:
 
 See :doc:`../reference/template-tags` for the full list.
 
-Use another CSS framework
-=========================
+Choose a frontend
+=================
 
-``DJANGOCMS_FRONTEND_FRAMEWORK`` (default ``"bootstrap5"``) selects both the
-template directory and the map from widget class to CSS classes.
+``DJANGOCMS_FORM_BUILDER_FRONTEND`` selects the templates and widget rendering.
+It defaults to ``DJANGOCMS_FRONTEND_FRAMEWORK``, or ``"bootstrap5"`` when that
+setting is absent.
+
+Set it to ``"django_formset"`` to use the optional django-formset renderer and
+web component. See :doc:`use-django-formset`.
 
 The package ships templates for Bootstrap 5 only. It also contains an attribute
 map for Foundation 6, but no templates to go with it: pointing the setting at

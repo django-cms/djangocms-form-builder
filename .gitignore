@@ -26,7 +26,6 @@ venv/
 .sass-cache
 *.css.map
 npm-debug.log
-package-lock.json
 
 local.sqlite
 /docs/_build/
@@ -38,3 +37,9 @@ local.sqlite
 .history/
 htmlcov/
 docs/_build/
+
+# Browser tests
+node_modules/
+tests/browser/.generated/
+playwright-report/
+test-results/

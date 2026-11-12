@@ -1,0 +1,13 @@
+{% load form_builder_tags %}{% spaceless %}
+    {% if form_field|stringformat:"s" == form_field %}
+        {% render_formset_widget form form_field %}
+    {% else %}
+        <div class="row">
+            {% for form_field in form_field %}
+                <div class="col">
+                    {% include "djangocms_form_builder/django_formset/render/field.html" with form=form form_field=form_field %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endspaceless %}

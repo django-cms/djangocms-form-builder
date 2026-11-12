@@ -8,6 +8,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.core import mail
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.template import TemplateDoesNotExist
 from django.test import SimpleTestCase, override_settings
 from django.utils.safestring import mark_safe
 
@@ -113,6 +114,49 @@ class ConfirmationMailActionTests(CMSTestCase):
         self.assertEqual(
             mail.outbox[0].body.strip(), "HTML only body for guest@example.com"
         )
+
+    def test_skipped_when_the_subject_template_is_missing(self):
+        with (
+            patch.object(
+                actions_module,
+                "render_to_string",
+                side_effect=TemplateDoesNotExist("subject.txt"),
+            ),
+            self.assertLogs("djangocms_form_builder.actions", "ERROR") as logs,
+        ):
+            self.assertEqual(self.execute(), 0)
+
+        self.assertIn("has no subject", logs.output[0])
+        self.assertEqual(mail.outbox, [])
+
+    def test_skipped_when_both_body_templates_are_missing(self):
+        def render(template_name, _context):
+            if template_name.endswith("subject.txt"):
+                return "Subject"
+            raise TemplateDoesNotExist(template_name)
+
+        with (
+            patch.object(actions_module, "render_to_string", side_effect=render),
+            self.assertLogs("djangocms_form_builder.actions", "ERROR") as logs,
+        ):
+            self.assertEqual(self.execute(), 0)
+
+        self.assertIn("has no mail body", logs.output[0])
+        self.assertEqual(mail.outbox, [])
+
+    def test_missing_html_template_still_sends_plain_text_mail(self):
+        def render(template_name, _context):
+            if template_name.endswith("subject.txt"):
+                return "Subject"
+            if template_name.endswith("mail.txt"):
+                return "Plain text body"
+            raise TemplateDoesNotExist(template_name)
+
+        with patch.object(actions_module, "render_to_string", side_effect=render):
+            self.assertEqual(self.execute(), 1)
+
+        self.assertEqual(mail.outbox[0].body, "Plain text body")
+        self.assertEqual(mail.outbox[0].alternatives, [])
 
     def test_skipped_without_an_email_field(self):
         form = FakeForm(

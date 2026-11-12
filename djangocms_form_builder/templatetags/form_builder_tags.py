@@ -5,7 +5,7 @@ from django.utils.html import conditional_escape, mark_safe
 
 from .. import constants, recaptcha
 from ..helpers import get_option
-from ..settings import FORM_TEMPLATE
+from ..settings import FORM_TEMPLATE, frontend
 
 register = template.Library()
 attr_dict = constants.attr_dict
@@ -40,9 +40,8 @@ def add_placeholder(form):
 
 @register.simple_tag()
 def render_form(form, **kwargs):
-    """Renders form either with crispy_forms if installed and form has helper or with
-    django-formset's means"""
-    if crispy_forms_installed:
+    """Render a form with its crispy helper or the configured form template."""
+    if crispy_forms_installed and frontend != "django_formset":
         helper = kwargs.pop("helper", None) or getattr(form, "helper", None)
         if helper is None and get_option(form, "crispy_form"):
             helper = FormHelper(form=form)
@@ -50,7 +49,15 @@ def render_form(form, **kwargs):
             helper.form_tag = False
             helper.disable_csrf = True
             return mark_safe(render_form_implementation(form, helper, None))
-    template = kwargs.pop("template", FORM_TEMPLATE)
+    default_template = FORM_TEMPLATE
+    if (
+        frontend == "django_formset"
+        and FORM_TEMPLATE == "djangocms_form_builder/django_formset/render/form.html"
+        and not form.renderer.__class__.__module__.startswith("formset.")
+    ):
+        # Registered forms using the multipart fallback have not been formsetified.
+        default_template = "djangocms_form_builder/bootstrap5/render/form.html"
+    template = kwargs.pop("template", default_template)
     return render_to_string(template, {"form": form, **kwargs})
 
 
@@ -151,12 +158,35 @@ def render_widget(form, form_field, **kwargs):
 
 
 @register.simple_tag(takes_context=False)
+def render_formset_widget(form, form_field):
+    """Render one field through django-formset's configured renderer."""
+    field = get_bound_field(form, form_field)
+    if field is None:
+        return ""
+    renderer = form.renderer
+    framework = getattr(renderer, "framework", "default")
+    return mark_safe(
+        renderer.render(
+            f"formset/{framework}/field_group.html",
+            {
+                "field": field,
+                "control_css_classes": getattr(renderer, "control_css_classes", ""),
+            },
+        )
+    )
+
+
+@register.simple_tag(takes_context=False)
 def render_captcha_widget(form):
     if form is None or recaptcha.field_name not in form.fields:
         return ""
     field = form[recaptcha.field_name]
     if field.field.widget.__class__.__module__.startswith("django_altcha"):
         return field.as_widget()
+    if getattr(form, "form_id", None) and form.renderer.__class__.__module__.startswith(
+        "formset."
+    ):
+        return render_formset_widget(form, recaptcha.field_name)
     return render_widget(form, recaptcha.field_name)
 
 

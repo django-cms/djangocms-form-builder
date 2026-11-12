@@ -1,6 +1,6 @@
 import re
 from decimal import Decimal
-from unittest import skipIf
+from unittest import skipIf, skipUnless
 from unittest.mock import patch
 
 from cms import __version__ as cms_version
@@ -10,7 +10,8 @@ from django import forms
 from django.template import Context, Template
 from django.test import RequestFactory, override_settings
 
-from djangocms_form_builder import cms_plugins, recaptcha, settings
+from djangocms_form_builder import cms_plugins, recaptcha
+from djangocms_form_builder import settings as builder_settings
 
 from .fixtures import TestFixture
 
@@ -71,6 +72,14 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
 
+        if builder_settings.frontend == "django_formset":
+            self.assertIn("<django-formset", content)
+            self.assertIn("formset/js/django-formset.js", content)
+            self.assertIn("djangocms_form_builder/js/django_formset.js", content)
+            self.assertIn("data-djangocms-form-builder-submit", content)
+            self.assertIn("dj-field-errors", content)
+            self.assertFalse(cms_plugins.FormPlugin.cache)
+
         # Check form tag
         self.assertIn('id="form', content)
         self.assertIn('method="post"', content)
@@ -80,20 +89,124 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         self.assertIn("Full Name", content)
         self.assertIn('placeholder="Enter your name"', content)
         self.assertIn("This help text should render below the field.", content)
-        match = re.search(
-            r'name="full_name"[^>]*aria-describedby="(hints_[^"]+)"', content
-        )
-        self.assertIsNotNone(match)
-        hints_id = match.group(1)
-        self.assertIn(
-            f'id="{hints_id}" class="form-text">This help text should render below the field.</div>',
-            content,
-        )
+        if builder_settings.frontend == "django_formset":
+            self.assertIn('aria-describedby="id_full_name_helptext"', content)
+            self.assertIn('class="form-text text-muted"', content)
+        else:
+            match = re.search(
+                r'name="full_name"[^>]*aria-describedby="(hints_[^"]+)"', content
+            )
+            self.assertIsNotNone(match)
+            hints_id = match.group(1)
+            self.assertIn(
+                f'id="{hints_id}" class="form-text">This help text should render below the field.</div>',
+                content,
+            )
 
         # Check EmailField rendered
         self.assertIn('name="email"', content)
         self.assertIn("Email Address", content)
         self.assertIn('placeholder="you@example.com"', content)
+
+    @skipUnless(
+        builder_settings.frontend == "django_formset",
+        "requires the django_formset frontend",
+    )
+    def test_file_field_uses_multipart_fallback(self):
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="upload-form",
+        )
+        file_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FileFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": "attachment",
+                "field_label": "Attachment",
+                "field_file_validation_presets": [],
+            },
+        )
+        file_field.initialize_from_form()
+        self.publish(self.page, self.language)
+
+        with self.login_user_context(self.superuser):
+            response = self.client.get(self.request_url)
+
+        content = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("<django-formset", content)
+        self.assertIn("djangocms-form-builder-ajax-form", content)
+        self.assertIn("djangocms_form_builder/js/ajax_form.js", content)
+
+    @skipUnless(
+        builder_settings.frontend == "django_formset",
+        "requires the django_formset frontend",
+    )
+    def test_multiple_file_field_uses_multipart_fallback(self):
+        form_plugin = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            language=self.language,
+            form_selection="",
+            form_name="multiple-upload-form",
+        )
+        file_field = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.MultipleFileFieldPlugin.__name__,
+            target=form_plugin,
+            language=self.language,
+            config={
+                "field_name": "attachments",
+                "field_label": "Attachments",
+                "field_file_validation_presets": [],
+                "max_files": 3,
+            },
+        )
+        file_field.initialize_from_form()
+        self.publish(self.page, self.language)
+
+        with self.login_user_context(self.superuser):
+            response = self.client.get(self.request_url)
+
+        content = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("<django-formset", content)
+        self.assertIn("djangocms-form-builder-ajax-form", content)
+        self.assertIn('name="attachments"', content)
+        self.assertIn("multiple", content)
+        self.assertIn("djangocms_form_builder/js/ajax_form.js", content)
+
+    @skipUnless(
+        builder_settings.frontend == "django_formset",
+        "requires the django_formset frontend",
+    )
+    def test_empty_form_inside_container_renders_without_error(self):
+        container = add_plugin(
+            placeholder=self.placeholder,
+            plugin_type="ContainerPlugin",
+            language=self.language,
+        )
+        add_plugin(
+            placeholder=self.placeholder,
+            plugin_type=cms_plugins.FormPlugin.__name__,
+            target=container,
+            language=self.language,
+            form_selection="",
+            form_name="empty-form",
+        )
+        self.publish(self.page, self.language)
+
+        with self.login_user_context(self.superuser):
+            response = self.client.get(self.request_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("test-container", response.content.decode())
+        self.assertNotIn("<django-formset", response.content.decode())
 
     def _render_bare_form(self):
         """Render a form plugin that has a field but no Submit button plugin."""
@@ -120,20 +233,26 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
 
     def test_default_submit_button_uses_configured_label(self):
         """The default submit button label comes from the setting."""
-        with patch.object(settings, "DEFAULT_SUBMIT_LABEL", "Send it off"):
+        with patch.object(builder_settings, "DEFAULT_SUBMIT_LABEL", "Send it off"):
             content = self._render_bare_form()
         self.assertIn('type="submit"', content)
-        self.assertIn('value="Send it off"', content)
+        if builder_settings.frontend == "django_formset":
+            self.assertRegex(content, r">\s*Send it off\s*</button>")
+        else:
+            self.assertIn('value="Send it off"', content)
 
     def test_default_submit_button_label_defaults_to_submit(self):
         """Without an override the default button reads "Submit"."""
         content = self._render_bare_form()
         self.assertIn('type="submit"', content)
-        self.assertIn('value="Submit"', content)
+        if builder_settings.frontend == "django_formset":
+            self.assertRegex(content, r">\s*Submit\s*</button>")
+        else:
+            self.assertIn('value="Submit"', content)
 
     def test_no_default_submit_button_when_label_is_none(self):
         """``None`` renders no default button, requiring a custom submit plugin."""
-        with patch.object(settings, "DEFAULT_SUBMIT_LABEL", None):
+        with patch.object(builder_settings, "DEFAULT_SUBMIT_LABEL", None):
             content = self._render_bare_form()
         self.assertNotIn('type="submit"', content)
 
@@ -268,7 +387,10 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         content = response.content.decode()
 
         # Check floating label class applied
-        self.assertIn("form-floating", content)
+        if builder_settings.frontend == "django_formset":
+            self.assertIn('class="form-control"', content)
+        else:
+            self.assertIn("form-floating", content)
         self.assertIn('name="username"', content)
 
     def test_render_form_with_altcha(self):
@@ -358,6 +480,9 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         content = response.content.decode()
         field_position = content.index('name="full_name"')
         captcha_position = content.index('name="captcha_field"')
+        # ALTCHA forms use the standard frontend, also with django-formset.
+        self.assertNotIn("<django-formset", content)
+        self.assertNotIn("data-djangocms-form-builder-submit", content)
         submit_position = content.index('value="Send form"')
         self.assertLess(field_position, captcha_position)
         self.assertLess(captcha_position, submit_position)
@@ -654,6 +779,8 @@ class FormSubmissionRenderingTestCase(TestFixture, CMSTestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
         self.assertNotIn('name="csrfmiddlewaretoken"', content)
+        if builder_settings.frontend == "django_formset":
+            self.assertRegex(content, r'csrf-token="[^"]+"')
 
     @override_settings(CSRF_COOKIE_HTTPONLY=True)
     def test_form_csrf_token_rendered_when_cookie_httponly(self):
@@ -663,4 +790,7 @@ class FormSubmissionRenderingTestCase(TestFixture, CMSTestCase):
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn('name="csrfmiddlewaretoken"', content)
+        if builder_settings.frontend == "django_formset":
+            self.assertRegex(content, r'csrf-token="[^"]+"')
+        else:
+            self.assertIn('name="csrfmiddlewaretoken"', content)

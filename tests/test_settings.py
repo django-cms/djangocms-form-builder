@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "sekizai",
     "tests.test_app",
     "django_altcha",
+    "formset",
 ]
 
 try:  # V4 test?
@@ -90,6 +91,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "sekizai.context_processors.sekizai",
             ],
         },
     },
@@ -110,6 +112,9 @@ CMS_TEMPLATES = (("page.html", "Page"),)
 SITE_ID = 1
 
 ROOT_URLCONF = "tests.urls"
+
+if frontend := os.environ.get("DJANGOCMS_FORM_BUILDER_FRONTEND"):
+    DJANGOCMS_FORM_BUILDER_FRONTEND = frontend
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

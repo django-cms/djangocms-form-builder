@@ -3,6 +3,7 @@ autosizing
 backend
 blockquote
 captcha
+catalogue
 checkboxes
 ckeditor
 cms
@@ -16,6 +17,8 @@ djangocms
 dropdown
 fieldsets
 frontend
+frontends
+formset
 ish
 javascript
 Javascript
@@ -25,6 +28,7 @@ Jumbotron
 Jumbotrons
 kwargs
 LinkPlugin
+lifecycle
 listgroup
 mixin
 mixins
@@ -34,6 +38,9 @@ proxied
 queryset
 Rief
 rtl
+selectable
+sekizai
+stylesheet
 styledlink
 subclasses
 subclassing
@@ -41,6 +48,7 @@ submitter
 Textarea
 themable
 un
+uploader
 url
 validator
 viewport
