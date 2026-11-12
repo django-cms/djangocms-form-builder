@@ -480,11 +480,10 @@ class FormRenderingTestCase(TestFixture, CMSTestCase):
         content = response.content.decode()
         field_position = content.index('name="full_name"')
         captcha_position = content.index('name="captcha_field"')
-        if builder_settings.frontend == "django_formset":
-            submit_position = content.index("Send form")
-            self.assertIn("data-djangocms-form-builder-submit", content)
-        else:
-            submit_position = content.index('value="Send form"')
+        # ALTCHA forms use the standard frontend, also with django-formset.
+        self.assertNotIn("<django-formset", content)
+        self.assertNotIn("data-djangocms-form-builder-submit", content)
+        submit_position = content.index('value="Send form"')
         self.assertLess(field_position, captcha_position)
         self.assertLess(captcha_position, submit_position)
         self.assertEqual(content.count('challengeurl="/altcha/challenge/"'), 1)

@@ -79,9 +79,9 @@ presets and storage lifecycle continue to work, but that whole form does not use
 django-formset's rendering or browser-side validation. Registered forms
 rendered through django-formset ignore django-crispy-forms helpers.
 
-Forms using Google reCAPTCHA or hCaptcha also use the standard frontend. These
-providers need their own browser initialization and token flow, which is not
-integrated with django-formset yet. ALTCHA continues to use django-formset.
+Forms using Google reCAPTCHA, hCaptcha or ALTCHA also use the standard frontend.
+These providers need their own browser initialization and token flow, which is
+not integrated with django-formset yet.
 
 Native file support
 ===================

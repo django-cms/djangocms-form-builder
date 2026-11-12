@@ -1040,6 +1040,63 @@ class DjangoFormsetAjaxPluginTestCase(TestFixture, CMSTestCase):
                 self.assertEqual(response.status_code, 400)
                 self.assertIn("error", response.json())
 
+    def test_altcha_uses_existing_submission_frontend(self):
+        # ALTCHA keeps its solved payload in an input inside <altcha-widget>,
+        # which django-formset does not collect.
+        form_plugin, field = self._create_form()
+        form_plugin.captcha_widget = "altcha"
+
+        context = self._render_plugin_context(form_plugin, field)
+
+        self.assertIn("captcha_field", context["form"].fields)
+        self.assertFalse(context["use_django_formset"])
+        self.assertFalse(hasattr(context["form"], "form_id"))
+
+    def test_non_string_formset_values_do_not_crash_validation(self):
+        form_plugin, _field = self._create_form(plugin_type="DateFieldPlugin")
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+
+        for value in (5, 1.5, True, None, [5], ["2026-11-12", 3]):
+            with self.subTest(value=value), self.login_user_context(self.superuser):
+                response = self.client.post(
+                    url,
+                    data=json.dumps({"formset_data": {"message": value}}),
+                    content_type="application/json",
+                    headers={"accept": "application/json"},
+                )
+
+                self.assertEqual(response.status_code, 422)
+                self.assertIn("message", response.json())
+
+    def test_structured_formset_values_are_rejected(self):
+        form_plugin, _field = self._create_form(plugin_type="DateFieldPlugin")
+        self.publish(self.page, self.language)
+        url = reverse("form_builder:ajaxview", kwargs={"instance_id": form_plugin.pk})
+        deeply_nested = (
+            '{"formset_data": {"message": ' + "[" * 100_000 + "]" * 100_000 + "}}"
+        )
+
+        for body in (
+            json.dumps({"formset_data": {"message": {"day": 1}}}),
+            json.dumps({"formset_data": {"message": [["2026-11-12"]]}}),
+            json.dumps({"formset_data": {"message": [{"day": 1}]}}),
+            deeply_nested,
+        ):
+            with (
+                self.subTest(body=body[:40]),
+                self.login_user_context(self.superuser),
+            ):
+                response = self.client.post(
+                    url,
+                    data=body,
+                    content_type="application/json",
+                    headers={"accept": "application/json"},
+                )
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("error", response.json())
+
     def test_formset_non_field_validation_error(self):
         form_plugin, _field = self._create_form(
             form_options={"form_login_required": True}
@@ -1094,7 +1151,34 @@ class DjangoFormsetResponseTestCase(SimpleTestCase):
     def test_formset_payload_is_cached_on_request(self):
         first = self.plugin._get_formset_payload()
         self.assertIs(first, self.plugin._get_formset_payload())
-        self.assertEqual(self.plugin.get_form_kwargs()["data"], {"message": "hello"})
+        self.assertEqual(
+            self.plugin.get_form_kwargs()["data"].dict(), {"message": "hello"}
+        )
+
+    def test_formset_data_is_normalized_like_a_form_post(self):
+        self.plugin.request = RequestFactory().post(
+            "/form/",
+            data=json.dumps(
+                {
+                    "formset_data": {
+                        "text": "hello",
+                        "number": 5,
+                        "flag": True,
+                        "empty": None,
+                        "choices": ["a", 2],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+
+        data = self.plugin.get_form_kwargs()["data"]
+
+        self.assertEqual(data["text"], "hello")
+        self.assertEqual(data["number"], "5")
+        self.assertEqual(data["flag"], "True")
+        self.assertIsNone(data["empty"])
+        self.assertEqual(data.getlist("choices"), ["a", "2"])
 
     def test_prefixed_registered_form_binds_local_json_field_names(self):
         class ContactForm(forms.Form):

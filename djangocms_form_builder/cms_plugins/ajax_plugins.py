@@ -10,6 +10,7 @@ from django.middleware.csrf import get_token
 from django.template.context_processors import csrf
 from django.template.loader import render_to_string
 from django.urls import NoReverseMatch, reverse
+from django.utils.datastructures import MultiValueDict
 from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.edit import FormMixin
@@ -24,6 +25,35 @@ from ..helpers import get_option, insert_fields, mark_safe_lazy
 from ..upload_form_fields import MultipleUploadedFilesField
 
 SAME_PAGE_REDIRECT = "result"
+
+
+def _normalize_formset_data(formset_data):
+    """Turn django-formset's JSON field data into form data, or ``None``.
+
+    Django's fields and widgets expect what a browser form post delivers:
+    strings, with several values per name for multiple selections. JSON can
+    carry any type, so scalars are converted to strings and lists become
+    multiple values. Nested structures are not part of the basic single-form
+    protocol and are rejected.
+    """
+
+    def scalar(value):
+        if value is None or isinstance(value, str):
+            return value
+        if isinstance(value, (bool, int, float)):
+            return str(value)
+        raise ValueError("Unsupported value in formset data")
+
+    data = MultiValueDict()
+    try:
+        for name, value in formset_data.items():
+            if isinstance(value, list):
+                data.setlist(name, [scalar(item) for item in value])
+            else:
+                data[name] = scalar(value)
+    except ValueError:
+        return None
+    return data
 
 
 class CMSAjaxBase(CMSPluginBase):
@@ -55,11 +85,19 @@ class AjaxFormMixin(FormMixin):
         if not hasattr(self.request, "_djangocms_formset_payload"):
             try:
                 payload = json.loads(self.request.body or b"{}")
-            except (json.JSONDecodeError, UnicodeDecodeError):
+            except (ValueError, RecursionError):
+                # Malformed JSON, undecodable bytes or excessive nesting.
                 payload = None
-            if not isinstance(payload, dict) or not isinstance(
+            if isinstance(payload, dict) and isinstance(
                 payload.get("formset_data"), dict
             ):
+                formset_data = _normalize_formset_data(payload["formset_data"])
+                payload = (
+                    None
+                    if formset_data is None
+                    else {**payload, "formset_data": formset_data}
+                )
+            else:
                 payload = None
             self.request._djangocms_formset_payload = payload
         return self.request._djangocms_formset_payload
@@ -219,9 +257,12 @@ class AjaxFormMixin(FormMixin):
                 # django-formset sends local field names, whereas a regular
                 # Django form binds prefixed names. Use the instantiated form:
                 # registered forms can choose their prefix in __init__.
-                form.data = {
-                    form.add_prefix(name): value for name, value in form.data.items()
-                }
+                form.data = MultiValueDict(
+                    {
+                        form.add_prefix(name): values
+                        for name, values in form.data.lists()
+                    }
+                )
             if self.instance:
                 for field in form.base_fields:
                     form.fields[field].widget.attrs.update(
@@ -318,12 +359,16 @@ class CMSAjaxForm(AjaxFormMixin, CMSAjaxBase):
                 f"https://{domain}/recaptcha/api.js?{urlencode(api_params)}"
             )
         if settings.frontend == "django_formset" and form is not None:
+            # Uploads need multipart requests. CAPTCHAs, including ALTCHA, run
+            # their own browser token flow which django-formset does not collect.
+            fallback_fields = (
+                django_forms.FileField,
+                MultipleUploadedFilesField,
+                *recaptcha.CAPTCHA_FIELDS.values(),
+                *([recaptcha.ALTCHA_FIELD] if recaptcha.ALTCHA_FIELD else []),
+            )
             context["use_django_formset"] = not any(
-                isinstance(field, (django_forms.FileField, MultipleUploadedFilesField))
-                for field in form.fields.values()
-            ) and not any(
-                isinstance(field, tuple(recaptcha.CAPTCHA_FIELDS.values()))
-                for field in form.fields.values()
+                isinstance(field, fallback_fields) for field in form.fields.values()
             )
             if context["use_django_formset"]:
                 # django-formset links detached controls to this form by ID.
