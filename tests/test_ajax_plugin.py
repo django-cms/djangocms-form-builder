@@ -790,10 +790,6 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         self.assertIn(json_data["result"], ["success", "error"])
         self.assertIn("field_errors", json_data)
 
-    @skipUnless(
-        builder_settings.frontend == "django_formset",
-        "requires the django_formset frontend",
-    )
     def test_django_formset_json_submission(self):
         form_plugin = self._create_simple_form_plugin("formset-json-post")
         self.publish(self.page, self.language)
@@ -813,10 +809,6 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"success_url": self.request_url})
 
-    @skipUnless(
-        builder_settings.frontend == "django_formset",
-        "requires the django_formset frontend",
-    )
     def test_django_formset_validation_errors(self):
         form_plugin = self._create_simple_form_plugin("formset-json-invalid")
         self.publish(self.page, self.language)
@@ -834,11 +826,15 @@ class AjaxGetRequestTestCase(TestFixture, CMSTestCase):
         self.assertIn("simple_field", response.json())
 
 
-@skipUnless(
-    builder_settings.frontend == "django_formset",
-    "requires the django_formset frontend",
-)
 class DjangoFormsetAjaxPluginTestCase(TestFixture, CMSTestCase):
+    def setUp(self):
+        super().setUp()
+        # The plugin reads the frontend at render time, so these tests do not
+        # depend on the frontend the test run was started with.
+        patcher = mock.patch.object(builder_settings, "frontend", "django_formset")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def _create_form(self, plugin_type="CharFieldPlugin", **field_config):
         form_plugin = add_plugin(
             placeholder=self.placeholder,
@@ -885,6 +881,12 @@ class DjangoFormsetAjaxPluginTestCase(TestFixture, CMSTestCase):
         self.assertTrue(context["use_django_formset"])
         self.assertEqual(context["form"].form_id, f"form{context['uid']}")
         self.assertTrue(context["csrf_token"])
+
+    @skipUnless(
+        builder_settings.frontend == "django_formset",
+        "FormPlugin.cache is evaluated at import time",
+    )
+    def test_plugin_is_not_cached_with_django_formset(self):
         self.assertFalse(cms_plugins.FormPlugin.cache)
 
     def test_render_context_uses_multipart_fallback_for_file_fields(self):

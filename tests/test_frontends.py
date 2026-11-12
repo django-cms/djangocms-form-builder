@@ -1,6 +1,9 @@
 import importlib
+import sys
+from unittest import mock
 
 from django import forms
+from django.core.exceptions import ImproperlyConfigured
 from django.template import RequestContext, Template
 from django.test import RequestFactory, TestCase, override_settings
 
@@ -9,6 +12,8 @@ import djangocms_form_builder.settings as builder_settings_module
 from djangocms_form_builder.frontends import bootstrap5 as bootstrap5_module
 from djangocms_form_builder.frontends import django_formset as django_formset_module
 from djangocms_form_builder.frontends import foundation6 as foundation6_module
+from djangocms_form_builder.templatetags import form_builder_tags
+from djangocms_form_builder.templatetags.form_builder_tags import render_formset_widget
 
 
 class SubmitButtonChoicesTestCase(TestCase):
@@ -196,6 +201,41 @@ class DjangoFormsetFrontendTestCase(TestCase):
         self.assertIn('role="group"', rendered)
         self.assertIn('name="captcha_field"', rendered)
         self.assertIn('form="captcha-form"', rendered)
+
+    def test_formset_widget_is_empty_for_unknown_field(self):
+        class ContactForm(forms.Form):
+            name = forms.CharField(label="Name")
+
+        self.assertEqual(render_formset_widget(ContactForm(), "missing"), "")
+        self.assertEqual(render_formset_widget(None, "name"), "")
+
+    def test_unformsetified_form_falls_back_to_bootstrap_template(self):
+        class ContactForm(forms.Form):
+            name = forms.CharField(label="Name")
+
+        formset_template = "djangocms_form_builder/django_formset/render/form.html"
+        with (
+            mock.patch.object(form_builder_tags, "frontend", "django_formset"),
+            mock.patch.object(form_builder_tags, "FORM_TEMPLATE", formset_template),
+            mock.patch.object(
+                form_builder_tags, "render_to_string", return_value=""
+            ) as render,
+        ):
+            form = ContactForm()
+            form_builder_tags.render_form(form)
+
+        render.assert_called_once_with(
+            "djangocms_form_builder/bootstrap5/render/form.html", {"form": form}
+        )
+
+    def test_missing_django_formset_raises_improperly_configured(self):
+        self.addCleanup(importlib.reload, django_formset_module)
+        # A ``None`` entry makes the import machinery raise ImportError.
+        with mock.patch.dict(sys.modules, {"formset.renderers.bootstrap": None}):
+            with self.assertRaisesMessage(
+                ImproperlyConfigured, "requires django-formset"
+            ):
+                importlib.reload(django_formset_module)
 
     @override_settings(DJANGOCMS_FORM_BUILDER_FRONTEND="django_formset")
     def test_frontend_setting_takes_precedence_over_framework(self):
